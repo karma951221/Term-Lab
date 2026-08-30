@@ -3,3 +3,43 @@ docs/_archive/
 docs/_자료/
 
 .DS_Store
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+/build
+
+# 개발 DB (PGlite)
+/.data/
+
+# testing
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# next dev 가 자동 재생성하는 파일
+/AGENTS.md
+/CLAUDE.md
