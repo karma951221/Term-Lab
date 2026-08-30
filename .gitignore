@@ -40,6 +40,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# next dev 가 자동 재생성하는 파일
-/AGENTS.md
-/CLAUDE.md
+# next dev 가 자동 재생성 (내용 동일 재생성이라 커밋해 둠 — CLAUDE.md 는 프로젝트 규칙 포함)
