@@ -6,6 +6,7 @@
  * 새 테이블 파일을 추가하면 여기에도 re-export 한다.
  */
 
+export * from "./auth";
 export * from "./catalog";
 export * from "./common";
 export * from "./coverage";
