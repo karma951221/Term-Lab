@@ -11,3 +11,4 @@ export * from "./catalog";
 export * from "./common";
 export * from "./coverage";
 export * from "./product";
+export * from "./values";
