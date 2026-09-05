@@ -18,6 +18,8 @@ export default defineConfig({
   use: {
     baseURL: BASE_URL,
     trace: "on-first-retry",
+    // 사전 설치된 브라우저를 그대로 쓰는 환경(원격 실행 등)을 위해 경로를 넘길 수 있게 한다.
+    ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}),
   },
   projects: [
     {

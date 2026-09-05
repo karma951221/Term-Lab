@@ -122,8 +122,8 @@ export function RenderedGroupView({ group }: { group: RenderedGroup }) {
   return (
     <section className="ts-doc-group">
       <h2 className="ts-doc-group-title">{group.title}</h2>
-      {group.docs.map((d) => (
-        <RenderedDoc key={d.id} doc={d} />
+      {group.docs.map((d, i) => (
+        <RenderedDoc key={`${d.ownerId ?? d.id}-${i}`} doc={d} />
       ))}
     </section>
   );
