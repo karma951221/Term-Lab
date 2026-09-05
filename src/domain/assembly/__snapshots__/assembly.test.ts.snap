@@ -1,0 +1,615 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망보장(+추가) 조립 > 문서트리 스냅샷 — 보통약관 · 그룹 「상해 관련 특별약관」 · 특약 2벌 · 별표 목록 1`] = `
+{
+  "appendices": [
+    {
+      "code": "APX_DISABILITY",
+      "firstAt": {
+        "articleId": "g-art-disability",
+        "articleTitle": "장해의 분류",
+        "document": "general",
+        "nodePath": [
+          "g-doc",
+          "g-art-disability",
+          "g-par-dis",
+          "g-apx-disability",
+        ],
+        "ownerId": "g-doc",
+        "ownerName": "알파Plus 보통약관",
+      },
+      "name": "장해분류표",
+      "number": 1,
+    },
+  ],
+  "general": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "id": "g-txt-def",
+                "kind": "text",
+                "text": "이 계약에서 사용하는 용어의 정의는 다음과 같습니다.",
+              },
+            ],
+            "id": "g-par-def",
+            "kind": "paragraph",
+            "label": "①",
+            "number": 1,
+          },
+        ],
+        "id": "g-art-def",
+        "kind": "article",
+        "label": "제1조",
+        "number": 1,
+        "title": "용어의 정의",
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "id": "g-txt-pay-1",
+                "kind": "text",
+                "text": "회사는 피보험자가 ",
+              },
+              {
+                "id": "g-txt-pay-3",
+                "kind": "text",
+                "text": "계약일",
+              },
+              {
+                "id": "g-txt-pay-4",
+                "kind": "text",
+                "text": " 이후 기본계약의 보험금 지급사유가 발생한 때 보험금을 지급합니다.",
+              },
+            ],
+            "id": "g-par-pay-1",
+            "kind": "paragraph",
+            "label": "①",
+            "number": 1,
+          },
+          {
+            "children": [
+              {
+                "id": "g-txt-pay-5",
+                "kind": "text",
+                "text": "이 계약은 ",
+              },
+              {
+                "id": "g-slot-notice",
+                "kind": "text",
+                "text": "간편심사",
+              },
+              {
+                "id": "g-txt-pay-6",
+                "kind": "text",
+                "text": " 계약입니다.",
+              },
+            ],
+            "id": "g-par-pay-2",
+            "kind": "paragraph",
+            "label": "②",
+            "number": 2,
+          },
+        ],
+        "id": "g-art-pay",
+        "kind": "article",
+        "label": "제2조",
+        "number": 2,
+        "title": "보험금의 지급사유",
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "id": "g-txt-dis-1",
+                "kind": "text",
+                "text": "장해의 분류는 ",
+              },
+              {
+                "appendixCode": "APX_DISABILITY",
+                "id": "g-apx-disability",
+                "kind": "appendixRef",
+                "label": "【별표1(장해분류표)】",
+                "number": 1,
+              },
+              {
+                "id": "g-txt-dis-2",
+                "kind": "text",
+                "text": " 에 따릅니다.",
+              },
+            ],
+            "id": "g-par-dis",
+            "kind": "paragraph",
+            "label": "①",
+            "number": 1,
+          },
+        ],
+        "id": "g-art-disability",
+        "kind": "article",
+        "label": "제3조",
+        "number": 3,
+        "title": "장해의 분류",
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "id": "g-clause-apply/c2-t1",
+                "kind": "text",
+                "text": "이 약관에서 정하지 않은 사항은 보통약관 ",
+              },
+              {
+                "articleId": "g-art-def",
+                "id": "g-clause-apply/c2-ref",
+                "kind": "articleRef",
+                "label": "제1조(용어의 정의)",
+              },
+              {
+                "id": "g-clause-apply/c2-t2",
+                "kind": "text",
+                "text": " 및 관계 법령을 따릅니다.",
+              },
+            ],
+            "id": "g-par-apply",
+            "kind": "paragraph",
+            "label": "①",
+            "number": 1,
+          },
+        ],
+        "id": "g-art-apply",
+        "kind": "article",
+        "label": "제4조",
+        "number": 4,
+        "title": "준용규정",
+      },
+    ],
+    "document": "general",
+    "id": "g-doc",
+    "kind": "document",
+    "ownerId": "g-doc",
+    "title": "알파Plus 보통약관",
+  },
+  "omitted": [
+    {
+      "articleId": "s-art-apply",
+      "articleTitle": "준용규정",
+      "linkedArticleId": "g-art-apply",
+      "productCoverageId": "pc-basic",
+      "productCoverageName": "일반상해사망보장",
+    },
+    {
+      "articleId": "s-art-apply",
+      "articleTitle": "준용규정",
+      "linkedArticleId": "g-art-apply",
+      "productCoverageId": "pc-addon",
+      "productCoverageName": "일반상해사망보장 추가",
+    },
+  ],
+  "specials": [
+    {
+      "docs": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "id": "s-txt-pay-1",
+                      "kind": "text",
+                      "text": "회사는 피보험자가 ",
+                    },
+                    {
+                      "id": "s-txt-pay-3",
+                      "kind": "text",
+                      "text": "계약일",
+                    },
+                    {
+                      "id": "s-txt-pay-4",
+                      "kind": "text",
+                      "text": " 이후 상해로 사망한 경우 사망보험금을 지급합니다.",
+                    },
+                  ],
+                  "id": "s-par-pay-1",
+                  "kind": "paragraph",
+                  "label": "①",
+                  "number": 1,
+                },
+                {
+                  "children": [
+                    {
+                      "id": "s-txt-pay-5",
+                      "kind": "text",
+                      "text": "사망보험금은 보험가입금액에 평균공시이율 ",
+                    },
+                    {
+                      "id": "s-slot-rate",
+                      "kind": "text",
+                      "text": "2.5%",
+                    },
+                    {
+                      "id": "s-txt-pay-6",
+                      "kind": "text",
+                      "text": " 을 적용하여 계산합니다.",
+                    },
+                  ],
+                  "id": "s-par-pay-2",
+                  "kind": "paragraph",
+                  "label": "②",
+                  "number": 2,
+                },
+              ],
+              "id": "s-art-pay",
+              "kind": "article",
+              "label": "제1조",
+              "number": 1,
+              "title": "보험금의 지급사유",
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "id": "s-txt-exempt-1",
+                      "kind": "text",
+                      "text": "회사는 다음 중 어느 한 가지로 보험금 지급사유가 발생한 때에는 보험금을 지급하지 않습니다.",
+                    },
+                  ],
+                  "id": "s-par-exempt",
+                  "items": [
+                    {
+                      "children": [
+                        {
+                          "id": "s-txt-exempt-2",
+                          "kind": "text",
+                          "text": "피보험자가 고의로 자신을 해친 경우",
+                        },
+                      ],
+                      "id": "s-item-exempt-1",
+                      "kind": "item",
+                      "label": "1.",
+                      "number": 1,
+                    },
+                    {
+                      "children": [
+                        {
+                          "id": "s-txt-exempt-3",
+                          "kind": "text",
+                          "text": "보험수익자가 고의로 피보험자를 해친 경우",
+                        },
+                      ],
+                      "id": "s-item-exempt-2",
+                      "kind": "item",
+                      "label": "2.",
+                      "number": 2,
+                      "subitems": [
+                        {
+                          "children": [
+                            {
+                              "id": "s-txt-exempt-4",
+                              "kind": "text",
+                              "text": "다만, 그 보험수익자가 보험금의 일부 보험수익자인 경우에는 다른 보험수익자에 대한 보험금은 지급합니다.",
+                            },
+                          ],
+                          "id": "s-sub-exempt",
+                          "kind": "subitem",
+                          "label": "가.",
+                          "number": 1,
+                        },
+                      ],
+                    },
+                  ],
+                  "kind": "paragraph",
+                  "label": "①",
+                  "number": 1,
+                },
+              ],
+              "id": "s-art-exempt",
+              "kind": "article",
+              "label": "제2조",
+              "number": 2,
+              "title": "보험금을 지급하지 않는 사유",
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "id": "s-txt-reduce-1",
+                      "kind": "text",
+                      "text": "계약일부터 ",
+                    },
+                    {
+                      "id": "s-slot-reduce",
+                      "kind": "text",
+                      "text": "24",
+                    },
+                    {
+                      "id": "s-txt-reduce-2",
+                      "kind": "text",
+                      "text": "개월 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다.",
+                    },
+                  ],
+                  "id": "s-par-reduce",
+                  "kind": "paragraph",
+                  "label": "①",
+                  "number": 1,
+                },
+              ],
+              "id": "s-art-reduce",
+              "kind": "article",
+              "label": "제3조",
+              "number": 3,
+              "title": "보험금의 감액지급",
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "id": "s-txt-lapse",
+                      "kind": "text",
+                      "text": "이 특별약관은 다음의 경우 소멸합니다.",
+                    },
+                  ],
+                  "id": "s-par-lapse",
+                  "kind": "paragraph",
+                  "label": "①",
+                  "number": 1,
+                },
+                {
+                  "children": [
+                    {
+                      "id": "s-clause-lapse/c1-t1",
+                      "kind": "text",
+                      "text": "이 특별약관은 ",
+                    },
+                    {
+                      "id": "s-clause-lapse/c1-o-death",
+                      "kind": "text",
+                      "text": "피보험자가 사망한 때",
+                    },
+                    {
+                      "id": "s-clause-lapse/c1-t2",
+                      "kind": "text",
+                      "text": " 소멸합니다.",
+                    },
+                  ],
+                  "id": "s-clause-lapse/c1-par",
+                  "kind": "paragraph",
+                  "label": "②",
+                  "number": 2,
+                },
+              ],
+              "id": "s-art-lapse",
+              "kind": "article",
+              "label": "제4조",
+              "number": 4,
+              "title": "특별약관의 소멸",
+            },
+          ],
+          "document": "special",
+          "id": "s-doc-death",
+          "kind": "document",
+          "ownerId": "pc-basic",
+          "title": "일반상해사망보장 특별약관",
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "id": "s-txt-pay-1",
+                      "kind": "text",
+                      "text": "회사는 피보험자가 ",
+                    },
+                    {
+                      "id": "s-txt-pay-3",
+                      "kind": "text",
+                      "text": "계약일",
+                    },
+                    {
+                      "id": "s-txt-pay-4",
+                      "kind": "text",
+                      "text": " 이후 상해로 사망한 경우 사망보험금을 지급합니다.",
+                    },
+                  ],
+                  "id": "s-par-pay-1",
+                  "kind": "paragraph",
+                  "label": "①",
+                  "number": 1,
+                },
+                {
+                  "children": [
+                    {
+                      "id": "s-txt-pay-5",
+                      "kind": "text",
+                      "text": "사망보험금은 보험가입금액에 평균공시이율 ",
+                    },
+                    {
+                      "id": "s-slot-rate",
+                      "kind": "text",
+                      "text": "2.5%",
+                    },
+                    {
+                      "id": "s-txt-pay-6",
+                      "kind": "text",
+                      "text": " 을 적용하여 계산합니다.",
+                    },
+                  ],
+                  "id": "s-par-pay-2",
+                  "kind": "paragraph",
+                  "label": "②",
+                  "number": 2,
+                },
+              ],
+              "id": "s-art-pay",
+              "kind": "article",
+              "label": "제1조",
+              "number": 1,
+              "title": "보험금의 지급사유",
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "id": "s-txt-exempt-1",
+                      "kind": "text",
+                      "text": "회사는 다음 중 어느 한 가지로 보험금 지급사유가 발생한 때에는 보험금을 지급하지 않습니다.",
+                    },
+                  ],
+                  "id": "s-par-exempt",
+                  "items": [
+                    {
+                      "children": [
+                        {
+                          "id": "s-txt-exempt-2",
+                          "kind": "text",
+                          "text": "피보험자가 고의로 자신을 해친 경우",
+                        },
+                      ],
+                      "id": "s-item-exempt-1",
+                      "kind": "item",
+                      "label": "1.",
+                      "number": 1,
+                    },
+                    {
+                      "children": [
+                        {
+                          "id": "s-txt-exempt-3",
+                          "kind": "text",
+                          "text": "보험수익자가 고의로 피보험자를 해친 경우",
+                        },
+                      ],
+                      "id": "s-item-exempt-2",
+                      "kind": "item",
+                      "label": "2.",
+                      "number": 2,
+                      "subitems": [
+                        {
+                          "children": [
+                            {
+                              "id": "s-txt-exempt-4",
+                              "kind": "text",
+                              "text": "다만, 그 보험수익자가 보험금의 일부 보험수익자인 경우에는 다른 보험수익자에 대한 보험금은 지급합니다.",
+                            },
+                          ],
+                          "id": "s-sub-exempt",
+                          "kind": "subitem",
+                          "label": "가.",
+                          "number": 1,
+                        },
+                      ],
+                    },
+                  ],
+                  "kind": "paragraph",
+                  "label": "①",
+                  "number": 1,
+                },
+              ],
+              "id": "s-art-exempt",
+              "kind": "article",
+              "label": "제2조",
+              "number": 2,
+              "title": "보험금을 지급하지 않는 사유",
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "id": "s-txt-reduce-1",
+                      "kind": "text",
+                      "text": "계약일부터 ",
+                    },
+                    {
+                      "id": "s-slot-reduce",
+                      "kind": "text",
+                      "text": "24",
+                    },
+                    {
+                      "id": "s-txt-reduce-2",
+                      "kind": "text",
+                      "text": "개월 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다.",
+                    },
+                  ],
+                  "id": "s-par-reduce",
+                  "kind": "paragraph",
+                  "label": "①",
+                  "number": 1,
+                },
+              ],
+              "id": "s-art-reduce",
+              "kind": "article",
+              "label": "제3조",
+              "number": 3,
+              "title": "보험금의 감액지급",
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "id": "s-txt-lapse",
+                      "kind": "text",
+                      "text": "이 특별약관은 다음의 경우 소멸합니다.",
+                    },
+                  ],
+                  "id": "s-par-lapse",
+                  "kind": "paragraph",
+                  "label": "①",
+                  "number": 1,
+                },
+                {
+                  "children": [
+                    {
+                      "id": "s-clause-lapse/c1-t1",
+                      "kind": "text",
+                      "text": "이 특별약관은 ",
+                    },
+                    {
+                      "id": "s-clause-lapse/c1-o-death",
+                      "kind": "text",
+                      "text": "피보험자가 사망한 때",
+                    },
+                    {
+                      "id": "s-clause-lapse/c1-t2",
+                      "kind": "text",
+                      "text": " 소멸합니다.",
+                    },
+                  ],
+                  "id": "s-clause-lapse/c1-par",
+                  "kind": "paragraph",
+                  "label": "②",
+                  "number": 2,
+                },
+              ],
+              "id": "s-art-lapse",
+              "kind": "article",
+              "label": "제4조",
+              "number": 4,
+              "title": "특별약관의 소멸",
+            },
+          ],
+          "document": "special",
+          "id": "s-doc-death",
+          "kind": "document",
+          "ownerId": "pc-addon",
+          "title": "일반상해사망보장 추가 특별약관",
+        },
+      ],
+      "id": "grp-injury",
+      "title": "상해 관련 특별약관",
+    },
+  ],
+}
+`;
