@@ -11,7 +11,7 @@
  *              GeneralAttachmentCheck = document.requiredDiscriminators + 카탈로그 레벨(파생은 식의 구분자로 펼침) ·
  *              OptionValidator = clause 정의의 validateOptionSelection · AttributeRefSource = `attributeRefSource`
  * - refs     ← 그래프 서비스 (관계정보 · 무결성)
- * - assembly 는 C2 가 완성한 뒤 오케스트레이터가 연결한다 (여기 없음).
+ * - assembly ← 위 서비스들의 조회 메서드 (읽기 전용 · 매번 재계산)
  *
  * 트랜잭션: 서비스마다 자기 트랜잭션을 열고 주입 소스를 그 안에서 부른다. PGlite 는 단일 연결이라 소스가 바깥 핸들로
  * 쿼리하면 교착하므로, 모든 서비스·소스에 `contextualDb()` 프록시를 넘긴다 (txContext.ts) — 열린 tx 를 자동으로 탄다.
@@ -32,6 +32,7 @@ import * as productRepo from "@/db/repo/product";
 import type { Db } from "@/db/repo/types";
 import type { ValueOwner } from "@/db/repo/values";
 
+import { createAssemblyService, type AssemblyService } from "./assembly";
 import { createAuthService, type AuthService, type AuthServiceOptions } from "./auth";
 import { createCatalogService, type CatalogService } from "./catalog";
 import { createClauseService, type ClauseService } from "./clause";
@@ -51,6 +52,7 @@ export interface Services {
   document: DocumentService;
   product: ProductService;
   refs: RefsService;
+  assembly: AssemblyService;
 }
 
 export interface ContainerOptions {
@@ -169,8 +171,9 @@ export function createServices(root: Db, opts: ContainerOptions = {}): Services 
     attributeRefs: attributeRefSource(db),
   });
   const auth = createAuthService(db, opts.auth);
+  const assembly = createAssemblyService(db, { catalog, coverage, clause, document, product });
 
-  Object.assign(services, { db, auth, catalog, coverage, clause, document, product, refs });
+  Object.assign(services, { db, auth, catalog, coverage, clause, document, product, refs, assembly });
   return services;
 }
 
