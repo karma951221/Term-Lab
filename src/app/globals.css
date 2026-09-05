@@ -35,3 +35,431 @@ body {
 a {
   color: inherit;
 }
+
+/* ───────────────────────────── terms-studio 최소 스타일 (D2) ─────────────────────────────
+ * 디자인은 리뷰 후 (02_UI/디자인원칙.md 톤만 참고). 여기서는 표·폼·배지·회색 톤다운·오류 붉은색만 최소로. */
+
+:root {
+  --ts-paper: #f6f4ef;
+  --ts-surface: #ffffff;
+  --ts-surface-2: #f1eee7;
+  --ts-ink: #1a1815;
+  --ts-ink-2: #57534b;
+  --ts-ink-3: #77726a;
+  --ts-rule: #e4e0d8;
+  --ts-rule-strong: #cfc9be;
+  --ts-mark: #b4432b;
+  --ts-error: #a02617;
+  --ts-error-bg: #fbf0ec;
+  --ts-ok: #3f6b3a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ts-paper: #1e1c19;
+    --ts-surface: #26241f;
+    --ts-surface-2: #2c2a25;
+    --ts-ink: #e8e3d9;
+    --ts-ink-2: #c9c2b4;
+    --ts-ink-3: #9c968a;
+    --ts-rule: #3a362f;
+    --ts-rule-strong: #4a453c;
+    --ts-mark: #d4694e;
+    --ts-error: #d9584a;
+    --ts-error-bg: #3a201c;
+    --ts-ok: #7fae77;
+  }
+}
+
+.ts-app {
+  display: flex;
+  min-height: 100vh;
+  background: var(--ts-paper);
+  color: var(--ts-ink);
+}
+
+.ts-nav {
+  flex: 0 0 200px;
+  background: var(--ts-surface-2);
+  border-right: 1px solid var(--ts-rule);
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ts-nav-title {
+  font-weight: 700;
+  font-size: 15px;
+  margin: 0 0 12px 4px;
+}
+
+.ts-nav a {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 3px;
+  font-size: 13px;
+  text-decoration: none;
+  color: var(--ts-ink-2);
+}
+
+.ts-nav a:hover {
+  background: var(--ts-surface);
+  color: var(--ts-ink);
+}
+
+.ts-nav-user {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--ts-rule);
+  font-size: 12px;
+  color: var(--ts-ink-3);
+}
+
+.ts-main {
+  flex: 1;
+  padding: 24px 32px;
+  max-width: 1000px;
+}
+
+.ts-h1 {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+
+.ts-h2 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 24px 0 8px;
+  border-bottom: 1px solid var(--ts-rule-strong);
+  padding-bottom: 4px;
+}
+
+.ts-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+table.ts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ts-table th,
+.ts-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ts-rule);
+}
+
+.ts-table code {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.ts-table tr:hover td {
+  background: var(--ts-surface-2);
+}
+
+.ts-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--ts-surface-2);
+  color: var(--ts-ink-2);
+  border: 1px solid var(--ts-rule);
+}
+
+.ts-badge.locked {
+  color: var(--ts-ink);
+  border-color: var(--ts-ink-3);
+}
+
+.ts-badge.undetermined {
+  color: var(--ts-ink-3);
+  font-style: italic;
+}
+
+.ts-muted {
+  color: var(--ts-ink-3);
+}
+
+.ts-ok {
+  color: var(--ts-ok);
+}
+
+.ts-dim {
+  opacity: 0.5;
+}
+
+/* ts-form (StructForm/ValueList 클래스는 forms 팀 몫 — 여기는 최소 배선만) */
+.ts-form {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-rule);
+  border-radius: 3px;
+  padding: 12px 16px;
+  max-width: 560px;
+  margin-bottom: 16px;
+}
+.ts-form-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.ts-form-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--ts-rule);
+}
+.ts-form-label {
+  color: var(--ts-ink-2);
+  padding-top: 4px;
+}
+.ts-form-control {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.ts-form-badge {
+  font-size: 11px;
+  color: var(--ts-ink-3);
+  background: var(--ts-surface-2);
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+.ts-form-error {
+  color: var(--ts-error);
+  font-size: 12px;
+  flex-basis: 100%;
+}
+.ts-form-issues {
+  color: var(--ts-error);
+  font-size: 12px;
+}
+.ts-form-actions {
+  margin-top: 12px;
+}
+.ts-form input,
+.ts-form select {
+  font-size: 13px;
+  padding: 3px 6px;
+  border: 1px solid var(--ts-rule-strong);
+  border-radius: 3px;
+  background: var(--ts-surface);
+  color: var(--ts-ink);
+}
+
+.ts-panel {
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-rule);
+  border-radius: 3px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.ts-tree {
+  list-style: none;
+  padding-left: 16px;
+  margin: 0;
+}
+.ts-tree > li {
+  margin: 2px 0;
+}
+.ts-tree-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ts-error-banner {
+  background: var(--ts-error-bg);
+  color: var(--ts-error);
+  border: 1px solid var(--ts-error);
+  border-radius: 3px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.ts-issues {
+  color: var(--ts-error);
+  font-size: 12px;
+  padding-left: 16px;
+}
+.ts-issue-kind {
+  color: var(--ts-ink-3);
+}
+.ts-issue-path {
+  color: var(--ts-ink-3);
+}
+.ts-issue-at {
+  color: var(--ts-ink-3);
+}
+
+.ts-confirm {
+  background: var(--ts-error-bg);
+  border: 1px solid var(--ts-error);
+  border-radius: 3px;
+  padding: 12px 16px;
+  margin: 12px 0;
+}
+.ts-confirm-title {
+  font-weight: 700;
+  color: var(--ts-error);
+  margin: 0 0 8px;
+}
+.ts-confirm-body {
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+.ts-confirm-actions button.danger {
+  background: var(--ts-error);
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+button {
+  font-size: 13px;
+  padding: 4px 10px;
+  border: 1px solid var(--ts-rule-strong);
+  border-radius: 3px;
+  background: var(--ts-surface);
+  color: var(--ts-ink);
+  cursor: pointer;
+}
+button:hover {
+  background: var(--ts-surface-2);
+}
+button.danger {
+  border-color: var(--ts-error);
+  color: var(--ts-error);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+  font-size: 13px;
+  padding: 4px 6px;
+  border: 1px solid var(--ts-rule-strong);
+  border-radius: 3px;
+  background: var(--ts-surface);
+  color: var(--ts-ink);
+}
+
+textarea.ts-json {
+  width: 100%;
+  min-height: 200px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+
+label.ts-field {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+label.ts-field > span {
+  display: block;
+  color: var(--ts-ink-2);
+  margin-bottom: 2px;
+}
+
+/* 문서 세계 (조립 미리보기) — 명조 · 넉넉한 행간 */
+.ts-doc {
+  font-family: "Noto Serif KR", serif;
+  font-size: 15px;
+  line-height: 1.9;
+  max-width: 44em;
+  background: var(--ts-surface);
+  border: 1px solid var(--ts-rule);
+  padding: 16px 24px;
+  margin-bottom: 16px;
+}
+.ts-doc-title {
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+}
+.ts-doc-article-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 20px;
+}
+.ts-doc-num {
+  color: var(--ts-ink-3);
+}
+.ts-doc-ref {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  color: var(--ts-mark);
+}
+.ts-doc-error {
+  color: var(--ts-error);
+  background: var(--ts-error-bg);
+  border-radius: 3px;
+  padding: 0 4px;
+  font-family: "Malgun Gothic", sans-serif;
+  font-size: 12px;
+}
+.ts-doc-group-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 24px;
+}
+
+/* 문면 구조 편집기 */
+.ts-mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+.ts-derived-mark {
+  color: var(--ts-ink-3);
+  font-style: italic;
+  margin-right: 2px;
+}
+.ts-insert-menu {
+  margin: 4px 0;
+  font-size: 12px;
+}
+.ts-insert-menu summary {
+  cursor: pointer;
+  color: var(--ts-ink-3);
+}
+.ts-cond,
+.ts-cond-inline {
+  border-left: 2px solid var(--ts-ink-3);
+  padding-left: 8px;
+  margin: 4px 0;
+}
+.ts-cond-branch {
+  margin: 4px 0;
+  padding-left: 4px;
+}
+.ts-node-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 4px;
+}
+.ts-node-actions {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 4px;
+}
+.ts-node-actions button {
+  padding: 1px 6px;
+}

@@ -1,13 +1,11 @@
-export default function Home() {
-  return (
-    <main style={{ padding: "3rem 2rem", maxWidth: "48rem", margin: "0 auto" }}>
-      <h1>terms-studio</h1>
-      <p>보험 약관 생성 도구 — P0 뼈대.</p>
-      <ul>
-        <li>
-          <a href="/api/health">/api/health</a> — DB(PGlite) 연결 확인
-        </li>
-      </ul>
-    </main>
-  );
+import { redirect } from "next/navigation";
+
+import { currentActorOrNull } from "@/lib/services";
+
+export const dynamic = "force-dynamic";
+
+/** 루트 — 로그인 여부로 갈라 보낸다. 화면 없음(항상 redirect). */
+export default async function Home() {
+  const actor = await currentActorOrNull();
+  redirect(actor ? "/catalog" : "/login");
 }
