@@ -1,0 +1,70 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`문면_기획 참조 무결성 — collectRefs 는 문서가 읽는 참조 전부를 좌표와 함께 뽑는다 (C1 역인덱스 재료) > 구분자(식 안·슬롯) · 담보속성 · 공용조항 · 조(자기·보통약관) · 별표 · 조연결 1`] = `
+[
+  [
+    "discriminator",
+    "D0001",
+    "when",
+    "s-art-pay",
+  ],
+  [
+    "discriminator",
+    "D0004",
+    "slot",
+    "s-art-pay",
+  ],
+  [
+    "discriminator",
+    "D0001",
+    "when",
+    undefined,
+  ],
+  [
+    "discriminator",
+    "D0005",
+    "when",
+    undefined,
+  ],
+  [
+    "discriminator",
+    "D0003.F02",
+    "slot",
+    "s-art-exempt",
+  ],
+  [
+    "clause",
+    "C001",
+    "block",
+    "s-art-lapse",
+  ],
+  [
+    "link",
+    "g-art-apply",
+    "s-art-apply",
+  ],
+  [
+    "article",
+    "g-art-pay",
+    "general",
+    "s-art-apply",
+  ],
+  [
+    "article",
+    "s-art-pay",
+    "self",
+    "s-art-apply",
+  ],
+  [
+    "appendix",
+    "APX_BURN",
+    "s-art-apply",
+  ],
+  [
+    "clause",
+    "C002",
+    "inline",
+    "s-art-apply",
+  ],
+]
+`;

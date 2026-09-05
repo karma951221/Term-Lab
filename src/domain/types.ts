@@ -114,7 +114,8 @@ export type IssueKind =
   | "notAttached" // 요구 구분자 미부착 (값 자리 없음)
   | "typeMismatch" // 조건 자리에 boolean 아님 등
   | "unplaced" // 그룹에 배치되지 않은 상품담보
-  | "syntax"; // 식 문법 오류
+  | "syntax" // 식 문법 오류
+  | "structure"; // 문면 트리 규칙 위반 (허용 자식 · 인라인 조건 중첩 · 노드 id 중복 · else 위치 등, ADR-0012)
 
 export interface Issue {
   kind: IssueKind;

@@ -10,5 +10,6 @@ export * from "./auth";
 export * from "./catalog";
 export * from "./common";
 export * from "./coverage";
+export * from "./document";
 export * from "./product";
 export * from "./values";

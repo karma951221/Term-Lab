@@ -1,0 +1,220 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`문면작성 S2 — 인라인 조건 삽입 > 문장 안에 인라인 조건 칩 삽입 — 참/else 가지 텍스트가 저장된다 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "id": "n1",
+              "kind": "text",
+              "text": "회사는 ",
+            },
+            {
+              "branches": [
+                {
+                  "children": [
+                    {
+                      "id": "n6",
+                      "kind": "text",
+                      "text": "최초계약일",
+                    },
+                  ],
+                  "id": "n7",
+                  "when": "D0001 = true",
+                },
+                {
+                  "children": [
+                    {
+                      "id": "n8",
+                      "kind": "text",
+                      "text": "계약일",
+                    },
+                  ],
+                  "id": "n9",
+                },
+              ],
+              "id": "n10",
+              "kind": "inlineCond",
+            },
+          ],
+          "id": "n2",
+          "kind": "paragraph",
+        },
+      ],
+      "id": "n3",
+      "kind": "article",
+      "title": "보험금의 지급사유",
+    },
+    {
+      "children": [],
+      "id": "n4",
+      "kind": "article",
+      "title": "보험기간",
+    },
+  ],
+  "id": "n5",
+  "kind": "document",
+  "title": "수술비",
+}
+`;
+
+exports[`문면작성 S3 — 조 자리의 조건 블록과 가지 편집 > 조 자리에 조건 블록(if) 추가 후 가지 안에 조 작성 · elif · else 추가 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "id": "n1",
+              "kind": "text",
+              "text": "회사는 ",
+            },
+          ],
+          "id": "n2",
+          "kind": "paragraph",
+        },
+      ],
+      "id": "n3",
+      "kind": "article",
+      "title": "보험금의 지급사유",
+    },
+    {
+      "branches": [
+        {
+          "children": [
+            {
+              "children": [],
+              "id": "n8",
+              "kind": "article",
+              "title": "보험기간(갱신형)",
+            },
+          ],
+          "id": "n6",
+          "when": "D0001 = true",
+        },
+        {
+          "children": [],
+          "id": "n9",
+          "when": "D0002 = 'V01'",
+        },
+        {
+          "children": [
+            {
+              "children": [],
+              "id": "n10",
+              "kind": "article",
+              "title": "그 외",
+            },
+          ],
+          "id": "n11",
+        },
+      ],
+      "id": "n7",
+      "kind": "condBlock",
+    },
+    {
+      "children": [],
+      "id": "n4",
+      "kind": "article",
+      "title": "보험기간",
+    },
+  ],
+  "id": "n5",
+  "kind": "document",
+  "title": "수술비",
+}
+`;
+
+exports[`복제 (D-P4-9) — 하위 트리·조연결·참조 대상 id 를 그대로, 노드 id 는 새로 > 조 복제 → 바로 뒤에 사본, 사본 안의 자기 조 참조는 사본을 가리킨다 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "id": "n1",
+              "kind": "text",
+              "text": "회사는 ",
+            },
+          ],
+          "id": "n2",
+          "kind": "paragraph",
+        },
+        {
+          "children": [
+            {
+              "articleId": "n3",
+              "id": "n6",
+              "kind": "articleRef",
+              "scope": "self",
+            },
+            {
+              "articleId": "n4",
+              "id": "n7",
+              "kind": "articleRef",
+              "scope": "self",
+            },
+          ],
+          "id": "n8",
+          "kind": "paragraph",
+        },
+      ],
+      "id": "n3",
+      "kind": "article",
+      "linkedArticleId": "g1",
+      "title": "보험금의 지급사유",
+    },
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "id": "c3",
+              "kind": "text",
+              "text": "회사는 ",
+            },
+          ],
+          "id": "c2",
+          "kind": "paragraph",
+        },
+        {
+          "children": [
+            {
+              "articleId": "c1",
+              "id": "c5",
+              "kind": "articleRef",
+              "scope": "self",
+            },
+            {
+              "articleId": "n4",
+              "id": "c6",
+              "kind": "articleRef",
+              "scope": "self",
+            },
+          ],
+          "id": "c4",
+          "kind": "paragraph",
+        },
+      ],
+      "id": "c1",
+      "kind": "article",
+      "linkedArticleId": "g1",
+      "title": "보험금의 지급사유",
+    },
+    {
+      "children": [],
+      "id": "n4",
+      "kind": "article",
+      "title": "보험기간",
+    },
+  ],
+  "id": "n5",
+  "kind": "document",
+  "title": "수술비",
+}
+`;

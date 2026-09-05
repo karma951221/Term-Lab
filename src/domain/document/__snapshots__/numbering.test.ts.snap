@@ -1,0 +1,20 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`문면작성 S1·S3 — 번호는 저장하지 않고 현재 트리에서 계산한다 > 조·항·호·목 번호를 순서대로 매긴다 — 조건 블록 안의 조도 현재 트리 순서대로 (전체 뷰) 1`] = `
+{
+  "s-art-apply": "제5조",
+  "s-art-exempt": "제3조",
+  "s-art-lapse": "제4조",
+  "s-art-pay": "제1조",
+  "s-art-term": "제2조",
+  "s-clause-lapse": "②",
+  "s-item-1": "1.",
+  "s-item-2": "2.",
+  "s-par-apply-1": "①",
+  "s-par-exempt-1": "①",
+  "s-par-lapse-1": "①",
+  "s-par-pay-1": "①",
+  "s-par-term-1": "①",
+  "s-sub-1": "가.",
+}
+`;
