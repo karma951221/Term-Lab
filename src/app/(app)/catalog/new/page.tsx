@@ -1,6 +1,8 @@
 import { ErrorBanner } from "@/app/_components/ErrorBanner";
+import { StructCreateForm } from "@/app/_components/StructCreateForm";
 import { LEVEL_LABEL, label } from "@/app/_lib/labels";
 import { ATTACH_LEVELS, type AttachLevel } from "@/domain/types";
+import type { DiscriminatorKind } from "@/domain/catalog/types";
 import { getServices } from "@/lib/services";
 
 import { createConstAction, createDerivedAction, createScalarAction, createStructAction } from "../actions";
@@ -33,8 +35,8 @@ function LevelSelect() {
   );
 }
 
-export default async function NewCatalogPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const { error } = await searchParams;
+export default async function NewCatalogPage({ searchParams }: { searchParams: Promise<{ error?: string; q?: string; kind?: string; level?: string }> }) {
+  const { error, q = "", kind = "scalar", level = DEFAULT_LEVEL } = await searchParams;
   const enums = await getServices().catalog.listEnums();
 
   const scalarForm = (
@@ -102,41 +104,9 @@ export default async function NewCatalogPage({ searchParams }: { searchParams: P
     </form>
   );
 
-  const structForm = (
-    <form action={createStructAction} className="ts-form">
-      <div className="ts-form-row">
-        <label className="ts-form-label" htmlFor="struct-label">
-          표시명
-        </label>
-        <div className="ts-form-control">
-          <input id="struct-label" type="text" name="label" required />
-        </div>
-      </div>
-      <LevelSelect />
-      <div className="ts-form-row">
-        <label className="ts-form-label" htmlFor="struct-exposed">
-          무조건 노출
-        </label>
-        <div className="ts-form-control">
-          <input id="struct-exposed" type="checkbox" name="alwaysExposed" />
-        </div>
-      </div>
-      <div className="ts-form-row">
-        <label className="ts-form-label" htmlFor="struct-desc">
-          설명
-        </label>
-        <div className="ts-form-control">
-          <textarea id="struct-desc" name="description" rows={2} />
-        </div>
-      </div>
-      <p className="ts-muted">생성하면 상세 화면으로 이동한다 — 다음 단계는 거기서 첫 필드를 추가하는 것이다 (리뷰 #21).</p>
-      <div className="ts-form-actions">
-        <button type="submit" className="primary">
-          폼 구분자 생성
-        </button>
-      </div>
-    </form>
-  );
+  const initialLevel = ATTACH_LEVELS.includes(level as AttachLevel) ? level as AttachLevel : DEFAULT_LEVEL;
+  const initialKind = (["scalar", "struct", "const", "derived"] as readonly string[]).includes(kind) ? kind as DiscriminatorKind : "scalar";
+  const structForm = <StructCreateForm action={createStructAction} initialLabel={q} initialLevel={initialLevel} />;
 
   const constForm = (
     <form action={createConstAction} className="ts-form">
@@ -211,7 +181,7 @@ export default async function NewCatalogPage({ searchParams }: { searchParams: P
     <div>
       <h1 className="ts-h1">새 구분자</h1>
       <ErrorBanner message={error} />
-      <KindPicker forms={{ scalar: scalarForm, struct: structForm, const: constForm, derived: derivedForm }} />
+      <KindPicker forms={{ scalar: scalarForm, struct: structForm, const: constForm, derived: derivedForm }} initialKind={initialKind} />
     </div>
   );
 }

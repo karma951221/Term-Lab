@@ -13,8 +13,8 @@ import type { DiscriminatorKind } from "@/domain/catalog/types";
 
 const KINDS: readonly DiscriminatorKind[] = ["scalar", "struct", "const", "derived"];
 
-export function KindPicker({ forms }: { forms: Record<DiscriminatorKind, ReactNode> }) {
-  const [kind, setKind] = useState<DiscriminatorKind>("scalar");
+export function KindPicker({ forms, initialKind = "scalar" }: { forms: Record<DiscriminatorKind, ReactNode>; initialKind?: DiscriminatorKind }) {
+  const [kind, setKind] = useState<DiscriminatorKind>(initialKind);
 
   return (
     <div>

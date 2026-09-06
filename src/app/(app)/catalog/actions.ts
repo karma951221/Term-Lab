@@ -50,7 +50,7 @@ export async function createStructAction(formData: FormData): Promise<void> {
     description: str(formData, "description"),
   });
   if (!r.ok) redirect(errorRedirectPath(`${BASE}/new`, msg(r.rejection)));
-  redirect(detailPath(r.value.code));
+  redirect(`/types/forms/${r.value.code}`);
 }
 
 export async function createConstAction(formData: FormData): Promise<void> {
