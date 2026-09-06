@@ -62,6 +62,10 @@ interface Prepared {
   issues: Issue[];
 }
 
+function omissionAliases(records: readonly OmissionRecord[]): ReadonlyMap<Id, Id> {
+  return new Map(records.filter((record) => record.disposition === "omitted").map((record) => [record.articleId, record.linkedArticleId]));
+}
+
 function prepare(doc: DocumentNode, ctx: AssemblyContext, s: Shared, opts: { coordinate: ReturnType<typeof specialCoordinate>; overrides: readonly ClauseOptionOverride[]; title?: string }): Prepared {
   const resolved = resolveDocument({ ...doc, ...(opts.title !== undefined ? { title: opts.title } : {}) }, ctx, { clauses: s.clauses, overrides: overrideMap(opts.overrides), coordinate: opts.coordinate });
   const substituted = substituteSlots(resolved.doc, ctx, { catalog: s.catalog, enums: s.enums });
@@ -186,7 +190,7 @@ export function assemble(input: AssemblyInput): Booklet {
     id: g.id,
     title: g.title,
     docs: g.docs.map(({ c, b }) => {
-      const r = renderDocument(b.numbered, { document: "special", ownerId: c.snapshot.id, general: general?.numbered, appendices });
+      const r = renderDocument(b.numbered, { document: "special", ownerId: c.snapshot.id, general: general?.numbered, aliases: omissionAliases(b.omitted), appendices });
       issues.push(...b.issues, ...r.issues);
       omitted.push(...b.omitted);
       return r.doc;
@@ -224,7 +228,7 @@ export function assembleSpecial(input: AssemblyInput, productCoverageId: Id): Re
     renderedGeneral = r.doc;
     issues.push(...general.issues, ...r.issues);
   }
-  const r = renderDocument(b.numbered, { document: "special", ownerId: c.snapshot.id, general: general?.numbered, appendices });
+  const r = renderDocument(b.numbered, { document: "special", ownerId: c.snapshot.id, general: general?.numbered, aliases: omissionAliases(b.omitted), appendices });
   issues.push(...b.issues, ...r.issues);
   const trace = contexts.traces.filter((t) => t.productCoverageId === productCoverageId || input.product.baseContractIds.includes(t.productCoverageId));
   return ok({ doc: r.doc, general: renderedGeneral, appendices, issues, complete: !issues.some((item) => (item.severity ?? "error") === "error"), omitted: b.omitted, trace });

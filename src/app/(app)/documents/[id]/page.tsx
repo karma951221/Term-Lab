@@ -6,7 +6,7 @@ import { ErrorBanner } from "@/app/_components/ErrorBanner";
 import { IssueList } from "@/app/_components/IssueList";
 import { previewOutcome } from "@/app/_lib/rejection";
 import { masterCatalog, masterEvalContext } from "@/domain/coverage";
-import type { Appendix, BlockBranch, BranchEvaluation, InlineBranch, Node, NodeKind } from "@/domain/document";
+import { referenceTargetIndex, referenceTargetLabel, type Appendix, type ArticleRefNode, type BlockBranch, type BranchEvaluation, type InlineBranch, type Node, type NodeKind, type ReferenceTarget } from "@/domain/document";
 import type { Id } from "@/domain/types";
 import { currentActor, getServices } from "@/lib/services";
 
@@ -38,6 +38,7 @@ interface Ctx {
   numbers: Map<Id, { n: number; label: string }>;
   branchEval?: Map<Id, BranchEvaluation>;
   appendices: Appendix[];
+  references: { self: Map<Id, ReferenceTarget>; general: Map<Id, ReferenceTarget> };
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -96,12 +97,14 @@ function InsertMenu({
   slot,
   mode,
   appendices,
+  references,
 }: {
   documentId: Id;
   parentId: Id;
   slot?: "children" | "items" | "subitems";
   mode: keyof typeof MODE_KINDS;
   appendices: Appendix[];
+  references: Ctx["references"];
 }) {
   const kinds = MODE_KINDS[mode];
   return (
@@ -125,10 +128,10 @@ function InsertMenu({
           <input type="text" name="when" placeholder="조건식 (when)" className="ts-mono" />
           <input type="text" name="thenText" placeholder="참일 때 텍스트" />
           <input type="text" name="elseText" placeholder="else 텍스트" />
-          <input type="text" name="articleId" placeholder="조 참조 대상 id" className="ts-mono" />
-          <select name="scope" defaultValue="self">
-            <option value="self">이 문서 조</option>
-            <option value="general">보통약관 조</option>
+          <select name="articleTarget" defaultValue="">
+            <option value="">참조 대상 선택</option>
+            {[...references.self].map(([nodeId, target]) => <option key={`self:${nodeId}`} value={`self:${nodeId}`}>이 문서 › {referenceTargetLabel(target)}</option>)}
+            {[...references.general].map(([nodeId, target]) => <option key={`general:${nodeId}`} value={`general:${nodeId}`}>보통약관 › {referenceTargetLabel(target)}</option>)}
           </select>
           {appendices.length > 0 ? (
             <select name="appendixCode">
@@ -170,7 +173,7 @@ function renderBranch(br: BlockBranch | InlineBranch, ctx: Ctx, inline: boolean)
       </form>
       <div style={{ paddingLeft: 12 }}>
         {(br.children as Node[]).map((c) => renderNode(c, ctx))}
-        <InsertMenu documentId={ctx.documentId} parentId={br.id} mode={inline ? "inline" : "block"} appendices={ctx.appendices} />
+        <InsertMenu documentId={ctx.documentId} parentId={br.id} mode={inline ? "inline" : "block"} appendices={ctx.appendices} references={ctx.references} />
       </div>
     </div>
   );
@@ -186,6 +189,20 @@ function AddBranchForm({ documentId, condId }: { documentId: Id; condId: Id }) {
   );
 }
 
+function referencePreview(node: ArticleRefNode, ctx: Ctx): string {
+  const index = node.scope === "general" ? ctx.references.general : ctx.references.self;
+  let previous: ReferenceTarget | undefined;
+  const labels = node.targets.flatMap(({ nodeId }) => {
+    const target = index.get(nodeId);
+    if (!target) return [];
+    const label = referenceTargetLabel(target, previous);
+    previous = target;
+    return [label];
+  });
+  const joined = labels.length <= 1 ? (labels[0] ?? "대상 없음") : `${labels.slice(0, -1).join(", ")} ${node.connector} ${labels.at(-1)}`;
+  return `${node.scope === "general" ? "보통약관 " : ""}${joined}`;
+}
+
 function renderNode(node: Node, ctx: Ctx): ReactNode {
   const num = ctx.numbers.get(node.id);
   const actions = <NodeActions documentId={ctx.documentId} nodeId={node.id} />;
@@ -195,7 +212,7 @@ function renderNode(node: Node, ctx: Ctx): ReactNode {
       return (
         <div key={node.id}>
           {node.children.map((c) => renderNode(c, ctx))}
-          <InsertMenu documentId={ctx.documentId} parentId={node.id} mode="top" appendices={ctx.appendices} />
+          <InsertMenu documentId={ctx.documentId} parentId={node.id} mode="top" appendices={ctx.appendices} references={ctx.references} />
         </div>
       );
 
@@ -220,7 +237,7 @@ function renderNode(node: Node, ctx: Ctx): ReactNode {
           )}
           <div style={{ paddingLeft: 16 }}>
             {node.children.map((c) => renderNode(c, ctx))}
-            <InsertMenu documentId={ctx.documentId} parentId={node.id} mode="block" appendices={ctx.appendices} />
+            <InsertMenu documentId={ctx.documentId} parentId={node.id} mode="block" appendices={ctx.appendices} references={ctx.references} />
           </div>
         </section>
       );
@@ -231,10 +248,10 @@ function renderNode(node: Node, ctx: Ctx): ReactNode {
           <div>
             <span className="ts-muted">{num?.label}</span> {node.children.map((c) => renderNode(c, ctx))}
             {actions}
-            <InsertMenu documentId={ctx.documentId} parentId={node.id} slot="children" mode="inline" appendices={ctx.appendices} />
+            <InsertMenu documentId={ctx.documentId} parentId={node.id} slot="children" mode="inline" appendices={ctx.appendices} references={ctx.references} />
             <div style={{ paddingLeft: 16 }}>
               {(node.items ?? []).map((c) => renderNode(c, ctx))}
-              <InsertMenu documentId={ctx.documentId} parentId={node.id} slot="items" mode="item" appendices={ctx.appendices} />
+              <InsertMenu documentId={ctx.documentId} parentId={node.id} slot="items" mode="item" appendices={ctx.appendices} references={ctx.references} />
             </div>
           </div>
         </div>
@@ -245,10 +262,10 @@ function renderNode(node: Node, ctx: Ctx): ReactNode {
         <div key={node.id}>
           <span className="ts-muted">{num?.label}</span> {node.children.map((c) => renderNode(c, ctx))}
           {actions}
-          <InsertMenu documentId={ctx.documentId} parentId={node.id} slot="children" mode="inline" appendices={ctx.appendices} />
+          <InsertMenu documentId={ctx.documentId} parentId={node.id} slot="children" mode="inline" appendices={ctx.appendices} references={ctx.references} />
           <div style={{ paddingLeft: 16 }}>
             {(node.subitems ?? []).map((c) => renderNode(c, ctx))}
-            <InsertMenu documentId={ctx.documentId} parentId={node.id} slot="subitems" mode="subitem" appendices={ctx.appendices} />
+            <InsertMenu documentId={ctx.documentId} parentId={node.id} slot="subitems" mode="subitem" appendices={ctx.appendices} references={ctx.references} />
           </div>
         </div>
       );
@@ -258,7 +275,7 @@ function renderNode(node: Node, ctx: Ctx): ReactNode {
         <div key={node.id}>
           <span className="ts-muted">{num?.label}</span> {node.children.map((c) => renderNode(c, ctx))}
           {actions}
-          <InsertMenu documentId={ctx.documentId} parentId={node.id} slot="children" mode="inline" appendices={ctx.appendices} />
+          <InsertMenu documentId={ctx.documentId} parentId={node.id} slot="children" mode="inline" appendices={ctx.appendices} references={ctx.references} />
         </div>
       );
 
@@ -337,10 +354,18 @@ function renderNode(node: Node, ctx: Ctx): ReactNode {
               <option value="self">이 문서</option>
               <option value="general">보통약관</option>
             </select>
-            <input type="text" name="targets" defaultValue={node.targets.map((target) => target.nodeId).join(", ")} className="ts-mono" />
+            <select name="targets" multiple defaultValue={node.targets.map((target) => target.nodeId)} aria-label="참조 대상">
+              <optgroup label="이 문서">
+                {[...ctx.references.self].map(([nodeId, target]) => <option key={`self:${nodeId}`} value={nodeId}>{referenceTargetLabel(target)}</option>)}
+              </optgroup>
+              <optgroup label="보통약관">
+                {[...ctx.references.general].map(([nodeId, target]) => <option key={`general:${nodeId}`} value={nodeId}>{referenceTargetLabel(target)}</option>)}
+              </optgroup>
+            </select>
             <input type="text" name="connector" defaultValue={node.connector} aria-label="연결어" />
             <button type="submit">저장</button>
           </form>
+          <span className="ts-muted">미리보기: {referencePreview(node, ctx)}</span>
           {actions}
         </span>
       );
@@ -421,8 +446,14 @@ export default async function DocumentDetailPage({
     }
   }
   const numbers = await services.document.numbering(id, branchEval);
+  const generalDocument = doc.kind === "special" && doc.generalDocumentId ? await services.document.get(doc.generalDocumentId) : undefined;
+  const generalNumbers = generalDocument ? await services.document.numbering(generalDocument.id) : new Map();
+  const references = {
+    self: referenceTargetIndex(doc.tree, numbers),
+    general: generalDocument ? referenceTargetIndex(generalDocument.tree, generalNumbers) : new Map<Id, ReferenceTarget>(),
+  };
 
-  const ctx: Ctx = { documentId: id, docKind: doc.kind, numbers, appendices, ...(branchEval ? { branchEval } : {}) };
+  const ctx: Ctx = { documentId: id, docKind: doc.kind, numbers, appendices, references, ...(branchEval ? { branchEval } : {}) };
 
   let deleteNode = null;
   if (sp.del === "1") {

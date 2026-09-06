@@ -83,7 +83,10 @@ export async function insertNodeAction(documentId: Id, parentId: Id, slot: "chil
       node = b.slot(str(formData, "ref"));
       break;
     case "articleRef":
-      node = b.articleRef(str(formData, "articleId"), (str(formData, "scope") || "self") as "self" | "general");
+      {
+        const [scope, ...targetParts] = str(formData, "articleTarget").split(":");
+        node = b.articleRef(targetParts.join(":"), scope === "general" ? "general" : "self");
+      }
       break;
     case "appendixRef":
       node = b.appendixRef(str(formData, "appendixCode"));
@@ -142,7 +145,7 @@ export async function setSlotRefAction(documentId: Id, nodeId: Id, formData: For
 }
 
 export async function setArticleRefAction(documentId: Id, nodeId: Id, formData: FormData): Promise<void> {
-  const targets = str(formData, "targets").split(",").map((nodeId) => nodeId.trim()).filter(Boolean).map((nodeId) => ({ nodeId }));
+  const targets = formData.getAll("targets").flatMap((value) => String(value).split(",")).map((targetId) => targetId.trim()).filter(Boolean).map((targetId) => ({ nodeId: targetId }));
   await apply(documentId, [{ type: "setArticleRef", nodeId, targets, connector: str(formData, "connector") || "및", scope: (str(formData, "scope") || "self") as ArticleRefNode["scope"] }]);
 }
 

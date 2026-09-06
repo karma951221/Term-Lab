@@ -352,11 +352,15 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                       "connector": "및",
                       "id": "s-ref-refund",
                       "kind": "articleRef",
-                      "label": "보통약관 제6조(해약환급금)",
+                      "label": "보통약관 제6조(해약환급금) 제1항 및 제2항",
                       "targets": [
                         {
-                          "label": "제6조(해약환급금)",
-                          "nodeId": "g-art-refund",
+                          "label": "제6조(해약환급금) 제1항",
+                          "nodeId": "g-par-refund-1",
+                        },
+                        {
+                          "label": "제2항",
+                          "nodeId": "g-par-refund-2",
                         },
                       ],
                     },
@@ -538,11 +542,15 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                       "connector": "및",
                       "id": "s-ref-refund",
                       "kind": "articleRef",
-                      "label": "보통약관 제6조(해약환급금)",
+                      "label": "보통약관 제6조(해약환급금) 제1항 및 제2항",
                       "targets": [
                         {
-                          "label": "제6조(해약환급금)",
-                          "nodeId": "g-art-refund",
+                          "label": "제6조(해약환급금) 제1항",
+                          "nodeId": "g-par-refund-1",
+                        },
+                        {
+                          "label": "제2항",
+                          "nodeId": "g-par-refund-2",
                         },
                       ],
                     },

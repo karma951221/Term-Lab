@@ -426,7 +426,7 @@ export function alphaDeathDocument(): DocumentNode {
               { id: "s-txt-reduce-1", kind: "text", text: "계약일부터 " },
               { id: "s-slot-reduce", kind: "slot", ref: "D0007" },
               { id: "s-txt-reduce-2", kind: "text", text: " 이내에는 감액 지급하며, " },
-              { id: "s-ref-refund", kind: "articleRef", scope: "general", targets: [{ nodeId: "g-art-refund" }], connector: "및" },
+              { id: "s-ref-refund", kind: "articleRef", scope: "general", targets: [{ nodeId: "g-par-refund-1" }, { nodeId: "g-par-refund-2" }], connector: "및" },
               { id: "s-txt-reduce-3", kind: "text", text: "을 확인합니다." },
             ],
           },

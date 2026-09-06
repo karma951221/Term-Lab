@@ -57,6 +57,68 @@ export function articleRefLabel(n: number, title: string): string {
   return `${articleLabel(n)}(${title})`;
 }
 
+export interface ReferencePart {
+  id: Id;
+  n: number;
+}
+
+/** 참조 대상의 계산 번호와 상위 구조. `kind` 아래 단계까지만 값이 있다. */
+export interface ReferenceTarget {
+  kind: NumberKind;
+  article: ReferencePart & { title: string };
+  paragraph?: ReferencePart;
+  item?: ReferencePart;
+  subitem?: ReferencePart;
+}
+
+/** 첫 대상은 전체 경로, 다음 대상은 직전 대상과 같은 상위 경로를 생략한 실물 표기를 만든다. */
+export function referenceTargetLabel(target: ReferenceTarget, previous?: ReferenceTarget): string {
+  const parts: string[] = [];
+  const sameArticle = previous?.article.id === target.article.id;
+  const sameParagraph = sameArticle && previous?.paragraph?.id === target.paragraph?.id;
+  const sameItem = sameParagraph && previous?.item?.id === target.item?.id;
+  if (target.kind === "article" || !sameArticle) parts.push(articleRefLabel(target.article.n, target.article.title));
+  if (target.paragraph && (target.kind === "paragraph" || !sameParagraph)) parts.push(`제${target.paragraph.n}항`);
+  if (target.item && (target.kind === "item" || !sameItem)) parts.push(`제${target.item.n}호`);
+  if (target.subitem) parts.push(`제${target.subitem.n}목`);
+  return parts.join(" ");
+}
+
+/** 편집기용: 현재 계산 번호를 붙여 문서 안의 조·항·호·목을 참조 대상 id로 색인한다. */
+export function referenceTargetIndex(doc: DocumentNode, numbers: ReadonlyMap<Id, NodeNumber>): Map<Id, ReferenceTarget> {
+  const out = new Map<Id, ReferenceTarget>();
+  const visit = (node: Node, parent?: ReferenceTarget): void => {
+    if (node.kind === "condBlock") {
+      for (const branch of node.branches) for (const child of branch.children) visit(child, parent);
+      return;
+    }
+    const number = numbers.get(node.id);
+    if (node.kind === "article" && number) {
+      const target: ReferenceTarget = { kind: "article", article: { id: node.id, n: number.n, title: node.title } };
+      out.set(node.id, target);
+      for (const child of node.children) visit(child, target);
+      return;
+    }
+    if (node.kind === "paragraph" && number && parent) {
+      const target: ReferenceTarget = { kind: "paragraph", article: parent.article, paragraph: { id: node.id, n: number.n } };
+      out.set(node.id, target);
+      for (const item of node.items ?? []) visit(item, target);
+      return;
+    }
+    if (node.kind === "item" && number && parent?.paragraph) {
+      const target: ReferenceTarget = { kind: "item", article: parent.article, paragraph: parent.paragraph, item: { id: node.id, n: number.n } };
+      out.set(node.id, target);
+      for (const subitem of node.subitems ?? []) visit(subitem, target);
+      return;
+    }
+    if (node.kind === "subitem" && number && parent?.paragraph && parent.item) {
+      out.set(node.id, { kind: "subitem", article: parent.article, paragraph: parent.paragraph, item: parent.item, subitem: { id: node.id, n: number.n } });
+    }
+  };
+  for (const node of doc.children) visit(node);
+  return out;
+}
+
 /** 별표 참조 슬롯 표기 — 「【별표N(이름)】」. 번호는 책자별 등장 순 (조립). */
 export function appendixRefLabel(n: number, name: string): string {
   return `【별표${n}(${name})】`;

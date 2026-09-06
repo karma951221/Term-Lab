@@ -9,6 +9,8 @@ import {
   itemLabel,
   numberTree,
   paragraphLabel,
+  referenceTargetIndex,
+  referenceTargetLabel,
   subitemLabel,
 } from "./numbering";
 
@@ -27,6 +29,23 @@ describe("번호 표기 (임시 규칙 — 실물 조사 후 확정)", () => {
   it("조 참조 슬롯 「제N조(조 명)」 · 별표 「【별표N(이름)】」", () => {
     expect(articleRefLabel(3, "보험금의 지급사유")).toBe("제3조(보험금의 지급사유)");
     expect(appendixRefLabel(13, "화상 분류표")).toBe("【별표13(화상 분류표)】");
+  });
+
+  it("조·항·호·목 참조는 직전 위치와 같은 상위 번호를 생략한다", () => {
+    const article = { id: "a1", n: 6, title: "해약환급금" };
+    const paragraph1 = { kind: "paragraph" as const, article, paragraph: { id: "p1", n: 1 } };
+    const paragraph2 = { kind: "paragraph" as const, article, paragraph: { id: "p2", n: 2 } };
+    expect(referenceTargetLabel(paragraph1)).toBe("제6조(해약환급금) 제1항");
+    expect(referenceTargetLabel(paragraph2, paragraph1)).toBe("제2항");
+    expect(referenceTargetLabel({ kind: "item", article, paragraph: { id: "p1", n: 1 }, item: { id: "i2", n: 2 } }, paragraph1)).toBe("제2호");
+    expect(referenceTargetLabel({ kind: "subitem", article, paragraph: { id: "p1", n: 1 }, item: { id: "i2", n: 2 }, subitem: { id: "s1", n: 1 } })).toBe("제6조(해약환급금) 제1항 제2호 제1목");
+  });
+
+  it("문서 트리의 참조 가능 조·항·호·목을 계산 번호 경로로 색인한다", () => {
+    const b = nodeBuilders(sequentialIds("r"));
+    const doc = b.document("d", [b.article("a", [b.paragraph([], [b.item([], [b.subitem([])])])])]);
+    const index = referenceTargetIndex(doc, numberTree(doc));
+    expect([...index.values()].map((target) => referenceTargetLabel(target))).toEqual(["제1조(a)", "제1조(a) 제1항", "제1조(a) 제1항 제1호", "제1조(a) 제1항 제1호 제1목"]);
   });
 });
 

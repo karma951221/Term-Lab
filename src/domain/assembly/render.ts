@@ -9,7 +9,7 @@
  */
 
 import type { Appendix } from "../document/appendix";
-import { appendixRefLabel, articleLabel, articleRefLabel, itemLabel, paragraphLabel, subitemLabel } from "../document/numbering";
+import { appendixRefLabel, articleLabel, itemLabel, paragraphLabel, referenceTargetLabel, subitemLabel, type ReferenceTarget } from "../document/numbering";
 import type { Code, Coordinate, Id, Issue } from "../types";
 import type {
   BookletAppendix,
@@ -97,6 +97,8 @@ export interface RenderEnv {
   ownerId: Id;
   /** 보통약관 (담보약관의 `scope:'general'` 조 참조 · 같은 문서에 없는 조 id 의 두 번째 탐색 대상). */
   general?: NumberedDoc;
+  /** 생략된 특약 조 id → 연결된 보통약관 조 id. */
+  aliases?: ReadonlyMap<Id, Id>;
   appendices: readonly BookletAppendix[];
 }
 
@@ -105,33 +107,49 @@ export interface RenderOutcome {
   issues: Issue[];
 }
 
-interface ArticleInfo {
-  n: number;
-  title: string;
-}
-
-function articleIndex(d: NumberedDoc | undefined): Map<Id, ArticleInfo> {
-  const out = new Map<Id, ArticleInfo>();
+function targetIndex(d: NumberedDoc | undefined): Map<Id, ReferenceTarget> {
+  const out = new Map<Id, ReferenceTarget>();
   for (const a of d?.doc.children ?? []) {
     if (a.kind === "error") continue;
-    const num = d!.numbers.get(a.id);
-    if (num) out.set(a.id, { n: num.n, title: a.title });
+    const articleNumber = d!.numbers.get(a.id);
+    if (!articleNumber) continue;
+    const article = { id: a.id, n: articleNumber.n, title: a.title };
+    out.set(a.id, { kind: "article", article });
+    for (const p of a.children) {
+      if (p.kind === "error") continue;
+      const paragraphNumber = d!.numbers.get(p.id);
+      if (!paragraphNumber) continue;
+      const paragraph = { id: p.id, n: paragraphNumber.n };
+      out.set(p.id, { kind: "paragraph", article, paragraph });
+      for (const it of p.items ?? []) {
+        if (it.kind === "error") continue;
+        const itemNumber = d!.numbers.get(it.id);
+        if (!itemNumber) continue;
+        const item = { id: it.id, n: itemNumber.n };
+        out.set(it.id, { kind: "item", article, paragraph, item });
+        for (const sub of it.subitems ?? []) {
+          if (sub.kind === "error") continue;
+          const subitemNumber = d!.numbers.get(sub.id);
+          if (subitemNumber) out.set(sub.id, { kind: "subitem", article, paragraph, item, subitem: { id: sub.id, n: subitemNumber.n } });
+        }
+      }
+    }
   }
   return out;
 }
 
 class Renderer {
   readonly issues: Issue[] = [];
-  private readonly self: Map<Id, ArticleInfo>;
-  private readonly general: Map<Id, ArticleInfo>;
+  private readonly self: Map<Id, ReferenceTarget>;
+  private readonly general: Map<Id, ReferenceTarget>;
   private readonly appendices: Map<Code, BookletAppendix>;
 
   constructor(
     private readonly numbered: NumberedDoc,
     private readonly env: RenderEnv,
   ) {
-    this.self = articleIndex(numbered);
-    this.general = articleIndex(env.general);
+    this.self = targetIndex(numbered);
+    this.general = targetIndex(env.general);
     this.appendices = new Map(env.appendices.map((a) => [a.code, a]));
   }
 
@@ -145,17 +163,25 @@ class Renderer {
     return { number: n.n, label: n.label };
   }
 
-  inline(n: SInline): RenderedInline {
+  inline(n: SInline, source: ReferenceTarget): RenderedInline {
     switch (n.kind) {
       case "text":
       case "error":
         return n;
       case "articleRef": {
         const targets: { nodeId: Id; label: string }[] = [];
+        let previous = n.scope === "self" ? source : undefined;
+        let generalPrefix = n.scope === "general";
         for (const target of n.targets) {
-          const info = n.scope === "self" || this.env.document === "general"
-            ? this.self.get(target.nodeId)
-            : this.general.get(target.nodeId);
+          let info = n.scope === "self" || this.env.document === "general" ? this.self.get(target.nodeId) : this.general.get(target.nodeId);
+          if (!info && n.scope === "self") {
+            const alias = this.env.aliases?.get(target.nodeId);
+            if (alias) {
+              info = this.general.get(alias);
+              generalPrefix = true;
+              previous = undefined;
+            }
+          }
           if (!info) {
             const at: Coordinate = { ...n.at, refPath: target.nodeId };
             const issue: Issue = n.scope === "general" && !this.env.general
@@ -164,12 +190,13 @@ class Renderer {
             this.issues.push(issue);
             continue;
           }
-          targets.push({ nodeId: target.nodeId, label: articleRefLabel(info.n, info.title) });
+          targets.push({ nodeId: target.nodeId, label: referenceTargetLabel(info, previous) });
+          previous = info;
         }
         if (targets.length !== n.targets.length) return { kind: "error", id: n.id, issue: this.issues.at(-1)! };
         const labels = targets.map((target) => target.label);
         const label = labels.length <= 1 ? (labels[0] ?? "") : `${labels.slice(0, -1).join(", ")} ${n.connector} ${labels.at(-1)}`;
-        return { kind: "articleRef", id: n.id, targets, connector: n.connector, label: `${n.scope === "general" ? "보통약관 " : ""}${label}` };
+        return { kind: "articleRef", id: n.id, targets, connector: n.connector, label: `${generalPrefix ? "보통약관 " : ""}${label}` };
       }
       case "appendixRef": {
         const a = this.appendices.get(n.appendixCode);
@@ -180,7 +207,7 @@ class Renderer {
   }
 
   subitem(n: RSubitem<SInline>): RenderedSubitem {
-    return { kind: "subitem", id: n.id, ...this.number(n.id), children: n.children.map((c) => this.inline(c)) };
+    return { kind: "subitem", id: n.id, ...this.number(n.id), children: n.children.map((c) => this.inline(c, this.self.get(n.id)!)) };
   }
 
   item(n: RItem<SInline>): RenderedItem {
@@ -188,7 +215,7 @@ class Renderer {
       kind: "item",
       id: n.id,
       ...this.number(n.id),
-      children: n.children.map((c) => this.inline(c)),
+      children: n.children.map((c) => this.inline(c, this.self.get(n.id)!)),
       ...(n.subitems ? { subitems: n.subitems.map((s) => (s.kind === "error" ? s : this.subitem(s))) } : {}),
     };
   }
@@ -198,7 +225,7 @@ class Renderer {
       kind: "paragraph",
       id: n.id,
       ...this.number(n.id),
-      children: n.children.map((c) => this.inline(c)),
+      children: n.children.map((c) => this.inline(c, this.self.get(n.id)!)),
       ...(n.items ? { items: n.items.map((it) => (it.kind === "error" ? it : this.item(it))) } : {}),
     };
   }

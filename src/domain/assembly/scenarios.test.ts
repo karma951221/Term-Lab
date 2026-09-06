@@ -111,7 +111,7 @@ describe("조립오류 S2 — 미입력 값 참조 → 오류 마커 + 좌표 + 
   const { booklet, doc } = docsOf(input);
 
   it("조립은 중단되지 않는다 — 슬롯 자리에 notEntered 마커, 나머지는 끝까지 조립", () => {
-    expect(lines(doc("pc-basic"))[5]).toBe("  ③ 계약일부터 ⟦notEntered⟧ 이내에는 감액 지급하며, 보통약관 제6조(해약환급금)을 확인합니다.");
+    expect(lines(doc("pc-basic"))[5]).toBe("  ③ 계약일부터 ⟦notEntered⟧ 이내에는 감액 지급하며, 보통약관 제6조(해약환급금) 제1항 및 제2항을 확인합니다.");
     expect(lines(doc("pc-basic"))).toHaveLength(10);
   });
 
