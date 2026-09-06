@@ -86,10 +86,7 @@ function Item({ node }: { node: RenderedItem | ErrorNode }) {
   );
 }
 
-/**
- * 항 — 호 목록을 품으면 `<div>` 로 낸다. `<p>` 안에는 `<ol>` 이 들어갈 수 없어서
- * 파서가 목록을 밖으로 밀어내고 빈 `<p>` 를 남긴다 (문단 표시는 클래스가 한다).
- */
+/** 항 — 호 목록이 있으면 `<div>` 로, 없으면 `<p>` 로 낸다 — `<ol>` 을 `<p>` 안에 두지 않기 위해서다 (문단 표시는 클래스가 한다). */
 function Paragraph({ node }: { node: RenderedParagraph | ErrorNode }) {
   if (node.kind === "error")
     return (

@@ -246,11 +246,9 @@ export default async function DocumentDetailPage({ params, searchParams }: { par
   };
 
   return (
-    // 바는 자기 높이만, 나머지 한 줄이 남는 높이를 먹는다 (globals.css 의 .ts-l3 는 열만 정한다)
-    <div className="ts-l3" style={{ gridTemplateRows: "auto minmax(0, 1fr)" }}>
-      {/* L3 는 전폭 화면이다 — 공통 레이아웃의 최대폭·패딩을 여기서만 푼다 (globals.css `.ts-main.is-full`) */}
-      <style>{`.ts-main{max-width:none;padding:0}`}</style>
-
+    // 바는 자기 높이만, 나머지 한 줄이 남는 높이를 먹는다 — 열·행 모두 globals.css 의 .ts-l3 가 정한다.
+    // L3 는 전폭 화면이다 — `.ts-main:has(> .ts-l3)`(globals.css)가 공통 레이아웃의 최대폭·패딩을 여기서만 푼다.
+    <div className="ts-l3">
       <div className="ts-l3-bar">
         <strong style={{ color: "var(--ts-ink)" }}>{doc.title}</strong>
         <span>{DOC_KIND_LABEL[doc.kind]}</span>

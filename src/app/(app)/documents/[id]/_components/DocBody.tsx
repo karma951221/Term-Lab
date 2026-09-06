@@ -19,8 +19,7 @@ import { chipText, returnToValue, type DocCtx } from "./ctx";
 /** 행 오른쪽 끝 조작 묶음 — 위로 · 아래로 · 복제 · 삭제 + 우측 패널에서 열기 (§1.6 전부 tooltip). */
 export function NodeControls({ ctx, nodeId, what }: { ctx: DocCtx; nodeId: Id; what: string }) {
   return (
-    // 문서 세계의 매달림 들여쓰기(text-indent) 밖으로 빼야 아이콘이 겹치지 않는다.
-    <span className="ts-node-actions" style={{ float: "right", fontFamily: "var(--sans)", textIndent: 0, marginLeft: 8 }}>
+    <span className="ts-doc-actions">
       <Link
         className="ts-iconbtn"
         href={ctx.linkTo({ node: nodeId })}
@@ -145,15 +144,8 @@ function Inline({ node, ctx }: { node: Node; ctx: DocCtx }): ReactNode {
             return (
               <span
                 key={br.id}
-                className={state === "notTaken" ? "ts-dim" : undefined}
+                className={`ts-doc-inline-cond${i === 0 ? "" : " is-alt"}${state === "notTaken" ? " ts-dim" : ""}`}
                 title={`문장 안 조건 — ${full}`}
-                // 첫 가지는 점선, 뒤 가지(elif · else)는 파선 — 조건 블록의 실선/파선 규칙과 같은 문법이다 (§2 L3).
-                style={{
-                  textDecoration: `underline ${i === 0 ? "dotted" : "dashed"}`,
-                  textUnderlineOffset: "3px",
-                  marginInline: "1px",
-                  ...(state === "notTaken" ? { textDecorationLine: "underline line-through" } : {}),
-                }}
               >
                 {ctx.mode === "edit" && (
                   <>

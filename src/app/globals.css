@@ -334,6 +334,7 @@ button.danger:focus-visible {
 }
 
 /* L3 등 전폭 화면은 패딩을 스스로 관리한다 */
+.ts-main:has(> .ts-l3),
 .ts-main.is-full {
   max-width: none;
   padding: 0;
@@ -1187,6 +1188,21 @@ label.ts-field > textarea {
   border-left-style: dashed;
 }
 
+/* 문장 안 조건 — 배경 없이 밑줄만. 첫 가지는 점선, 뒤 가지(elif · else)는 파선 (§2 L3). */
+.ts-doc-inline-cond {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  margin-inline: 1px;
+}
+
+.ts-doc-inline-cond.is-alt {
+  text-decoration-style: dashed;
+}
+
+.ts-doc-inline-cond.ts-dim {
+  text-decoration-line: underline line-through;
+}
+
 .ts-doc-cond-head {
   font-family: var(--mono);
   font-size: 12px;
@@ -1199,6 +1215,7 @@ label.ts-field > textarea {
 .ts-l3 {
   display: grid;
   grid-template-columns: 196px minmax(0, 1fr) 360px;
+  grid-template-rows: auto minmax(0, 1fr);
   align-items: stretch;
   min-height: calc(100vh - 1px);
 }
@@ -1319,17 +1336,21 @@ label.ts-field > textarea {
   margin-right: 4px;
 }
 
-.ts-node-actions {
+.ts-doc-actions {
   display: inline-flex;
   gap: 2px;
-  margin-left: 4px;
+  margin-left: 8px;
   align-items: center;
+  /* 문서 세계의 매달림 들여쓰기(text-indent) 밖으로 빼야 아이콘이 겹치지 않는다. */
+  float: right;
+  font-family: var(--sans);
+  text-indent: 0;
 }
 
-.ts-node-actions button {
+.ts-doc-actions button {
   padding: 1px 6px;
 }
 
-.ts-node-actions .ts-iconbtn {
+.ts-doc-actions .ts-iconbtn {
   padding: 0;
 }
