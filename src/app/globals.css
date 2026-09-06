@@ -534,6 +534,47 @@ button.danger:focus-visible {
   color: var(--ts-ink-2);
 }
 
+.ts-l2-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 40%);
+  gap: 24px;
+  align-items: start;
+}
+
+.ts-l2-main,
+.ts-l2-side {
+  min-width: 0;
+}
+
+.ts-l2-side {
+  border-left: 1px solid var(--ts-rule-strong);
+  padding-left: 16px;
+}
+
+.ts-l2-side-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
+.ts-struct-readonly {
+  margin-top: 12px;
+}
+
+@media (max-width: 1023px) {
+  .ts-l2-split {
+    grid-template-columns: 1fr;
+  }
+
+  .ts-l2-side {
+    border-left: 0;
+    border-top: 1px solid var(--ts-rule-strong);
+    padding: 12px 0 0;
+  }
+}
+
 .ts-infotip,
 .ts-native-tip {
   display: inline-flex;
