@@ -73,10 +73,23 @@ export interface Confirmable {
   confirm?: boolean;
 }
 
+/** 노드 하나의 완결성 — 값 탭 왼쪽 목록의 「입력 n / 부착 m」(담보 화면기획 §1 · 디자인원칙 §9.2). */
+export interface NodeCompleteness {
+  node: CoverageNodeRef;
+  /** 그 층에서 쓰는 이름 (조상 경로 없이). */
+  name: string;
+  /** 부착된 값 자리 수 = m. */
+  total: number;
+  /** 입력된 값 자리 수 = n. */
+  entered: number;
+}
+
 /** 완결성 요약 — 미입력 목록에 분모(부착된 값 자리 수)를 붙인 것. */
 export interface CompletenessSummary {
   total: number;
   missing: MissingSlot[];
+  /** 트리 순서대로. 노드별 분자·분모 — 전체 합이 total 이다. */
+  byNode: NodeCompleteness[];
 }
 
 /** 값 입력 폼 하나 — 정의 · 명시 값 · 프리필(명시 값 ∪ 기본값). */
@@ -314,11 +327,23 @@ export function createCoverageService(db: Db, deps: CoverageServiceDeps = {}): C
       const tree = await loadTree(db, coverageId);
       if (!tree.ok) return tree as Result<never>;
       const [defs, mv] = await Promise.all([catalogRepo.listDiscriminators(db), loadMasterValues(db, tree.value)]);
+      const missing = completeness(tree.value, defs, mv, filter);
+      const missingByNode = new Map<Id, number>();
+      for (const slot of missing) missingByNode.set(slot.owner.id, (missingByNode.get(slot.owner.id) ?? 0) + 1);
       let total = 0;
+      const byNode: NodeCompleteness[] = [];
       for (const node of nodesOf(tree.value)) {
-        for (const def of attachedDefinitions(node.level, defs, attachedOfNode(mv, node.id))) total += valueSlotsOf(def).length;
+        let nodeTotal = 0;
+        for (const def of attachedDefinitions(node.level, defs, attachedOfNode(mv, node.id))) nodeTotal += valueSlotsOf(def).length;
+        total += nodeTotal;
+        byNode.push({
+          node: { level: node.level, id: node.id },
+          name: node.name,
+          total: nodeTotal,
+          entered: nodeTotal - (missingByNode.get(node.id) ?? 0),
+        });
       }
-      return ok({ total, missing: completeness(tree.value, defs, mv, filter) });
+      return ok({ total, missing, byNode });
     },
 
     create: (actor, input) =>
