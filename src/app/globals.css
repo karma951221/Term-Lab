@@ -500,6 +500,53 @@ button.danger:focus-visible {
   margin-bottom: 10px;
 }
 
+.ts-edit-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  margin-bottom: 10px;
+}
+
+.ts-edit-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+}
+
+.ts-edit-fields {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ts-field-locked {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  min-width: 200px;
+  padding: 2px 7px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--ts-surface-2);
+  color: var(--ts-ink-2);
+}
+
+.ts-infotip,
+.ts-native-tip {
+  display: inline-flex;
+  margin-left: 3px;
+  vertical-align: -2px;
+  color: var(--ts-ink-3);
+}
+
+.ts-infotip .ts-icon {
+  width: 12px;
+  height: 12px;
+}
+
 .ts-detail-head > .ts-iconbtn:last-child {
   margin-left: auto;
 }
