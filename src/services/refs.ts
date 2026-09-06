@@ -28,6 +28,7 @@ import {
   nodeKey,
   orphans,
   referencesFrom,
+  refStats,
   relationView,
   usagesOf,
   type EdgeVia,
@@ -37,6 +38,7 @@ import {
   type RefGraph,
   type RefNodeInfo,
   type RefNodeKey,
+  type RefStats,
   type RelationView,
   type UsageOptions,
 } from "@/domain/refs";
@@ -97,6 +99,16 @@ export interface IntegrityReport {
   broken: RefEdge[];
   /** broken 의 Issue 표기 (조립 오류 패널과 같은 좌표 체계). */
   issues: Issue[];
+  /** 분모 — 「참조 노드 N 개 중 고아 M」 (디자인원칙 §9.6). */
+  stats: RefStats;
+}
+
+/** 관계정보 화면 한 판. 그래프를 한 번만 읽어 무결성·규모·(조회 대상이 있으면) 관계 뷰를 함께 낸다. */
+export interface RelationsOverview {
+  /** 표시명 표기(`describeKey(key, graph)`)에 그래프가 필요하다 — 화면이 좌표를 이름으로 부른다 (ADR-0022). */
+  graph: RefGraph;
+  integrity: IntegrityReport;
+  relation?: RelationView;
 }
 
 export interface RefsService {
@@ -106,6 +118,12 @@ export interface RefsService {
   /** 관계정보 뷰 — 정방향 · 역방향 · 옵션 오버라이드 사용처. */
   relation(target: RefNodeKey): Promise<RelationView>;
   integrity(): Promise<IntegrityReport>;
+  /** 관계정보 화면용 — 그래프 로딩 한 번으로 끝낸다. */
+  overview(target?: RefNodeKey): Promise<RelationsOverview>;
+}
+
+function integrityOf(g: RefGraph): IntegrityReport {
+  return { orphans: orphans(g), cycles: cycles(g), broken: brokenEdges(g), issues: brokenIssues(g), stats: refStats(g) };
 }
 
 export function createRefsService(db: Db): RefsService {
@@ -113,9 +131,10 @@ export function createRefsService(db: Db): RefsService {
     graph: () => loadGraph(db),
     usages: async (target, opts) => usagesOf(await loadGraph(db), target, opts),
     relation: async (target) => relationView(await loadGraph(db), target),
-    integrity: async () => {
+    integrity: async () => integrityOf(await loadGraph(db)),
+    overview: async (target) => {
       const g = await loadGraph(db);
-      return { orphans: orphans(g), cycles: cycles(g), broken: brokenEdges(g), issues: brokenIssues(g) };
+      return { graph: g, integrity: integrityOf(g), ...(target ? { relation: relationView(g, target) } : {}) };
     },
   };
 }

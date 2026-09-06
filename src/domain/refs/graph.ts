@@ -20,6 +20,7 @@ import type { Clause } from "../clause/types";
 import { nodesOf } from "../coverage/tree";
 import type { Coverage } from "../coverage/types";
 import { coordinateOf, indexTree } from "../document/nodes";
+import { articleRefLabel, numberTree } from "../document/numbering";
 import { collectRefs } from "../document/refs";
 import { extractRefs, parse, refPath, type Expr, type Ref } from "../expression";
 import type { Code, Coordinate, FieldType, Id } from "../types";
@@ -284,10 +285,17 @@ function addDocument(b: Builder, doc: DocumentInput): Map<Id, RefNodeKey> {
   b.node({ key, label: doc.title, detail: doc.kind, ownerId: doc.ownerId ?? doc.id });
   const base: Coordinate = { document: doc.kind, ownerId: doc.ownerId ?? doc.id, ownerName: doc.title };
   const ix = indexTree(doc.tree, base);
+  // 조 표시명은 계산된 번호까지 실어 「제2조(보험금의 감액지급)」로 둔다 — 관계정보·확인 팝업이 조를 id 가 아니라
+  // 사람이 부르는 이름으로 부르기 위해서다 (디자인원칙 §9.4 · 리뷰 #24). 번호는 저장값이 아니라 계산값이므로(ADR-0012)
+  // 여기서 매번 다시 센다.
+  const numbers = numberTree(doc.tree);
   /** 문서 안 모든 노드 id → 그 노드가 속한 조 키(또는 문서 키) — 오버라이드의 매개 노드 찾기용. */
   const anchors = new Map<Id, RefNodeKey>();
   for (const e of ix.nodes.values()) {
-    if (e.node.kind === "article") b.node({ key: { kind: "article", documentId: doc.id, articleId: e.node.id }, label: e.node.title, parent: key });
+    if (e.node.kind === "article") {
+      const n = numbers.get(e.node.id);
+      b.node({ key: { kind: "article", documentId: doc.id, articleId: e.node.id }, label: n ? articleRefLabel(n.n, e.node.title) : e.node.title, parent: key });
+    }
     anchors.set(e.node.id, anchorOf(doc, e.articleId));
   }
   const generalOf = (id: Id): RefNodeKey => ({ kind: "article", documentId: doc.generalDocumentId ?? "", articleId: id });

@@ -15,6 +15,24 @@ describe("오류 좌표 표시", () => {
     );
   });
 
+  it("omitOwner 는 이미 이름으로 부른 소유 실체를 빼고 조 아래만 남긴다", () => {
+    expect(
+      formatCoordinate(
+        { document: "special", ownerName: "일반상해사망 특별약관", articleTitle: "보험금의 감액지급", paragraphNumber: 1, nodeKind: "slot", refPath: "보험금지급.지급률" },
+        { source: true, omitOwner: true },
+      ),
+    ).toBe("「보험금의 감액지급」 › 1번째 항 › 슬롯:보험금지급.지급률");
+  });
+
+  it("omitArticle 은 조까지 이름으로 부른 줄에서 조를 빼고 그 아래만 남긴다", () => {
+    expect(
+      formatCoordinate(
+        { document: "special", ownerName: "일반상해사망 특별약관", articleTitle: "특별약관의 소멸", nodeKind: "clauseRef" },
+        { source: true, omitOwner: true, omitArticle: true },
+      ),
+    ).toBe("공용조항 참조");
+  });
+
   it("값 원천은 상품과 상품담보 이름 뒤에 참조 경로를 표시한다", () => {
     expect(formatCoordinate({ document: "product", ownerName: "알파Plus", subjectName: "일반상해사망 추가", nodeKind: "value", refPath: "보험금지급.지급률" }, { source: true })).toBe(
       "상품모델링 › 알파Plus › 일반상해사망 추가 › 보험금지급.지급률",

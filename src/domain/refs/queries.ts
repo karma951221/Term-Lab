@@ -144,8 +144,97 @@ export function brokenIssues(graph: RefGraph): Issue[] {
   }));
 }
 
-/** 사람이 읽을 노드 표기. */
-export function describeKey(key: RefNodeKey): string {
+// ───────────────────────────── 규모 (분모) ─────────────────────────────
+
+export interface RefStats {
+  /** 선언된 실체 수 전부. */
+  nodes: number;
+  /** 간선(참조) 수 전부 — 「참조 M 건 중 깨짐 N」의 분모. */
+  edges: number;
+  /** 고아 판정 대상 수 — 구분자·공용조항·별표. 「참조 노드 N 개 중 고아 M」의 분모다. */
+  orphanCandidates: number;
+}
+
+/** 문제 개수에 붙일 분모 (디자인원칙 §9.6 — 분모 없는 카운트를 두지 않는다). */
+export function refStats(graph: RefGraph): RefStats {
+  let orphanCandidates = 0;
+  for (const info of graph.nodes.values()) if ((ORPHAN_KINDS as readonly string[]).includes(info.key.kind)) orphanCandidates += 1;
+  return { nodes: graph.nodes.size, edges: graph.edges.length, orphanCandidates };
+}
+
+/** 코드로 부르는 실체 — 표시명 뒤에 코드를 괄호로 붙인다 (디자인원칙 §9.4 「표시명 (코드)」). */
+function codeOf(key: RefNodeKey): string | undefined {
+  switch (key.kind) {
+    case "discriminator":
+    case "clause":
+    case "appendix":
+    case "attribute":
+      return key.code;
+    case "enum":
+      return key.enumCode;
+    default:
+      return undefined;
+  }
+}
+
+/** 상위를 이름으로 부를 때 붙일 자기 자신의 짧은 표기 (상위 정보는 뺀다). */
+function selfFragment(key: RefNodeKey): string {
+  switch (key.kind) {
+    case "field":
+      return `필드 ${key.fieldCode}`;
+    case "enumValue":
+      return `값 ${key.valueCode}`;
+    case "clauseOption":
+      return `옵션 ${key.optionCode}`;
+    case "clauseOptionValue":
+      return `선택지 ${key.valueCode}`;
+    case "article":
+      return `조 ${key.articleId}`;
+    case "attributeValue":
+      return `유효값 ${key.valueCode}`;
+    default:
+      return describeKey(key);
+  }
+}
+
+/**
+ * 선언된 표시명으로 만든 경로 — 「일반상해사망 특별약관 › 제2조(보험금의 감액지급)」.
+ * 상위의 표시명이 하위 표시명의 접두이면(구분자 → `구분자.필드`) 겹쳐 적지 않는다.
+ * 대상 자신이 선언돼 있지 않아도(= 깨진 참조) 상위가 선언돼 있으면 그 이름 아래에 「…(없음)」으로 매단다 —
+ * 「알파Plus 보통약관 › 조 g-par-refund-1(없음)」. 아무것도 선언돼 있지 않으면 undefined.
+ */
+function namedPath(graph: RefGraph, key: RefNodeKey): string | undefined {
+  const keys = ancestorKeys(graph, key);
+  const self = graph.nodes.get(keys[0]!);
+  const labels: string[] = [];
+  for (const k of [...keys].reverse()) {
+    if (k === keys[0] && !self) continue;
+    const info = graph.nodes.get(k);
+    if (!info) continue;
+    const prev = labels.at(-1);
+    if (prev !== undefined && info.label.startsWith(prev)) labels[labels.length - 1] = info.label;
+    else labels.push(info.label);
+  }
+  if (labels.length === 0) return undefined;
+  if (self) return labels.join(" › ");
+  return [...labels, `${selfFragment(key)}(없음)`].join(" › ");
+}
+
+/**
+ * 사람이 읽을 노드 표기.
+ *
+ * `graph` 를 주면 **표시명**으로 부른다 (ADR-0022 「키와 표시를 분리한다」 · 리뷰 #24) —
+ * 「조 s-art-reduce (문서 77d5…)」가 아니라 「일반상해사망 특별약관 › 제2조(보험금의 감액지급)」.
+ * 그래프가 없거나 대상이 선언돼 있지 않으면(삭제된 대상) id·코드 표기로 돌아간다.
+ */
+export function describeKey(key: RefNodeKey, graph?: RefGraph): string {
+  if (graph) {
+    const named = namedPath(graph, key);
+    if (named !== undefined) {
+      const code = graph.nodes.has(nodeKey(key)) ? codeOf(key) : undefined;
+      return code !== undefined ? `${named}(${code})` : named;
+    }
+  }
   switch (key.kind) {
     case "discriminator":
       return `구분자 ${key.code}`;

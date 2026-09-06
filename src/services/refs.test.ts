@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Clause } from "@/domain/clause";
 import type { Coverage } from "@/domain/coverage";
 import { nodeBuilders } from "@/domain/document";
-import { nodeKey } from "@/domain/refs";
+import { describeKey, nodeKey } from "@/domain/refs";
 import type { Actor, Id } from "@/domain/types";
 
 import { insertClause } from "@/db/repo/clause";
@@ -124,12 +124,25 @@ describe("refs 서비스 · 주입 소스 (PGlite)", () => {
       expect(v.overrides).toEqual([expect.objectContaining({ from: { kind: "productCoverage", id: pcId }, through: { kind: "article", documentId: special.id, articleId: artLapse.id }, at: expect.objectContaining({ document: "special", ownerId: pcId, ownerName: "갱신형 수술비", nodePath: [clauseBlock.id], refPath: "C001.O01" }) })]);
     });
 
-    it("무결성 — 고아(미참조 구분자 · 별표) · 순환 없음 · 깨진 참조 없음", async () => {
+    it("무결성 — 고아(미참조 구분자 · 별표) · 순환 없음 · 깨진 참조 없음 + 분모", async () => {
       const r = await refs.integrity();
       expect(r.orphans.map((n) => nodeKey(n.key))).toEqual(["discriminator:D0007", "appendix:APX_DISABILITY"]);
       expect(r.cycles).toEqual([]);
       expect(r.broken).toEqual([]);
       expect(r.issues).toEqual([]);
+      // 분모 — 고아 2 를 셀 수 있으려면 고아 후보 수가 그보다 크거나 같아야 한다 (§9.6)
+      expect(r.stats.orphanCandidates).toBeGreaterThanOrEqual(r.orphans.length);
+      expect(r.stats.edges).toBeGreaterThan(0);
+    });
+
+    it("overview — 그래프 한 번으로 무결성·규모·관계 뷰를 함께 낸다 (관계정보 화면)", async () => {
+      const o = await refs.overview({ kind: "clause", code: "C001" });
+      expect(o.integrity.stats.nodes).toBe(o.graph.nodes.size);
+      expect(o.integrity.stats.edges).toBe(o.graph.edges.length);
+      expect(o.relation?.node?.label).toBe("특별약관의 소멸");
+      // 좌표를 이름으로 부를 수 있다 — 조는 「문서 › 제N조(조 명)」 (리뷰 #24)
+      expect(describeKey({ kind: "article", documentId: special.id, articleId: artLapse.id }, o.graph)).toBe("수술비 특별약관 › 제3조(특별약관의 소멸)");
+      expect((await refs.overview()).relation).toBeUndefined();
     });
   });
 

@@ -4,7 +4,7 @@ import type { Discriminator } from "../catalog";
 import type { Clause } from "../clause";
 import { surgeryFixture } from "../document";
 import { buildGraph, nodeKey, type DocumentInput } from "./graph";
-import { brokenEdges, cycles, orphans, relationView, usagesOf } from "./queries";
+import { brokenEdges, cycles, describeKey, orphans, refStats, relationView, usagesOf } from "./queries";
 
 const D = (code: string, label = code): Discriminator => ({ kind: "scalar", code, label, description: "", level: "coverage", alwaysExposed: true, type: { kind: "boolean" } });
 const struct: Discriminator = { kind: "struct", code: "D0003", label: "보험금지급", description: "", level: "benefit", alwaysExposed: true, fields: [{ code: "F01", label: "면책여부", type: { kind: "boolean" }, order: 0 }, { code: "F02", label: "지급률", type: { kind: "number" }, order: 1 }] };
@@ -166,5 +166,43 @@ describe("relationView — 관계정보 뷰 (정방향 · 역방향 · 옵션 �
     const v = relationView(g, { kind: "clauseOption", clauseCode: "C001", optionCode: "tone" });
     expect(v.node).toBeUndefined();
     expect(v.incoming.map((e) => e.via)).toEqual(["optionSelect"]);
+  });
+});
+
+describe("describeKey — 표시명 표기 (ADR-0022 · 리뷰 #24)", () => {
+  it("그래프를 주면 조를 「문서 › 제N조(조 명)」 으로 부른다", () => {
+    const g = surgeryGraph();
+    const key = { kind: "article", documentId: "doc-s", articleId: "s-art-lapse" } as const;
+    expect(describeKey(key, g)).toBe(`${fx.special.title} › 제4조(특별약관의 소멸)`);
+    expect(describeKey(key)).toBe("조 s-art-lapse (문서 doc-s)");
+  });
+
+  it("코드로 부르는 실체는 「표시명(코드)」, 필드는 상위 구분자명을 겹쳐 적지 않는다", () => {
+    const g = surgeryGraph();
+    expect(describeKey({ kind: "clause", code: "C001" }, g)).toBe("특별약관의 소멸(C001)");
+    expect(describeKey({ kind: "discriminator", code: "D0003" }, g)).toBe("보험금지급(D0003)");
+    expect(describeKey({ kind: "field", code: "D0003", fieldCode: "F01" }, g)).toBe("보험금지급.면책여부");
+  });
+
+  it("담보 노드는 담보 › 세부보장 › 급부 로 이어 부른다", () => {
+    const g = surgeryGraph();
+    expect(describeKey({ kind: "coverageNode", level: "benefit", id: "ben-1" }, g)).toBe("수술비 › 1종수술 › 수술보험금");
+  });
+
+  it("선언되지 않은 대상(깨진 참조)은 상위 이름 아래 「…(없음)」으로, 상위도 없으면 id 표기로 돌아간다", () => {
+    const g = surgeryGraph();
+    expect(describeKey({ kind: "clause", code: "C999" }, g)).toBe("공용조항 C999");
+    expect(describeKey({ kind: "article", documentId: "doc-g", articleId: "g-gone" }, g)).toBe(`${fx.general.title} › 조 g-gone(없음)`);
+  });
+});
+
+describe("refStats — 문제 개수에 붙일 분모 (§9.6)", () => {
+  it("고아 분모는 고아가 될 수 있는 종류(구분자·공용조항·별표)만 센다", () => {
+    const g = surgeryGraph();
+    const s = refStats(g);
+    expect(s.edges).toBe(g.edges.length);
+    expect(s.nodes).toBe(g.nodes.size);
+    expect(s.orphanCandidates).toBe([...g.nodes.values()].filter((n) => ["discriminator", "clause", "appendix"].includes(n.key.kind)).length);
+    expect(orphans(g).length).toBeLessThanOrEqual(s.orphanCandidates);
   });
 });

@@ -3,7 +3,7 @@
  *
  * - types.ts   : RefNodeKey · RefEdge · RefGraph · 입력(GraphInputs)
  * - graph.ts   : buildGraph · nodeKey · structuralParent · refNodeKey · ownerNodeKey · literalCompares
- * - queries.ts : usagesOf · referencesFrom · orphans · cycles · brokenEdges · brokenIssues · relationView · describeKey
+ * - queries.ts : usagesOf · referencesFrom · orphans · cycles · brokenEdges · brokenIssues · relationView · describeKey · refStats
  */
 export * from "./graph";
 export * from "./queries";

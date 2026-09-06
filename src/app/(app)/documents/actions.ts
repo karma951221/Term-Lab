@@ -19,11 +19,22 @@ function detailPath(id: Id): string {
   return `${BASE}/${id}`;
 }
 
-async function apply(id: Id, commands: Command[]): Promise<void> {
+/**
+ * 저장 뒤 돌아갈 자리 — 폼이 숨은 `returnTo` 로 지금 화면의 쿼리(`?mode=edit&node=…`)를 넘긴다.
+ * L3 저작 화면(ADR-0012)은 모드·선택 자리를 쿼리로 나르므로, 이것이 없으면 저장할 때마다 편집 모드에서 튕긴다.
+ * 넘기지 않는 호출부는 예전처럼 상세 기본 경로로 간다.
+ */
+function backTo(id: Id, formData?: FormData): string {
+  const q = formData ? String(formData.get("returnTo") ?? "").trim() : "";
+  return q.startsWith("?") && !q.includes("//") ? `${detailPath(id)}${q}` : detailPath(id);
+}
+
+async function apply(id: Id, commands: Command[], formData?: FormData): Promise<void> {
   const actor = await currentActor();
+  const back = backTo(id, formData);
   const r = await getServices().document.apply(actor, id, commands);
-  if (!r.ok) redirect(errorRedirectPath(detailPath(id), msg(r.rejection)));
-  redirect(detailPath(id));
+  if (!r.ok) redirect(errorRedirectPath(back, msg(r.rejection)));
+  redirect(back);
 }
 
 // ───────────────────────────── 문서 자체 ─────────────────────────────
@@ -44,9 +55,10 @@ export async function duplicateGeneralAction(id: Id, formData: FormData): Promis
 
 export async function setDocumentTitleAction(id: Id, formData: FormData): Promise<void> {
   const actor = await currentActor();
+  const back = backTo(id, formData);
   const r = await getServices().document.setTitle(actor, id, str(formData, "title"));
-  if (!r.ok) redirect(errorRedirectPath(detailPath(id), msg(r.rejection)));
-  redirect(detailPath(id));
+  if (!r.ok) redirect(errorRedirectPath(back, msg(r.rejection)));
+  redirect(back);
 }
 
 export async function removeDocumentAction(id: Id): Promise<void> {
@@ -112,49 +124,69 @@ export async function insertNodeAction(documentId: Id, parentId: Id, slot: "chil
     default:
       redirect(errorRedirectPath(detailPath(documentId), `지원하지 않는 노드 종류입니다: ${kind}`));
   }
-  await apply(documentId, [{ type: "insert", node: node!, at }]);
+  await apply(documentId, [{ type: "insert", node: node!, at }], formData);
 }
 
-export async function removeNodeAction(documentId: Id, nodeId: Id): Promise<void> {
-  await apply(documentId, [{ type: "remove", nodeId }]);
+export async function removeNodeAction(documentId: Id, nodeId: Id, formData?: FormData): Promise<void> {
+  await apply(documentId, [{ type: "remove", nodeId }], formData);
 }
 
-export async function moveNodeAction(documentId: Id, nodeId: Id, dir: -1 | 1): Promise<void> {
+export async function moveNodeAction(documentId: Id, nodeId: Id, dir: -1 | 1, formData?: FormData): Promise<void> {
   const services = getServices();
   const doc = await services.document.get(documentId);
   if (!doc) redirect(errorRedirectPath(BASE, "문서를 찾을 수 없습니다."));
   const to = moveTarget(doc.tree, nodeId, dir);
-  if (!to) redirect(detailPath(documentId)); // 경계 — 조용히 무시
-  await apply(documentId, [{ type: "move", nodeId, to }]);
+  if (!to) redirect(backTo(documentId, formData)); // 경계 — 조용히 무시
+  await apply(documentId, [{ type: "move", nodeId, to }], formData);
 }
 
-export async function duplicateNodeAction(documentId: Id, nodeId: Id): Promise<void> {
-  await apply(documentId, [{ type: "duplicate", nodeId }]);
+export async function duplicateNodeAction(documentId: Id, nodeId: Id, formData?: FormData): Promise<void> {
+  await apply(documentId, [{ type: "duplicate", nodeId }], formData);
 }
 
+/**
+ * 문장(텍스트런) 저장 — **좌우 공백을 자르지 않는다.** 텍스트런은 슬롯·참조 앞뒤의 한 칸을 스스로 들고 있어서
+ * (「계약일부터 」 + 슬롯 + 「 이내에는」), 자르면 조립 문면에서 글자가 붙어 버린다.
+ */
 export async function setTextAction(documentId: Id, nodeId: Id, formData: FormData): Promise<void> {
-  await apply(documentId, [{ type: "setText", nodeId, text: str(formData, "text") }]);
+  const text = String(formData.get("text") ?? "");
+  await apply(documentId, [{ type: "setText", nodeId, text }], formData);
 }
 
 export async function setArticleTitleAction(documentId: Id, nodeId: Id, formData: FormData): Promise<void> {
-  await apply(documentId, [{ type: "setTitle", nodeId, title: str(formData, "title") }]);
+  await apply(documentId, [{ type: "setTitle", nodeId, title: str(formData, "title") }], formData);
 }
 
 export async function setSlotRefAction(documentId: Id, nodeId: Id, formData: FormData): Promise<void> {
-  await apply(documentId, [{ type: "setSlotRef", nodeId, ref: str(formData, "ref") }]);
+  await apply(documentId, [{ type: "setSlotRef", nodeId, ref: str(formData, "ref") }], formData);
 }
 
 export async function setArticleRefAction(documentId: Id, nodeId: Id, formData: FormData): Promise<void> {
   const targets = formData.getAll("targets").flatMap((value) => String(value).split(",")).map((targetId) => targetId.trim()).filter(Boolean).map((targetId) => ({ nodeId: targetId }));
-  await apply(documentId, [{ type: "setArticleRef", nodeId, targets, connector: str(formData, "connector") || "및", scope: (str(formData, "scope") || "self") as ArticleRefNode["scope"] }]);
+  await apply(documentId, [{ type: "setArticleRef", nodeId, targets, connector: str(formData, "connector") || "및", scope: (str(formData, "scope") || "self") as ArticleRefNode["scope"] }], formData);
 }
 
 export async function setAppendixRefAction(documentId: Id, nodeId: Id, formData: FormData): Promise<void> {
-  await apply(documentId, [{ type: "setAppendixRef", nodeId, appendixCode: str(formData, "appendixCode") }]);
+  await apply(documentId, [{ type: "setAppendixRef", nodeId, appendixCode: str(formData, "appendixCode") }], formData);
 }
 
+/**
+ * 공용조항 옵션 선택 저장.
+ * 옵션마다 `option:<옵션코드>` select 로 받는다 (L3 우측 패널 — 리뷰 #65). 그런 필드가 하나도 없으면
+ * 예전의 `options` JSON 필드로 되돌아간다 (기존 호출부 호환).
+ */
 export async function setClauseOptionsAction(documentId: Id, nodeId: Id, formData: FormData): Promise<void> {
-  await apply(documentId, [{ type: "setClauseOptions", nodeId, options: parseOptions(str(formData, "options")) }]);
+  const picked: Record<string, string> = {};
+  let sawSelect = false;
+  for (const [key, value] of formData.entries()) {
+    if (!key.startsWith("option:")) continue;
+    sawSelect = true;
+    const code = key.slice("option:".length);
+    const chosen = String(value).trim();
+    if (chosen !== "") picked[code] = chosen;
+  }
+  const options = sawSelect ? picked : parseOptions(str(formData, "options"));
+  await apply(documentId, [{ type: "setClauseOptions", nodeId, options }], formData);
 }
 
 export async function addBranchAction(documentId: Id, condId: Id, formData: FormData): Promise<void> {
@@ -168,30 +200,32 @@ export async function addBranchAction(documentId: Id, condId: Id, formData: Form
   const text = str(formData, "text");
   const b = nodeBuilders();
   const branch = entry.node.kind === "inlineCond" ? b.inlineBranch(when, text ? [b.text(text)] : []) : b.branch(when, []);
-  await apply(documentId, [{ type: "addBranch", condId, branch }]);
+  await apply(documentId, [{ type: "addBranch", condId, branch }], formData);
 }
 
 export async function setWhenAction(documentId: Id, branchId: Id, formData: FormData): Promise<void> {
   const when = str(formData, "when");
-  await apply(documentId, [{ type: "setWhen", branchId, ...(when ? { when } : {}) }]);
+  await apply(documentId, [{ type: "setWhen", branchId, ...(when ? { when } : {}) }], formData);
 }
 
-export async function removeBranchAction(documentId: Id, branchId: Id): Promise<void> {
+export async function removeBranchAction(documentId: Id, branchId: Id, formData?: FormData): Promise<void> {
   const actor = await currentActor();
+  const back = backTo(documentId, formData);
   const r = await getServices().document.apply(actor, documentId, [{ type: "removeBranch", branchId }]);
-  if (!r.ok) redirect(errorRedirectPath(detailPath(documentId), msg(r.rejection)));
-  redirect(detailPath(documentId));
+  if (!r.ok) redirect(errorRedirectPath(back, msg(r.rejection)));
+  redirect(back);
 }
 
 export async function linkArticleAction(documentId: Id, articleId: Id, formData: FormData): Promise<void> {
   const linkedArticleId = str(formData, "linkedArticleId") || undefined;
-  await apply(documentId, [{ type: "link", articleId, linkedArticleId }]);
+  await apply(documentId, [{ type: "link", articleId, linkedArticleId }], formData);
 }
 
 export async function setGeneralDocumentAction(specialId: Id, formData: FormData): Promise<void> {
   const actor = await currentActor();
+  const back = backTo(specialId, formData);
   const generalId = str(formData, "generalDocumentId") || undefined;
   const r = await getServices().document.setGeneralDocument(actor, specialId, generalId);
-  if (!r.ok) redirect(errorRedirectPath(detailPath(specialId), msg(r.rejection)));
-  redirect(detailPath(specialId));
+  if (!r.ok) redirect(errorRedirectPath(back, msg(r.rejection)));
+  redirect(back);
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseRefTarget } from "./lib";
+import { KIND_OPTIONS, VIA_LABEL, parseRefTarget } from "./lib";
 
 describe("relations lib — 쿼리스트링 → RefNodeKey (순수)", () => {
   it("discriminator · clause · appendix — code 필요", () => {
@@ -29,5 +29,18 @@ describe("relations lib — 쿼리스트링 → RefNodeKey (순수)", () => {
   it("알 수 없는 kind 는 undefined", () => {
     expect(parseRefTarget({ kind: "bogus" })).toBeUndefined();
     expect(parseRefTarget({})).toBeUndefined();
+  });
+});
+
+describe("화면 라벨 (리뷰 #64 — 영문 enum 을 화면에 내보내지 않는다)", () => {
+  it("조회 종류 선택지는 전부 parseRefTarget 이 아는 kind 이고 글자는 한글이다", () => {
+    for (const o of KIND_OPTIONS) {
+      expect(parseRefTarget({ kind: o.value, code: "X", id: "x", fieldCode: "F", valueCode: "V", level: "benefit" })).toBeDefined();
+      expect(o.label).toMatch(/[가-힣]/);
+    }
+  });
+
+  it("참조 형태는 전부 한글 표기를 갖는다", () => {
+    for (const label of Object.values(VIA_LABEL)) expect(label).toMatch(/^[가-힣][가-힣 ()a-z]*$/);
   });
 });
