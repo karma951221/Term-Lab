@@ -90,12 +90,12 @@ export async function saveTypeFormBasicAction(code: Code, formData: FormData): P
   redirect(formPath(code));
 }
 
-export async function createInlineEnumAction(input: { label: string; values: string[] }): Promise<{ ok: true; item: { code: string; label: string } } | { ok: false; message: string }> {
+export async function createInlineEnumAction(input: { label: string; values: string[] }): Promise<{ ok: true; item: { code: string; label: string; description?: string; values: { code: string; label: string; order: number }[] } } | { ok: false; message: string }> {
   const result = await getServices().catalog.createEnum(await currentActor(), {
     label: input.label.trim(),
     values: input.values.map((label) => ({ label: label.trim() })).filter((value) => value.label),
   });
-  return result.ok ? { ok: true, item: { code: result.value.code, label: result.value.label } } : { ok: false, message: message(result.rejection) };
+  return result.ok ? { ok: true, item: result.value } : { ok: false, message: message(result.rejection) };
 }
 
 export async function addTypeFieldAction(code: Code, formData: FormData): Promise<void> {
