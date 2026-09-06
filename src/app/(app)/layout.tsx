@@ -1,9 +1,10 @@
 /**
  * 공통 레이아웃 — 좌측 내비(구분자·담보·공용조항·문면·별표·상품·담보속성·관계정보) + 현재 사용자·역할·로그아웃.
  * 로그인 세션이 없으면 `currentActor()` 가 `/login` 으로 redirect 한다.
+ *
+ * 현재 위치 표시는 `NavLink`(클라이언트 leaf)가 `aria-current="page"` 로 붙인다 — 디자인원칙 §1.3.
  */
-import Link from "next/link";
-
+import { NavLink } from "@/app/_components/NavLink";
 import { logoutAction } from "@/app/login/actions";
 import { currentActor, getServices } from "@/lib/services";
 
@@ -30,9 +31,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <nav className="ts-nav">
         <p className="ts-nav-title">terms-studio</p>
         {NAV.map((item) => (
-          <Link key={item.href} href={item.href}>
-            {item.label}
-          </Link>
+          <NavLink key={item.href} href={item.href} label={item.label} />
         ))}
         <div className="ts-nav-user">
           <div>
