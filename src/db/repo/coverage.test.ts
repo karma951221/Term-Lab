@@ -11,6 +11,7 @@ import {
   insertCoverage,
   listCoverageNames,
   listCoverages,
+  listCoverageSummaries,
   loadCoverage,
   saveCoverage,
 } from "./coverage";
@@ -48,6 +49,16 @@ describe("coverage repo — 담보 · 세부보장 · 급부 (PGlite)", () => {
     await insertCoverage(t.db, accident, who);
     expect((await listCoverages(t.db)).map((c) => c.name)).toEqual(["수술비", "일반상해사망"]);
     expect(await listCoverageNames(t.db)).toEqual(["수술비", "일반상해사망"]);
+  });
+
+  it("L1 목록 요약 — 트리 없이 이름·최종수정만 (WP2, 리뷰 #38/#48)", async () => {
+    const summaries = await listCoverageSummaries(t.db);
+    expect(summaries.map((s) => s.name)).toEqual(["수술비", "일반상해사망"]);
+    for (const s of summaries) {
+      expect(s.id).toBeTruthy();
+      expect(s.updatedAt).toBeInstanceOf(Date);
+      expect(s.documentId).toBeUndefined();
+    }
   });
 
   it("저장은 upsert — 순서 변경·이름 변경·문서 연결이 반영되고, 트리에서 빠진 노드는 삭제된다 (급부는 FK cascade)", async () => {

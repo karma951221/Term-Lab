@@ -81,6 +81,23 @@ export async function listCoverages(db: Db): Promise<Coverage[]> {
   );
 }
 
+/** 담보 조회(L1) 목록 행 — 트리를 전부 안 읽고 최종수정만 얹는다 (리뷰 #38/#48, WP2). */
+export interface CoverageSummary {
+  id: Id;
+  name: string;
+  documentId?: Id;
+  updatedAt: Date;
+}
+
+/** 이름순 목록 — 담보 마스터에는 코드·상태·담보분류가 아직 없다(디자인원칙 §2 L1 은 미구현 상태, §10). */
+export async function listCoverageSummaries(db: Db): Promise<CoverageSummary[]> {
+  const rows = await db
+    .select({ id: coverages.id, name: coverages.name, documentId: coverages.documentId, updatedAt: coverages.updatedAt })
+    .from(coverages)
+    .orderBy(asc(coverages.name));
+  return rows.map((r) => ({ id: r.id, name: r.name, updatedAt: r.updatedAt, ...(r.documentId ? { documentId: r.documentId } : {}) }));
+}
+
 /** 담보명 전부 — 전역 중복 검사용. */
 export async function listCoverageNames(db: Db): Promise<string[]> {
   const rows = await db.select({ name: coverages.name }).from(coverages).orderBy(asc(coverages.name));

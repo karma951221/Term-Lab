@@ -121,6 +121,14 @@ describe("coverage 서비스 (PGlite)", () => {
       expect(rejection(await svc.rename(editor, "44444444-4444-4444-8444-444444444444", "x")).reason).toBe("notFound");
       expect(rejection(await svc.addBenefit(editor, "44444444-4444-4444-8444-444444444444", "x")).reason).toBe("notFound");
     });
+
+    it("listSummaries — L1 목록 요약이 이름·문서연결·최종수정을 담는다 (WP2, 리뷰 #38/#48)", async () => {
+      const summaries = await svc.listSummaries();
+      const found = summaries.find((s) => s.id === surgery.id)!;
+      expect(found.name).toBe(surgery.name);
+      expect(found.documentId).toBe(surgery.documentId);
+      expect(found.updatedAt).toBeInstanceOf(Date);
+    });
   });
 
   describe("담보값입력 S1·S2 — 노출여부와 부착", () => {

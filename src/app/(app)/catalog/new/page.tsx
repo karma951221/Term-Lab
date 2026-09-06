@@ -1,26 +1,35 @@
 import { ErrorBanner } from "@/app/_components/ErrorBanner";
-import { ATTACH_LEVELS, ATTACH_LEVEL_LABEL } from "@/domain/types";
+import { LEVEL_LABEL, label } from "@/app/_lib/labels";
+import { ATTACH_LEVELS, type AttachLevel } from "@/domain/types";
 import { getServices } from "@/lib/services";
 
 import { createConstAction, createDerivedAction, createScalarAction, createStructAction } from "../actions";
+import { KindPicker } from "./KindPicker";
 
 export const dynamic = "force-dynamic";
 
+/** 시드 구분자 11개 중 담보 레벨이 최다다 (리뷰 #2) — 구조 선택지라 프리필하되, 「제안」임을 배지로 알린다. */
+const DEFAULT_LEVEL: AttachLevel = "coverage";
+
 function LevelSelect() {
   return (
-    <label className="ts-field">
-      <span>레벨</span>
-      <select name="level" required defaultValue="">
-        <option value="" disabled>
-          — 선택 —
-        </option>
-        {ATTACH_LEVELS.map((l) => (
-          <option key={l} value={l}>
-            {ATTACH_LEVEL_LABEL[l]}
-          </option>
-        ))}
-      </select>
-    </label>
+    <div className="ts-form-row">
+      <label className="ts-form-label" htmlFor="new-level">
+        레벨
+      </label>
+      <div className="ts-form-control">
+        <select id="new-level" name="level" required defaultValue={DEFAULT_LEVEL}>
+          {ATTACH_LEVELS.map((l) => (
+            <option key={l} value={l}>
+              {label(LEVEL_LABEL, l)}
+            </option>
+          ))}
+        </select>
+        <span className="ts-badge proposed" title="가장 흔히 쓰는 레벨을 미리 골라 뒀다 — 바꿀 수 있다">
+          제안
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -28,32 +37,38 @@ export default async function NewCatalogPage({ searchParams }: { searchParams: P
   const { error } = await searchParams;
   const enums = await getServices().catalog.listEnums();
 
-  return (
-    <div>
-      <h1 className="ts-h1">새 구분자</h1>
-      <ErrorBanner message={error} />
-
-      <h2 className="ts-h2">스칼라</h2>
-      <form action={createScalarAction} className="ts-form">
-        <label className="ts-field">
-          <span>표시명</span>
-          <input type="text" name="label" required />
+  const scalarForm = (
+    <form action={createScalarAction} className="ts-form">
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="scalar-label">
+          표시명
         </label>
-        <LevelSelect />
-        <label className="ts-field">
-          <span>타입</span>
-          <select name="typeKind" required>
-            <option value="string">string</option>
-            <option value="number">number</option>
-            <option value="boolean">boolean</option>
-            <option value="date">date</option>
-            <option value="enum">enum</option>
-            <option value="list<enum>">list&lt;enum&gt;</option>
+        <div className="ts-form-control">
+          <input id="scalar-label" type="text" name="label" required />
+        </div>
+      </div>
+      <LevelSelect />
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="scalar-type">
+          타입
+        </label>
+        <div className="ts-form-control">
+          <select id="scalar-type" name="typeKind" required defaultValue="string">
+            <option value="string">문자열</option>
+            <option value="number">숫자</option>
+            <option value="boolean">예/아니오</option>
+            <option value="date">날짜</option>
+            <option value="enum">선택형</option>
+            <option value="list<enum>">선택형(복수)</option>
           </select>
+        </div>
+      </div>
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="scalar-enum">
+          enum 대상 (타입이 선택형일 때만)
         </label>
-        <label className="ts-field">
-          <span>enum 대상 (타입이 enum 류일 때만)</span>
-          <select name="enumCode" defaultValue="">
+        <div className="ts-form-control">
+          <select id="scalar-enum" name="enumCode" defaultValue="">
             <option value="">—</option>
             {enums.map((e) => (
               <option key={e.code} value={e.code}>
@@ -61,81 +76,142 @@ export default async function NewCatalogPage({ searchParams }: { searchParams: P
               </option>
             ))}
           </select>
-        </label>
-        <label className="ts-field">
-          <span>
-            <input type="checkbox" name="alwaysExposed" /> 무조건 노출
-          </span>
-        </label>
-        <label className="ts-field">
-          <span>설명</span>
-          <textarea name="description" rows={2} />
-        </label>
-        <div className="ts-form-actions">
-          <button type="submit">생성</button>
         </div>
-      </form>
+      </div>
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="scalar-exposed">
+          무조건 노출
+        </label>
+        <div className="ts-form-control">
+          <input id="scalar-exposed" type="checkbox" name="alwaysExposed" />
+        </div>
+      </div>
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="scalar-desc">
+          설명
+        </label>
+        <div className="ts-form-control">
+          <textarea id="scalar-desc" name="description" rows={2} />
+        </div>
+      </div>
+      <div className="ts-form-actions">
+        <button type="submit" className="primary">
+          스칼라 구분자 생성
+        </button>
+      </div>
+    </form>
+  );
 
-      <h2 className="ts-h2">구조체</h2>
-      <form action={createStructAction} className="ts-form">
-        <label className="ts-field">
-          <span>표시명</span>
-          <input type="text" name="label" required />
+  const structForm = (
+    <form action={createStructAction} className="ts-form">
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="struct-label">
+          표시명
         </label>
-        <LevelSelect />
-        <label className="ts-field">
-          <span>
-            <input type="checkbox" name="alwaysExposed" /> 무조건 노출
-          </span>
-        </label>
-        <label className="ts-field">
-          <span>설명</span>
-          <textarea name="description" rows={2} />
-        </label>
-        <p className="ts-muted">필드는 생성 후 상세 화면에서 추가합니다.</p>
-        <div className="ts-form-actions">
-          <button type="submit">생성</button>
+        <div className="ts-form-control">
+          <input id="struct-label" type="text" name="label" required />
         </div>
-      </form>
+      </div>
+      <LevelSelect />
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="struct-exposed">
+          무조건 노출
+        </label>
+        <div className="ts-form-control">
+          <input id="struct-exposed" type="checkbox" name="alwaysExposed" />
+        </div>
+      </div>
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="struct-desc">
+          설명
+        </label>
+        <div className="ts-form-control">
+          <textarea id="struct-desc" name="description" rows={2} />
+        </div>
+      </div>
+      <p className="ts-muted">생성하면 상세 화면으로 이동한다 — 다음 단계는 거기서 첫 필드를 추가하는 것이다 (리뷰 #21).</p>
+      <div className="ts-form-actions">
+        <button type="submit" className="primary">
+          구조체 구분자 생성
+        </button>
+      </div>
+    </form>
+  );
 
-      <h2 className="ts-h2">const</h2>
-      <form action={createConstAction} className="ts-form">
-        <label className="ts-field">
-          <span>표시명</span>
-          <input type="text" name="label" required />
+  const constForm = (
+    <form action={createConstAction} className="ts-form">
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="const-label">
+          표시명
         </label>
-        <label className="ts-field">
-          <span>값</span>
-          <input type="text" name="value" required />
-        </label>
-        <label className="ts-field">
-          <span>설명</span>
-          <textarea name="description" rows={2} />
-        </label>
-        <div className="ts-form-actions">
-          <button type="submit">생성</button>
+        <div className="ts-form-control">
+          <input id="const-label" type="text" name="label" required />
         </div>
-      </form>
+      </div>
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="const-value">
+          값
+        </label>
+        <div className="ts-form-control">
+          <input id="const-value" type="text" name="value" required />
+        </div>
+      </div>
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="const-desc">
+          설명
+        </label>
+        <div className="ts-form-control">
+          <textarea id="const-desc" name="description" rows={2} />
+        </div>
+      </div>
+      <div className="ts-form-actions">
+        <button type="submit" className="primary">
+          상수 구분자 생성
+        </button>
+      </div>
+    </form>
+  );
 
-      <h2 className="ts-h2">파생</h2>
-      <form action={createDerivedAction} className="ts-form">
-        <label className="ts-field">
-          <span>표시명</span>
-          <input type="text" name="label" required />
+  const derivedForm = (
+    <form action={createDerivedAction} className="ts-form">
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="derived-label">
+          표시명
         </label>
-        <LevelSelect />
-        <label className="ts-field">
-          <span>식 (예: any(D0003.F01))</span>
-          <input type="text" name="expression" required className="ts-json" style={{ minHeight: "auto" }} />
-        </label>
-        <label className="ts-field">
-          <span>설명</span>
-          <textarea name="description" rows={2} />
-        </label>
-        <div className="ts-form-actions">
-          <button type="submit">생성</button>
+        <div className="ts-form-control">
+          <input id="derived-label" type="text" name="label" required />
         </div>
-      </form>
+      </div>
+      <LevelSelect />
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="derived-expr">
+          식
+        </label>
+        <div className="ts-form-control">
+          <input id="derived-expr" type="text" name="expression" required className="ts-mono" placeholder="예: any(D0003.F01)" />
+        </div>
+      </div>
+      <div className="ts-form-row">
+        <label className="ts-form-label" htmlFor="derived-desc">
+          설명
+        </label>
+        <div className="ts-form-control">
+          <textarea id="derived-desc" name="description" rows={2} />
+        </div>
+      </div>
+      <div className="ts-form-actions">
+        <button type="submit" className="primary">
+          파생 구분자 생성
+        </button>
+      </div>
+    </form>
+  );
+
+  return (
+    <div>
+      <h1 className="ts-h1">새 구분자</h1>
+      <ErrorBanner message={error} />
+      <KindPicker forms={{ scalar: scalarForm, struct: structForm, const: constForm, derived: derivedForm }} />
     </div>
   );
 }

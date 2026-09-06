@@ -16,6 +16,7 @@ import {
   addSubCoverage,
   attachableDefinitions,
   attachedDefinitions,
+  attachedOfNode,
   checkAttach,
   checkDetach,
   checkValueWrite,
@@ -26,6 +27,7 @@ import {
   findBenefit,
   findNode,
   formPrefill,
+  nodesOf,
   NO_USAGE,
   nodeDeleteImpact,
   removeBenefit,
@@ -71,6 +73,12 @@ export interface Confirmable {
   confirm?: boolean;
 }
 
+/** 완결성 요약 — 미입력 목록에 분모(부착된 값 자리 수)를 붙인 것. */
+export interface CompletenessSummary {
+  total: number;
+  missing: MissingSlot[];
+}
+
 /** 값 입력 폼 하나 — 정의 · 명시 값 · 프리필(명시 값 ∪ 기본값). */
 export interface FormView {
   def: ValuedDiscriminator;
@@ -82,6 +90,8 @@ export interface CoverageService {
   // 조회
   get(id: Id): Promise<Coverage | undefined>;
   list(): Promise<Coverage[]>;
+  /** L1 목록용 요약 — 트리를 전부 안 읽는다 (리뷰 #38/#48, WP2). */
+  listSummaries(): Promise<repo.CoverageSummary[]>;
   audit(id: Id): ReturnType<typeof repo.coverageAudit>;
   /** 실체의 부착 목록(무조건 노출 + 부착된 선택적 노출)을 폼으로. */
   forms(owner: CoverageNodeRef): Promise<Result<FormView[]>>;
@@ -91,6 +101,8 @@ export interface CoverageService {
   masterValues(coverageId: Id): Promise<Result<{ tree: Coverage; values: MasterValues }>>;
   /** 완결성 조회 — 부착 기반 미입력 목록 (필터 주입 시 실행 기반). */
   completeness(coverageId: Id): Promise<Result<MissingSlot[]>>;
+  /** 완결성 + 분모 — 「값 자리 N 중 M 입력」(디자인원칙 §9.2·§9.6). 분모는 부착된 구분자의 값 자리 수. */
+  completenessSummary(coverageId: Id): Promise<Result<CompletenessSummary>>;
 
   // 담보 — 비파괴
   create(actor: Actor, input: NewCoverage): Promise<Result<Coverage>>;
@@ -258,6 +270,7 @@ export function createCoverageService(db: Db, deps: CoverageServiceDeps = {}): C
   return {
     get: (id) => repo.loadCoverage(db, id),
     list: () => repo.listCoverages(db),
+    listSummaries: () => repo.listCoverageSummaries(db),
     audit: (id) => repo.coverageAudit(db, id),
 
     forms: async (owner) => {
@@ -295,6 +308,17 @@ export function createCoverageService(db: Db, deps: CoverageServiceDeps = {}): C
       if (!tree.ok) return tree as Result<never>;
       const [defs, mv] = await Promise.all([catalogRepo.listDiscriminators(db), loadMasterValues(db, tree.value)]);
       return ok(completeness(tree.value, defs, mv, filter));
+    },
+
+    completenessSummary: async (coverageId) => {
+      const tree = await loadTree(db, coverageId);
+      if (!tree.ok) return tree as Result<never>;
+      const [defs, mv] = await Promise.all([catalogRepo.listDiscriminators(db), loadMasterValues(db, tree.value)]);
+      let total = 0;
+      for (const node of nodesOf(tree.value)) {
+        for (const def of attachedDefinitions(node.level, defs, attachedOfNode(mv, node.id))) total += valueSlotsOf(def).length;
+      }
+      return ok({ total, missing: completeness(tree.value, defs, mv, filter) });
     },
 
     create: (actor, input) =>
