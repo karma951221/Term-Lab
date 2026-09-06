@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { decodeNodeKey, encodeNodeKey, moved, str } from "./lib";
+import { decodeNodeKey, encodeNodeKey, str } from "./lib";
 
 describe("coverages lib — 순수 파싱", () => {
   it("encode/decodeNodeKey — 왕복", () => {
@@ -15,13 +15,6 @@ describe("coverages lib — 순수 파싱", () => {
     expect(decodeNodeKey("coverage:")).toBeUndefined();
   });
 
-  it("moved — 형제 순서에서 한 칸 옮긴다, 경계는 그대로", () => {
-    const items = [{ id: "a" }, { id: "b" }, { id: "c" }];
-    expect(moved(items, "b", -1)).toEqual(["b", "a", "c"]);
-    expect(moved(items, "b", 1)).toEqual(["a", "c", "b"]);
-    expect(moved(items, "a", -1)).toEqual(["a", "b", "c"]);
-    expect(moved(items, "c", 1)).toEqual(["a", "b", "c"]);
-  });
 
   it("str — trim", () => {
     const fd = new FormData();

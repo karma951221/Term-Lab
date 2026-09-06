@@ -17,13 +17,3 @@ export function decodeNodeKey(key: string | undefined): { level: CoverageNodeLev
   if (!id) return undefined;
   return { level, id };
 }
-
-/** 형제 목록에서 id 를 한 칸 옮긴 새 순서 (범위를 벗어나면 그대로). */
-export function moved<T extends { id: string }>(items: readonly T[], id: string, dir: -1 | 1): string[] {
-  const ids = items.map((i) => i.id);
-  const i = ids.indexOf(id);
-  const j = i + dir;
-  if (i < 0 || j < 0 || j >= ids.length) return ids;
-  [ids[i], ids[j]] = [ids[j], ids[i]];
-  return ids;
-}
