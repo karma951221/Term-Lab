@@ -1,7 +1,15 @@
+/**
+ * enum 목록 — 선택형 구분자가 고르는 선택지 사전.
+ *
+ * - 파괴/비파괴의 무게가 다르게 보여야 한다 (리뷰 #37): 저장은 텍스트 버튼, 삭제는 `.danger` 아이콘 버튼 +
+ *   「무엇을 · 무엇에」 tooltip (디자인원칙 §1.6). 삭제는 전부 `Confirm` 을 거치고 대상을 이름으로 부른다 (§9.4).
+ * - 표는 코드 104px 고정 · 표시명이 남는 폭을 먹는 한 컬럼 (§2 L1).
+ */
 import Link from "next/link";
 
 import { Confirm } from "@/app/_components/Confirm";
 import { ErrorBanner } from "@/app/_components/ErrorBanner";
+import { IconTrash } from "@/app/_components/icons";
 import { previewOutcome } from "@/app/_lib/rejection";
 import { currentActor, getServices } from "@/lib/services";
 
@@ -22,6 +30,8 @@ interface SearchParams {
   delValue?: string; // `${enumCode}:${valueCode}`
 }
 
+const BASE = "/catalog/enums";
+
 export default async function EnumsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
   const services = getServices();
@@ -31,98 +41,179 @@ export default async function EnumsPage({ searchParams }: { searchParams: Promis
 
   return (
     <div>
-      <h1 className="ts-h1">enum 목록</h1>
+      <h1 className="ts-h1">
+        enum <span className="ts-count">{enums.length}</span>
+      </h1>
       <ErrorBanner message={sp.error} />
 
       <form action={createEnumAction} className="ts-form">
         <h2 className="ts-form-title">새 enum</h2>
-        <label className="ts-field">
-          <span>표시명</span>
-          <input type="text" name="label" required />
-        </label>
-        <label className="ts-field">
-          <span>초기 값 (콤마로 구분, 선택)</span>
-          <input type="text" name="values" placeholder="예: 일반심사, 간편심사" />
-        </label>
+        <div className="ts-form-row">
+          <label htmlFor="new-enum-label">표시명</label>
+          <div className="ts-form-control">
+            <input id="new-enum-label" type="text" name="label" className="ts-field-direct" required />
+          </div>
+        </div>
+        <div className="ts-form-row">
+          <label htmlFor="new-enum-values">초기 값</label>
+          <div className="ts-form-control">
+            <input
+              id="new-enum-values"
+              type="text"
+              name="values"
+              className="ts-field-direct"
+              placeholder="예: 일반심사, 간편심사"
+              title="콤마로 구분해 여러 개를 한 번에 만든다 (선택)"
+            />
+          </div>
+        </div>
         <div className="ts-form-actions">
-          <button type="submit">생성</button>
+          <button type="submit" className="primary">
+            생성
+          </button>
         </div>
       </form>
 
-      {enums.map((e) => (
-        <div key={e.code} className="ts-panel">
-          <h2 className="ts-h2">
-            {e.label} <code className="ts-muted">{e.code}</code>
-          </h2>
-          <form action={renameEnumAction.bind(null, e.code)} style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-            <input type="text" name="label" defaultValue={e.label} />
-            <button type="submit">이름 저장</button>
-          </form>
-          <table className="ts-table">
-            <thead>
-              <tr>
-                <th>코드</th>
-                <th>표시명</th>
-                <th>조작</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...e.values]
-                .sort((a, b) => a.order - b.order)
-                .map((v) => (
-                  <tr key={v.code}>
-                    <td>
-                      <code>{v.code}</code>
-                    </td>
-                    <td>
-                      <form action={renameEnumValueAction.bind(null, e.code, v.code)} style={{ display: "flex", gap: 4 }}>
-                        <input type="text" name="label" defaultValue={v.label} />
-                        <button type="submit">저장</button>
-                      </form>
-                    </td>
-                    <td>
-                      {delValueEnum === e.code && delValueCode === v.code ? null : <Link href={`?delValue=${e.code}:${v.code}`}>삭제</Link>}
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-          {delValueEnum === e.code &&
-            delValueCode &&
-            (() => {
-              return <EnumValueConfirm enumCode={e.code} valueCode={delValueCode} actor={actor} />;
-            })()}
-          <form action={addEnumValueAction.bind(null, e.code)} style={{ display: "flex", gap: 4, marginTop: 8 }}>
-            <input type="text" name="label" placeholder="새 값 표시명" required />
-            <button type="submit">값 추가</button>
-          </form>
+      {enums.map((e) => {
+        const values = [...e.values].sort((a, b) => a.order - b.order);
+        return (
+          <section key={e.code} className="ts-section">
+            <h2 className="ts-section-title">
+              {e.label} <code className="ts-mono ts-muted">{e.code}</code>
+              <span className="ts-count">값 {values.length}</span>
+            </h2>
 
-          {sp.delEnum === e.code ? (
-            <EnumConfirm enumCode={e.code} actor={actor} />
-          ) : (
-            <p style={{ marginTop: 8 }}>
-              <Link href={`?delEnum=${e.code}`}>enum 삭제…</Link>
-            </p>
-          )}
+            <form action={renameEnumAction.bind(null, e.code)} className="ts-form-row">
+              <label htmlFor={`rn-${e.code}`}>표시명</label>
+              <div className="ts-form-control">
+                <input id={`rn-${e.code}`} type="text" name="label" defaultValue={e.label} className="ts-field-direct" required />
+                <button type="submit">저장</button>
+              </div>
+            </form>
+
+            {values.length === 0 ? (
+              <div className="ts-empty">
+                <p className="ts-empty-what">선택지가 없으면 이 enum 을 쓰는 필드는 아무것도 고를 수 없다.</p>
+                <p className="ts-empty-example">예: 일반심사 · 간편심사 · 무심사</p>
+              </div>
+            ) : (
+              <table className="ts-table">
+                <thead>
+                  <tr>
+                    <th className="col-code">코드</th>
+                    <th className="col-flex">표시명</th>
+                    <th className="col-fixed-sm">조작</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {values.map((v) => (
+                    <tr key={v.code}>
+                      <td className="col-code">{v.code}</td>
+                      <td className="col-flex">
+                        <form action={renameEnumValueAction.bind(null, e.code, v.code)} style={{ display: "flex", gap: 4 }}>
+                          <input type="text" name="label" defaultValue={v.label} className="ts-field-direct" required />
+                          <button type="submit">저장</button>
+                        </form>
+                      </td>
+                      <td>
+                        {delValueEnum === e.code && delValueCode === v.code ? null : (
+                          <Link
+                            href={`?delValue=${e.code}:${v.code}`}
+                            className="ts-iconbtn danger"
+                            title={`${v.label}(${v.code}) 삭제`}
+                            aria-label={`${v.label}(${v.code}) 삭제`}
+                          >
+                            <IconTrash />
+                          </Link>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
+            {delValueEnum === e.code && delValueCode && (
+              <EnumValueConfirm
+                enumCode={e.code}
+                valueCode={delValueCode}
+                valueLabel={values.find((v) => v.code === delValueCode)?.label ?? delValueCode}
+                actor={actor}
+              />
+            )}
+
+            <form action={addEnumValueAction.bind(null, e.code)} className="ts-form-row">
+              <label htmlFor={`add-${e.code}`}>값 추가</label>
+              <div className="ts-form-control">
+                <input id={`add-${e.code}`} type="text" name="label" className="ts-field-direct" placeholder="새 값 표시명" required />
+                <button type="submit">추가</button>
+              </div>
+            </form>
+
+            {sp.delEnum === e.code ? (
+              <EnumConfirm enumCode={e.code} enumLabel={e.label} actor={actor} />
+            ) : (
+              <div className="ts-form-actions">
+                <Link href={`?delEnum=${e.code}`} tabIndex={-1}>
+                  <button type="button" className="danger" title={`enum ${e.label}(${e.code}) 삭제 — 값 ${values.length}개가 함께 사라진다`}>
+                    {e.label} enum 삭제…
+                  </button>
+                </Link>
+              </div>
+            )}
+          </section>
+        );
+      })}
+
+      {enums.length === 0 && (
+        <div className="ts-empty">
+          <p className="ts-empty-what">enum 은 선택형 구분자가 고르는 선택지 사전이다.</p>
+          <p className="ts-empty-example">예: 고지유형(일반심사 · 간편심사) · 갱신주기(1년 · 3년 · 5년)</p>
+          <p className="ts-empty-action">위 「새 enum」 폼에서 첫 enum 을 만든다.</p>
         </div>
-      ))}
-      {enums.length === 0 && <p className="ts-muted">아직 enum 이 없습니다.</p>}
+      )}
     </div>
   );
 }
 
-async function EnumValueConfirm({ enumCode, valueCode, actor }: { enumCode: string; valueCode: string; actor: Awaited<ReturnType<typeof currentActor>> }) {
-  const r = await getServices().catalog.removeEnumValue(actor, enumCode, valueCode);
-  const outcome = previewOutcome(r);
-  if (outcome.kind === "confirm") return <Confirm impact={outcome.impact} action={removeEnumValueAction.bind(null, enumCode, valueCode)} />;
+async function EnumValueConfirm({
+  enumCode,
+  valueCode,
+  valueLabel,
+  actor,
+}: {
+  enumCode: string;
+  valueCode: string;
+  valueLabel: string;
+  actor: Awaited<ReturnType<typeof currentActor>>;
+}) {
+  const outcome = previewOutcome(await getServices().catalog.removeEnumValue(actor, enumCode, valueCode));
+  if (outcome.kind === "confirm")
+    return (
+      <Confirm
+        impact={outcome.impact}
+        action={removeEnumValueAction.bind(null, enumCode, valueCode)}
+        targetLabel={`enum 값 ${valueLabel}(${valueCode})`}
+        actionLabel={`${valueLabel} 삭제`}
+        cancelHref={BASE}
+      />
+    );
   if (outcome.kind === "error") return <p className="ts-error-banner">{outcome.message}</p>;
   return null;
 }
 
-async function EnumConfirm({ enumCode, actor }: { enumCode: string; actor: Awaited<ReturnType<typeof currentActor>> }) {
-  const r = await getServices().catalog.removeEnum(actor, enumCode);
-  const outcome = previewOutcome(r);
-  if (outcome.kind === "confirm") return <Confirm impact={outcome.impact} action={removeEnumAction.bind(null, enumCode)} />;
+async function EnumConfirm({ enumCode, enumLabel, actor }: { enumCode: string; enumLabel: string; actor: Awaited<ReturnType<typeof currentActor>> }) {
+  const outcome = previewOutcome(await getServices().catalog.removeEnum(actor, enumCode));
+  if (outcome.kind === "confirm")
+    return (
+      <Confirm
+        impact={outcome.impact}
+        action={removeEnumAction.bind(null, enumCode)}
+        targetLabel={`enum ${enumLabel}(${enumCode})`}
+        actionLabel={`${enumLabel} 삭제`}
+        cancelHref={BASE}
+      />
+    );
   if (outcome.kind === "error") return <p className="ts-error-banner">{outcome.message}</p>;
   return null;
 }

@@ -55,12 +55,18 @@ describe("ValueList — 읽기 전용 값 목록 (완결성 표시)", () => {
     expect((html.match(/미입력/g) ?? []).length).toBeGreaterThanOrEqual(3);
   });
 
-  it("미입력 건수를 요약한다", () => {
-    expect(render(new Map([["D0002.F01", entered(true)]]))).toContain("미입력 2건");
-    expect(render()).toContain("미입력 3건");
+  it("요약은 해낸 것을 센다 — 「N개 중 M개 입력」 (§9.2 · 리뷰 #13)", () => {
+    expect(render(new Map([["D0002.F01", entered(true)]]))).toContain("3개 중 <b>1개 입력</b>");
+    expect(render()).toContain("3개 중 <b>0개 입력</b>");
   });
 
-  it("모두 입력되면 미입력 요약이 0건", () => {
+  it("요약에 진행 괘선이 붙는다 — 분모 없는 숫자를 두지 않는다", () => {
+    const html = render(new Map([["D0002.F01", entered(true)]]));
+    expect(html).toContain('class="ts-count"');
+    expect(html).toContain("--value:33");
+  });
+
+  it("모두 입력되면 3개 중 3개", () => {
     const html = render(
       new Map([
         ["D0002.F01", entered(true)],
@@ -68,7 +74,9 @@ describe("ValueList — 읽기 전용 값 목록 (완결성 표시)", () => {
         ["D0002.F05", entered("V01")],
       ]),
     );
-    expect(html).toContain("미입력 0건");
+    expect(html).toContain("3개 중 <b>3개 입력</b>");
+    expect(html).toContain("--value:100");
+    expect(html).not.toContain("미입력");
   });
 
   it("라벨은 필드 표시명", () => {

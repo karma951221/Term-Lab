@@ -13,9 +13,11 @@ import { entered, NOT_ENTERED, type ValueSlot } from "@/domain/types";
 import {
   buildForm,
   formatValue,
+  formProgress,
   formReducer,
   initFormState,
   toSubmission,
+  valueSlotsOf,
   zodSchemaFor,
   zodValueSchema,
   type FormState,
@@ -121,9 +123,68 @@ describe("buildForm — 구조체 메타만으로 폼 모델이 만들어진다 
     ]);
   });
 
-  it("const · derived 는 값 자리가 없다 — 필드 0개", () => {
-    expect(buildForm(평균공시이율, enums, empty).fields).toEqual([]);
-    expect(buildForm(면책여부합, enums, empty).fields).toEqual([]);
+  it("const · derived 는 값 자리가 아니다 — 세지 않고 제출하지도 않는다", () => {
+    expect(valueSlotsOf(buildForm(평균공시이율, enums, empty))).toEqual([]);
+    expect(valueSlotsOf(buildForm(면책여부합, enums, empty))).toEqual([]);
+    expect(formProgress(buildForm(평균공시이율, enums, empty))).toEqual({ total: 0, entered: 0, percent: 0 });
+    expect(toSubmission(initFormState(buildForm(평균공시이율, enums, empty))).values).toEqual([]);
+    expect(toSubmission(initFormState(buildForm(면책여부합, enums, empty))).values).toEqual([]);
+  });
+
+  it("const 는 자물쇠 자리 — 마스터 값과 마스터 이름을 싣는다 (§1.2)", () => {
+    const [f] = buildForm(평균공시이율, enums, empty).fields;
+    expect(f.source).toBe("const");
+    expect(f.masterValue).toBe(평균공시이율.value);
+    expect(f.masterLabel).toBe(`${평균공시이율.label} (${평균공시이율.code})`);
+  });
+
+  it("derived 는 ƒ 자리 — 식 원문을 싣는다 (§1.2)", () => {
+    const [f] = buildForm(면책여부합, enums, empty).fields;
+    expect(f.source).toBe("derived");
+    expect(f.expression).toBe(면책여부합.expression);
+  });
+
+  it("scalar · struct 의 값 자리는 직접값이다 (실선 테두리)", () => {
+    expect(buildForm(갱신여부, enums, empty).fields[0].source).toBe("direct");
+    expect(buildForm(보험금지급, enums, empty).fields.every((f) => f.source === "direct")).toBe(true);
+  });
+
+  it("스냅샷 문맥 — 마스터와 달라진 자리만 「스냅샷 · 변경됨」이 되고 마스터 값을 tooltip 재료로 싣는다", () => {
+    const master = new Map<string, ValueSlot>([
+      ["D0002.F02", entered(100)],
+      ["D0002.F03", entered("마스터 메모")],
+    ]);
+    const form = buildForm(
+      보험금지급,
+      enums,
+      new Map<string, ValueSlot>([
+        ["D0002.F02", entered(80)],
+        ["D0002.F03", entered("마스터 메모")],
+      ]),
+      { masterLabel: "수술비(1~7종)[상해]", masterValues: master },
+    );
+    const 지급률 = form.fields.find((f) => f.path === "D0002.F02")!;
+    expect(지급률.source).toBe("snapshot");
+    expect(지급률.masterValue).toBe(100);
+    expect(지급률.masterLabel).toBe("수술비(1~7종)[상해]");
+    // 마스터와 같은 값은 그냥 직접값 — 되돌릴 것이 없다
+    expect(form.fields.find((f) => f.path === "D0002.F03")!.source).toBe("direct");
+    // 마스터가 값을 갖지 않는 자리도 직접값
+    expect(form.fields.find((f) => f.path === "D0002.F01")!.source).toBe("direct");
+  });
+
+  it("진행 카운트는 저장소 기준으로 「해낸 것」을 센다 (§9.2)", () => {
+    expect(formProgress(buildForm(보험금지급, enums, empty))).toEqual({ total: 6, entered: 0, percent: 0 });
+    const form = buildForm(
+      보험금지급,
+      enums,
+      new Map<string, ValueSlot>([
+        ["D0002.F01", entered(true)],
+        ["D0002.F02", entered(80)],
+        ["D0002.F03", entered("메모")],
+      ]),
+    );
+    expect(formProgress(form)).toEqual({ total: 6, entered: 3, percent: 50 });
   });
 
   it("enum · list<enum> 필드는 선택지를 코드+표시명으로 갖는다 — order 순 (ADR-0005)", () => {
@@ -201,13 +262,29 @@ describe("initFormState — 편집 상태의 초기값", () => {
     });
   });
 
-  it("시나리오 1 — 기본값은 화면에 프리필로 미리 보이지만 상태는 여전히 미입력", () => {
+  it("시나리오 1 — 기본값은 폼이 열릴 때 이미 칸에 들어가 있다 (ADR-0004 프리필 · 리뷰 #3)", () => {
     const s = stateOf();
     const 지급률 = s.fields["D0002.F02"];
     expect(지급률.view.prefill).toBe(100);
-    expect(지급률.entered).toBe(false);
-    expect(지급률.value).toBeUndefined();
-    expect(지급률.draft).toBe("");
+    expect(지급률.draft).toBe("100");
+    expect(지급률.value).toBe(100);
+    // 「제안값」 — 사람이 손대지도 저장하지도 않았다
+    expect(지급률.proposed).toBe(true);
+    expect(지급률.dirty).toBe(false);
+    // 저장소 기준으로는 여전히 미입력
+    expect(지급률.view.state).toBe("notEntered");
+  });
+
+  it("기본값이 없는 자리는 빈 칸으로 태어난다 — 제안값이 아니다", () => {
+    const s = stateOf();
+    expect(s.fields["D0002.F01"].draft).toBe("");
+    expect(s.fields["D0002.F01"].proposed).toBe(false);
+  });
+
+  it("저장 값이 있으면 기본값이 아니라 저장 값이 칸에 들어간다", () => {
+    const s = stateOf(new Map([["D0002.F02", entered(80)]]));
+    expect(s.fields["D0002.F02"].draft).toBe("80");
+    expect(s.fields["D0002.F02"].proposed).toBe(false);
   });
 
   it("미입력 필드의 draft 는 빈 값 — list<enum> 은 빈 배열", () => {
@@ -297,29 +374,49 @@ describe("formReducer — clear · applyPrefill", () => {
     expect(list.fields["D0002.F06"].draft).toEqual([]);
   });
 
-  it("applyPrefill: 기본값을 draft 로 끌어와 entered 가 된다 — 사람이 「보고 채운」 행위", () => {
-    const s = formReducer(stateOf(), { type: "applyPrefill", path: "D0002.F02" });
-    expect(s.fields["D0002.F02"]).toMatchObject({ entered: true, value: 100, draft: "100", dirty: true });
+  it("clearAll: 폼 전체를 비운다 — 제안값도 걷어낸다 (버튼 「비우기」)", () => {
+    const s = formReducer(stateOf(new Map([["D0002.F03", entered("메모")]])), { type: "clearAll" });
+    expect(s.fields["D0002.F02"]).toMatchObject({ draft: "", entered: false, proposed: false, dirty: true });
+    expect(s.fields["D0002.F03"]).toMatchObject({ draft: "", entered: false });
+    expect(s.fields["D0002.F06"].draft).toEqual([]);
   });
 
-  it("applyPrefill: 기본값이 없는 필드에는 아무 일도 없다", () => {
+  it("revertToMaster: 마스터 값을 draft 로 끌어온다 — 저장해야 확정된다 (§1.2)", () => {
+    const model = buildForm(
+      보험금지급,
+      enums,
+      new Map<string, ValueSlot>([["D0002.F02", entered(80)]]),
+      { masterLabel: "수술비[상해]", masterValues: new Map<string, ValueSlot>([["D0002.F02", entered(100)]]) },
+    );
+    const s = formReducer(initFormState(model), { type: "revertToMaster", path: "D0002.F02" });
+    expect(s.fields["D0002.F02"]).toMatchObject({ draft: "100", value: 100, dirty: true });
+  });
+
+  it("revertToMaster: 마스터 값이 없는 자리에는 아무 일도 없다", () => {
     const s = stateOf();
-    expect(formReducer(s, { type: "applyPrefill", path: "D0002.F01" })).toBe(s);
+    expect(formReducer(s, { type: "revertToMaster", path: "D0002.F02" })).toBe(s);
+  });
+
+  it("reset: 서버가 새 모델을 내려보내면 편집 상태를 새 진실로 다시 세운다", () => {
+    let s = formReducer(stateOf(), { type: "edit", path: "D0002.F03", draft: "임시" });
+    s = formReducer(s, { type: "reset", model: buildForm(보험금지급, enums, new Map([["D0002.F03", entered("저장됨")]])) });
+    expect(s.fields["D0002.F03"]).toMatchObject({ draft: "저장됨", entered: true, dirty: false });
   });
 });
 
 // ───────────────────────────── 제출 ─────────────────────────────
 
-describe("toSubmission — 저장할 값 목록 (기본값 자동 유입 없음)", () => {
-  it("시나리오 1 — 프리필만 보고 저장하면 그 필드는 제출되지 않는다 (미입력 유지)", () => {
+describe("toSubmission — 저장할 값 목록 (자동 유입 없음 · 사람이 저장을 눌러야 값이 된다)", () => {
+  it("시나리오 1 — 화면에 보인 제안값을 그대로 두고 저장하면 그때 명시 값 100 이 된다 (ADR-0004)", () => {
     const sub = toSubmission(stateOf());
-    expect(sub.values).toEqual([]);
+    expect(sub.values).toEqual([{ path: "D0002.F02", value: 100 }]);
     expect(sub.issues).toEqual([]);
   });
 
-  it("시나리오 1 — 「기본값 채우기」 후 저장해야 비로소 명시 값 100", () => {
-    const s = formReducer(stateOf(), { type: "applyPrefill", path: "D0002.F02" });
-    expect(toSubmission(s).values).toEqual([{ path: "D0002.F02", value: 100 }]);
+  it("시나리오 1 — 「비우기」로 제안을 걷어내고 저장하면 아무것도 제출되지 않는다 (미입력 유지)", () => {
+    const sub = toSubmission(formReducer(stateOf(), { type: "clearAll" }));
+    expect(sub.values).toEqual([]);
+    expect(sub.issues).toEqual([]);
   });
 
   it("시나리오 2 — 일부만 입력하고 저장: 입력한 것만 제출, 나머지는 미입력으로 남는다", () => {
@@ -328,6 +425,8 @@ describe("toSubmission — 저장할 값 목록 (기본값 자동 유입 없음)
     s = formReducer(s, { type: "edit", path: "D0002.F06", draft: ["V02"] });
     expect(toSubmission(s).values).toEqual([
       { path: "D0002.F01", value: true },
+      // 지급률은 화면에 제안값 100 이 보인 채로 저장됐다 — 사람이 보고 저장한 값이다
+      { path: "D0002.F02", value: 100 },
       { path: "D0002.F06", value: ["V02"] },
     ]);
   });
@@ -346,7 +445,7 @@ describe("toSubmission — 저장할 값 목록 (기본값 자동 유입 없음)
   });
 
   it("저장 값이 있고 손대지 않은 필드도 제출된다 (사람이 보고 저장한 값)", () => {
-    const s = stateOf(new Map([["D0002.F03", entered("메모")]]));
+    const s = formReducer(stateOf(new Map([["D0002.F03", entered("메모")]])), { type: "clear", path: "D0002.F02" });
     expect(toSubmission(s).values).toEqual([{ path: "D0002.F03", value: "메모" }]);
   });
 
@@ -360,7 +459,7 @@ describe("toSubmission — 저장할 값 목록 (기본값 자동 유입 없음)
   });
 
   it("저장소에서 온 값이 지금 enum 에 없으면 (값 삭제됨) brokenRef 로 보고된다", () => {
-    const s = stateOf(new Map([["D0002.F05", entered("V99")]]));
+    const s = formReducer(stateOf(new Map([["D0002.F05", entered("V99")]])), { type: "clear", path: "D0002.F02" });
     const sub = toSubmission(s);
     expect(sub.issues[0].kind).toBe("brokenRef");
     expect(sub.issues[0].at.refPath).toBe("D0002.F05");
@@ -371,7 +470,7 @@ describe("toSubmission — 저장할 값 목록 (기본값 자동 유입 없음)
     let s = stateOf();
     s = formReducer(s, { type: "edit", path: "D0002.F05", draft: "V01" });
     s = formReducer(s, { type: "edit", path: "D0002.F01", draft: "false" });
-    expect(toSubmission(s).values.map((v) => v.path)).toEqual(["D0002.F01", "D0002.F05"]);
+    expect(toSubmission(s).values.map((v) => v.path)).toEqual(["D0002.F01", "D0002.F02", "D0002.F05"]);
   });
 });
 

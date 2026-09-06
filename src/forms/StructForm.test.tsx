@@ -1,7 +1,13 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import type { EnumDef, EnumLookup, StructDiscriminator } from "@/domain/catalog/types";
+import type {
+  ConstDiscriminator,
+  DerivedDiscriminator,
+  EnumDef,
+  EnumLookup,
+  StructDiscriminator,
+} from "@/domain/catalog/types";
 import { entered, type ValueSlot } from "@/domain/types";
 
 import { buildForm } from "./model";
@@ -32,6 +38,23 @@ const 보험금지급: StructDiscriminator = {
     { code: "F05", label: "고지유형", type: { kind: "enum", enumCode: "E0001" }, order: 4 },
     { code: "F06", label: "적용유형", type: { kind: "list<enum>", enumCode: "E0001" }, order: 5 },
   ],
+};
+
+const 평균공시이율: ConstDiscriminator = {
+  kind: "const",
+  code: "D0004",
+  label: "평균공시이율",
+  description: "",
+  value: "2.75%",
+};
+
+const 면책여부합: DerivedDiscriminator = {
+  kind: "derived",
+  code: "D0005",
+  label: "면책여부합",
+  description: "",
+  level: "coverage",
+  expression: "sum(D0002.F01)",
 };
 
 function render(current: Map<string, ValueSlot> = new Map()) {
@@ -90,7 +113,7 @@ describe("StructForm — 구조체 필드 메타만으로 6 타입이 알맞은 
   });
 });
 
-describe("StructForm — 미입력 · 프리필 · 지우기", () => {
+describe("StructForm — 미입력 · 보이는 제안값 · 비우기 (ADR-0004 · 리뷰 #3)", () => {
   it("미입력 필드마다 「미입력」 배지가 붙는다 — 기본값이 있어도", () => {
     const html = render();
     const badges = html.match(/미입력/g) ?? [];
@@ -103,22 +126,27 @@ describe("StructForm — 미입력 · 프리필 · 지우기", () => {
     expect(tagsWith(html, 'name="D0002.F03"')[0]).toContain('value="메모"');
   });
 
-  it("시나리오 1 — 기본값은 프리필로 보이되(미입력 배지 유지) 「기본값 채우기」 버튼이 있다", () => {
+  it("시나리오 1 — 기본값이 폼이 열리자마자 칸에 들어가 있다 (버튼 뒤에 숨지 않는다)", () => {
     const html = render();
-    expect(html).toContain("기본값 채우기");
-    expect(html).toContain("100");
-    // 기본값이 있는 필드는 지급률 하나뿐 → 버튼도 하나
-    expect((html.match(/기본값 채우기/g) ?? []).length).toBe(1);
-  });
-
-  it("값이 있는 필드에는 「지우기」 버튼이 있고 기본값 채우기 버튼은 없다", () => {
-    const html = render(new Map([["D0002.F02", entered(80)]]));
-    expect(html).toContain("지우기");
+    expect(tagsWith(html, 'name="D0002.F02"')[0]).toContain('value="100"');
     expect(html).not.toContain("기본값 채우기");
   });
 
-  it("미입력 필드에는 「지우기」 버튼이 없다", () => {
-    expect(render()).not.toContain("지우기");
+  it("제안값 자리는 「미입력」과 「제안값 · 저장해야 확정」 두 배지를 함께 단다", () => {
+    const html = render();
+    expect(html).toContain("제안값 · 저장해야 확정");
+    // 기본값이 있는 필드는 지급률 하나뿐 → 제안 배지도 하나
+    expect((html.match(/제안값 · 저장해야 확정/g) ?? []).length).toBe(1);
+  });
+
+  it("저장 값이 있으면 제안 배지가 없다 — 그 값은 사람이 이미 저장한 것이다", () => {
+    const html = render(new Map([["D0002.F02", entered(80)]]));
+    expect(html).not.toContain("제안값 · 저장해야 확정");
+    expect(tagsWith(html, 'name="D0002.F02"')[0]).toContain('value="80"');
+  });
+
+  it("「비우기」는 폼마다 하나다", () => {
+    expect((render().match(/비우기/g) ?? []).length).toBe(1);
   });
 
   it("enum 저장 값은 select 에서 선택돼 있다", () => {
@@ -135,5 +163,77 @@ describe("StructForm — 미입력 · 프리필 · 지우기", () => {
 
   it("제출 버튼이 있다", () => {
     expect(render()).toMatch(/<button[^>]*type="submit"/);
+  });
+});
+
+describe("StructForm — 진행 카운트 (디자인원칙 §9.2 · §9.6, 리뷰 #15)", () => {
+  it("제목 옆에 「입력 M / N」 과 진행 괘선이 붙는다 — 분모 없는 숫자를 두지 않는다", () => {
+    const html = render(new Map([["D0002.F03", entered("메모")]]));
+    expect(html).toContain('class="ts-count"');
+    expect(html).toContain("<b>입력 1</b> / 6");
+    expect(html).toContain("--value:17");
+  });
+
+  it("0 에서 시작하는 카운트도 분모를 갖는다", () => {
+    expect(render()).toContain("<b>입력 0</b> / 6");
+  });
+});
+
+describe("StructForm — 값의 출처 문법 (디자인원칙 §1.2, 리뷰 #47)", () => {
+  it("직접값은 실선 테두리 입력 — 모든 입력에 ts-field-direct", () => {
+    const html = render();
+    expect(tagsWith(html, 'name="D0002.F03"')[0]).toContain("ts-field-direct");
+    expect(tagsWith(html, 'name="D0002.F05"')[0]).toContain("ts-field-direct");
+  });
+
+  it("const 는 자물쇠 + 마스터 라벨, 입력칸이 없다", () => {
+    const html = renderToStaticMarkup(
+      <StructForm model={buildForm(평균공시이율, enums, new Map())} onSubmit={() => {}} />,
+    );
+    expect(html).toContain("ts-field-const");
+    expect(html).toContain("ts-src-lock");
+    expect(html).toContain("평균공시이율 (D0004)");
+    expect(html).not.toContain("<input");
+    // 값 자리가 아니므로 카운트도 붙지 않는다
+    expect(html).not.toContain('class="ts-count"');
+  });
+
+  it("파생은 ƒ 표식 + 식 노출, 입력칸이 없다", () => {
+    const html = renderToStaticMarkup(
+      <StructForm model={buildForm(면책여부합, enums, new Map())} onSubmit={() => {}} />,
+    );
+    expect(html).toContain("ts-field-derived");
+    expect(html).toContain("ts-src-mark");
+    expect(html).toContain("sum(D0002.F01)");
+    expect(html).not.toContain("<input");
+  });
+
+  it("손댄 스냅샷은 입력칸 + 되돌리기 버튼, 마스터 값은 tooltip 으로만 준다", () => {
+    const model = buildForm(
+      보험금지급,
+      enums,
+      new Map<string, ValueSlot>([["D0002.F02", entered(80)]]),
+      { masterLabel: "수술비(1~7종)[상해]", masterValues: new Map<string, ValueSlot>([["D0002.F02", entered(100)]]) },
+    );
+    const html = renderToStaticMarkup(<StructForm model={model} onSubmit={() => {}} />);
+    expect(html).toContain("ts-field-snapshot");
+    expect(html).toContain("ts-revert");
+    expect(html).toContain("마스터 값으로 되돌리기 · 마스터: 수술비(1~7종)[상해] = 100");
+  });
+
+  it("글리프를 문자로 쓰지 않는다 — ƒ · 자물쇠 · 되돌리기는 전부 SVG (§1.6)", () => {
+    const html = renderToStaticMarkup(
+      <StructForm model={buildForm(면책여부합, enums, new Map())} onSubmit={() => {}} />,
+    );
+    expect(html).toContain("<svg");
+    for (const glyph of ["\u21ba", "\u2327", "\u0192"]) expect(html).not.toContain(glyph);
+  });
+});
+
+describe("StructForm — 2열 그리드 (디자인원칙 §2 L2, 리뷰 #51)", () => {
+  it("모든 필드가 ts-form-row 다 — 라벨이 값 위에 쌓이는 자리가 없다", () => {
+    const html = render();
+    expect((html.match(/class="ts-form-row/g) ?? []).length).toBe(6);
+    expect(html).not.toContain('class="ts-field"');
   });
 });
