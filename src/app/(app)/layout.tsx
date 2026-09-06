@@ -10,6 +10,7 @@ import { currentActor, getServices } from "@/lib/services";
 
 const NAV = [
   { href: "/catalog", label: "구분자" },
+  { href: "/types", label: "유형" },
   { href: "/coverages", label: "담보" },
   { href: "/clauses", label: "공용조항" },
   { href: "/documents", label: "문면" },

@@ -480,6 +480,82 @@ button.danger:focus-visible {
   margin-bottom: 0;
 }
 
+.ts-list-title {
+  margin: 0;
+  font-size: 15px;
+}
+
+.ts-types-head {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  margin-bottom: 8px;
+}
+
+.ts-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  margin-bottom: 10px;
+}
+
+.ts-detail-head > .ts-iconbtn:last-child {
+  margin-left: auto;
+}
+
+.ts-inline-edit,
+.ts-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ts-inline-edit input {
+  min-width: 220px;
+}
+
+.ts-row-actions form {
+  display: inline-flex;
+  margin: 0;
+}
+
+.ts-add-row {
+  display: grid;
+  grid-template-columns: 104px minmax(180px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid var(--ts-rule);
+}
+
+.ts-add-row label {
+  font-size: 11px;
+  color: var(--ts-ink-3);
+}
+
+.ts-back {
+  margin-top: 24px;
+}
+
+.ts-subtabs {
+  display: flex;
+  gap: 12px;
+}
+
+.ts-subtabs a {
+  padding: 2px 0;
+  border-bottom: 2px solid transparent;
+  color: var(--ts-ink-2);
+  text-decoration: none;
+}
+
+.ts-subtabs a[aria-current="page"] {
+  border-bottom-color: var(--ts-mark);
+  color: var(--ts-mark);
+  font-weight: 700;
+}
+
 /* ── 7. L1 조회 ───────────────────────────────────────────────────────────── */
 
 .ts-l1 {
@@ -698,6 +774,16 @@ td.col-num {
   font-variant-numeric: tabular-nums;
   width: 82px;
   min-width: 82px;
+}
+
+th.col-values,
+td.col-values {
+  width: 320px;
+  min-width: 240px;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 th.col-act,
