@@ -1,10 +1,10 @@
 /**
- * 조립 진입점 — 9단계를 이어 붙여 책자(Booklet)를 만든다. 매번 재계산, 저장 없음 (조립_기획).
+ * 조립 진입점 — 단계별 순수 변환을 이어 붙여 책자(Booklet)를 만든다. 매번 재계산, 저장 없음 (조립_기획).
  *
- *   buildContexts → (문서마다) resolveDocument → substituteSlots → judgeOmission → numberDocument
- *   → placeSpecials(그룹별 sortInGroup) → collectAppendices(책자 순) → renderDocument
+ *   buildContexts → resolveDocument → substituteSlots → replaceGeneralWithBase → ensureApplicationArticle
+ *   → judgeOmission → numberDocument → placeSpecials → collectAppendices → renderDocument
  *
- * - 부분 조립: 오류는 마커로 심고 끝까지 간다. `issues` 는 책자 등장 순 (D-P6-12). 하나라도 있으면 `complete=false`.
+ * - 부분 조립: 오류는 마커로 심고 끝까지 간다. `issues` 는 책자 등장 순 (D-P6-12). error가 있으면 `complete=false`, warning만 있으면 완성본이다.
  * - 미배치 상품담보(문면 있음)는 `unplaced` 오류 + 책자에서 제외 (D-P6-5). 그 문서의 오류도 뒤이어 보고한다.
  * - 문면 없는 담보의 탑재분은 오류가 아니라 `undocumented` (D-P6-9).
  * - 특약 문서 제목 = 상품담보명 + 「 특별약관」 (임시 규칙 — 실물 조사 후 확정).
@@ -18,11 +18,13 @@ import { sortInGroup } from "../product/groups";
 import type { ClauseOptionOverride, ProductCoverage } from "../product/types";
 import { type Id, type Issue, ok, reject, type Result } from "../types";
 import { buildContexts, generalCoordinate, specialCoordinate, type AssemblyContext, type AssemblyContexts } from "./context";
+import { ensureApplicationArticle } from "./application";
+import { replaceGeneralWithBase } from "./base";
 import { judgeOmission } from "./omission";
 import { collectAppendices, numberDocument, renderDocument } from "./render";
 import { resolveDocument } from "./resolve";
 import { substituteSlots } from "./substitute";
-import type { AssemblyCoverage, AssemblyInput, Booklet, NumberedDoc, OmissionRecord, RenderedDoc, RenderedGroup, SpecialPreview, UndocumentedCoverage } from "./types";
+import type { AssemblyCoverage, AssemblyInput, Booklet, NumberedDoc, OmissionRecord, RenderedDoc, RenderedGroup, SpecialPreview, SubstitutedDoc, UndocumentedCoverage } from "./types";
 
 // ───────────────────────────── 공통 ─────────────────────────────
 
@@ -55,33 +57,53 @@ interface Built {
   omitted: OmissionRecord[];
 }
 
-/** 문서 하나를 해소 → 치환 → (생략) → 번호까지. */
-function build(doc: DocumentNode, ctx: AssemblyContext, s: Shared, opts: { coordinate: ReturnType<typeof specialCoordinate>; overrides: readonly ClauseOptionOverride[]; general?: NumberedDoc; owner?: { productCoverageId: Id; productCoverageName: string }; title?: string }): Built {
+interface Prepared {
+  doc: SubstitutedDoc;
+  issues: Issue[];
+}
+
+function prepare(doc: DocumentNode, ctx: AssemblyContext, s: Shared, opts: { coordinate: ReturnType<typeof specialCoordinate>; overrides: readonly ClauseOptionOverride[]; title?: string }): Prepared {
   const resolved = resolveDocument({ ...doc, ...(opts.title !== undefined ? { title: opts.title } : {}) }, ctx, { clauses: s.clauses, overrides: overrideMap(opts.overrides), coordinate: opts.coordinate });
   const substituted = substituteSlots(resolved.doc, ctx, { catalog: s.catalog, enums: s.enums });
-  const issues = [...resolved.issues, ...substituted.issues];
-  if (!opts.owner) return { numbered: numberDocument(substituted.doc), issues, omitted: [] };
-  const judged = judgeOmission(substituted.doc, opts.general?.doc, opts.owner);
-  return { numbered: numberDocument(judged.doc), issues, omitted: judged.omitted };
+  return { doc: substituted.doc, issues: [...resolved.issues, ...substituted.issues] };
 }
 
 function buildGeneral(input: AssemblyInput, contexts: AssemblyContexts, s: Shared): Built | undefined {
   const g = input.product.general;
   if (!g) return undefined;
-  return build(g, contexts.general, s, { coordinate: generalCoordinate(input.product), overrides: input.product.overrides });
+  if (input.product.baseContractIds.length === 1) {
+    const base = input.coverages.find((coverage) => coverage.snapshot.id === input.product.baseContractIds[0]);
+    const doc = base && input.specialDocuments.get(base.snapshot.coverageId);
+    const ctx = base && contexts.specials.get(base.snapshot.id);
+    if (base && doc && ctx) {
+      const basePrepared = prepare(doc, ctx, s, { coordinate: specialCoordinate(base), overrides: base.overrides });
+      const replacedArticleIds = new Set(basePrepared.doc.children.flatMap((node) => (node.kind === "article" && node.linkedArticleId ? [node.linkedArticleId] : [])));
+      // 대치될 보통약관 본문은 실행 경로가 아니다. 먼저 비운 뒤 해소해야 사라질 슬롯의 오류·조회 흔적이 남지 않는다.
+      const generalSource: DocumentNode = {
+        ...g,
+        children: g.children.map((node) => (node.kind === "article" && replacedArticleIds.has(node.id) ? { ...node, children: [] } : node)),
+      };
+      const generalPrepared = prepare(generalSource, contexts.general, s, { coordinate: generalCoordinate(input.product), overrides: input.product.overrides });
+      const replaced = replaceGeneralWithBase(generalPrepared.doc, basePrepared.doc, { productCoverageId: base.snapshot.id, productCoverageName: base.snapshot.name });
+      return { numbered: numberDocument(replaced.doc), issues: [...generalPrepared.issues, ...basePrepared.issues, ...replaced.issues], omitted: [] };
+    }
+  }
+  const prepared = prepare(g, contexts.general, s, { coordinate: generalCoordinate(input.product), overrides: input.product.overrides });
+  return { numbered: numberDocument(prepared.doc), issues: prepared.issues, omitted: [] };
 }
 
 function buildSpecial(input: AssemblyInput, contexts: AssemblyContexts, s: Shared, c: AssemblyCoverage, general: Built | undefined): Built | undefined {
   const doc = input.specialDocuments.get(c.snapshot.coverageId);
   const ctx = contexts.specials.get(c.snapshot.id);
   if (!doc || !ctx) return undefined;
-  return build(doc, ctx, s, {
+  const prepared = prepare(doc, ctx, s, {
     coordinate: specialCoordinate(c),
     overrides: c.overrides,
-    general: general?.numbered,
-    owner: { productCoverageId: c.snapshot.id, productCoverageName: c.snapshot.name },
     title: specialTitle(c.snapshot.name),
   });
+  const withApplication = ensureApplicationArticle(prepared.doc);
+  const judged = judgeOmission(withApplication, general?.numbered.doc, { productCoverageId: c.snapshot.id, productCoverageName: c.snapshot.name });
+  return { numbered: numberDocument(judged.doc), issues: prepared.issues, omitted: judged.records };
 }
 
 // ───────────────────────────── 9. 특약 배치 ─────────────────────────────
@@ -92,11 +114,17 @@ export interface Placement {
   /** 어느 그룹에도 속하지 않은 상품담보 (문면 있는 것만 — 없는 것은 undocumented). */
   unplaced: AssemblyCoverage[];
   undocumented: UndocumentedCoverage[];
+  baseContracts: Booklet["baseContracts"];
 }
 
 export function placeSpecials(input: AssemblyInput): Placement {
-  const documented = input.coverages.filter((c) => input.specialDocuments.has(c.snapshot.coverageId));
-  const undocumented = input.coverages
+  const baseIds = new Set(input.product.baseContractIds);
+  const baseContracts = input.coverages
+    .filter((c) => baseIds.has(c.snapshot.id))
+    .map((c) => ({ productCoverageId: c.snapshot.id, name: c.snapshot.name, coverageId: c.snapshot.coverageId }));
+  const specials = input.coverages.filter((c) => !baseIds.has(c.snapshot.id));
+  const documented = specials.filter((c) => input.specialDocuments.has(c.snapshot.coverageId));
+  const undocumented = specials
     .filter((c) => !input.specialDocuments.has(c.snapshot.coverageId))
     .map((c) => ({ productCoverageId: c.snapshot.id, name: c.snapshot.name, coverageId: c.snapshot.coverageId }));
   // 담보 순서 = 담보명 순 (B4 groupViews 와 같은 규칙 — B1 마스터 순서는 통합 때 어댑터로)
@@ -112,7 +140,7 @@ export function placeSpecials(input: AssemblyInput): Placement {
       return { id: g.id, title: g.title, members: sortInGroup(members, input.attributeKinds, coverageOrder).map((m) => byId.get(m.id)!) };
     });
   const placed = new Set(groups.flatMap((g) => g.members.map((m) => m.snapshot.id)));
-  return { groups, unplaced: documented.filter((c) => !placed.has(c.snapshot.id)), undocumented };
+  return { groups, unplaced: documented.filter((c) => !placed.has(c.snapshot.id)), undocumented, baseContracts };
 }
 
 // ───────────────────────────── 조립 ─────────────────────────────
@@ -122,6 +150,12 @@ export function assemble(input: AssemblyInput): Booklet {
   const contexts = buildContexts(input);
   const issues: Issue[] = [];
   const omitted: OmissionRecord[] = [];
+
+  if (input.product.baseContractIds.length === 0) {
+    issues.push({ kind: "noBaseContract", severity: "error", message: "기본계약이 지정되지 않았습니다", at: { document: "product", ownerId: input.product.id, ownerName: input.product.name } });
+  } else if (input.product.baseContractIds.length > 1) {
+    issues.push({ kind: "unsupported", severity: "error", message: "기본계약 2개 이상은 MVP 이후에 지원합니다", at: { document: "product", ownerId: input.product.id, ownerName: input.product.name } });
+  }
 
   const general = buildGeneral(input, contexts, s);
   if (!general) {
@@ -169,7 +203,7 @@ export function assemble(input: AssemblyInput): Booklet {
     }
   }
 
-  return { general: renderedGeneral, specials, appendices, issues, complete: issues.length === 0, omitted, undocumented: placement.undocumented, trace: contexts.traces };
+  return { general: renderedGeneral, specials, appendices, issues, complete: !issues.some((item) => (item.severity ?? "error") === "error"), omitted, undocumented: placement.undocumented, baseContracts: placement.baseContracts, trace: contexts.traces };
 }
 
 /** 상품담보 미리보기 — 배치와 무관하게 그 담보약관 하나를 조립한다. */
@@ -192,8 +226,8 @@ export function assembleSpecial(input: AssemblyInput, productCoverageId: Id): Re
   }
   const r = renderDocument(b.numbered, { document: "special", ownerId: c.snapshot.id, general: general?.numbered, appendices });
   issues.push(...b.issues, ...r.issues);
-  const trace = contexts.traces.filter((t) => t.productCoverageId === productCoverageId || t.productCoverageId === input.product.baseContractId);
-  return ok({ doc: r.doc, general: renderedGeneral, appendices, issues, complete: issues.length === 0, omitted: b.omitted, trace });
+  const trace = contexts.traces.filter((t) => t.productCoverageId === productCoverageId || input.product.baseContractIds.includes(t.productCoverageId));
+  return ok({ doc: r.doc, general: renderedGeneral, appendices, issues, complete: !issues.some((item) => (item.severity ?? "error") === "error"), omitted: b.omitted, trace });
 }
 
 // ───────────────────────────── 실행 기반 완결성 필터 ─────────────────────────────

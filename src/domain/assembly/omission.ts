@@ -1,6 +1,6 @@
 /**
- * 5단계 — 생략 판정 (ADR-0014). 담보약관의 조에 조연결(`linkedArticleId`)이 있으면, 해소·치환이 끝난 렌더 결과를
- * (조 명 제외) 대응 보통약관 조와 **리터럴 비교**해 완전히 같으면 그 조를 문서에서 뺀다. 판정은 탑재분별.
+ * 항 단위 자동 판정 (ADR-0020). 조연결된 담보 조와 보통약관 조를 순서 무관 항 집합으로 비교해
+ * 생략 / 준용 / 통째로 가른다. 조 명과 노드 id는 비교하지 않는다.
  *
  * 비교 직렬화: 구조(항·호·목) + 텍스트 + 참조 대상(조 id · 별표 코드). 노드 id 는 비교하지 않는다 —
  * 같은 공용조항을 두 문서가 참조하면 id 접두(`${참조노드id}/…`)만 다르고 내용은 같기 때문.
@@ -46,20 +46,72 @@ export interface OmissionOwner {
 
 export interface OmissionOutcome {
   doc: SubstitutedDoc;
-  omitted: OmissionRecord[];
+  records: OmissionRecord[];
+}
+
+function paragraphBodies(a: RArticle<SInline>, excludeMarked: boolean): string[] {
+  const children = a.children.filter((p) => p.kind === "error" || !excludeMarked || !p.excludeFromComparison);
+  if (children.length === 0) return ["항[]"];
+  return children.map(paragraph);
+}
+
+function containsErrors(a: RArticle<SInline>): boolean {
+  return paragraphBodies(a, false).some((body) => body.includes("e("));
+}
+
+function takeMatches(general: readonly string[], special: readonly string[]): { all: boolean; unmatchedSpecial: number[] } {
+  const used = new Set<number>();
+  for (const body of general) {
+    const found = special.findIndex((candidate, index) => !used.has(index) && candidate === body);
+    if (found < 0) return { all: false, unmatchedSpecial: special.map((_x, index) => index) };
+    used.add(found);
+  }
+  return { all: true, unmatchedSpecial: special.map((_x, index) => index).filter((index) => !used.has(index)) };
+}
+
+function topicParticle(title: string): "은" | "는" {
+  const code = title.charCodeAt(title.length - 1);
+  return code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 !== 0 ? "은" : "는";
+}
+
+function applicationParagraph(article: RArticle<SInline>, linkedArticleId: Id, owner: OmissionOwner): RParagraph<SInline> {
+  const id = `${article.id}::application`;
+  const at = { document: "special" as const, ownerId: owner.productCoverageId, ownerName: owner.productCoverageName, articleId: article.id, articleTitle: article.title, nodePath: [id] };
+  return {
+    kind: "paragraph",
+    id,
+    children: [
+      { kind: "text", id: `${id}::prefix`, text: `이 특별약관의 ${article.title}${topicParticle(article.title)} ` },
+      { kind: "articleRef", id: `${id}::ref`, targets: [{ nodeId: linkedArticleId }], connector: "및", scope: "general", at },
+      { kind: "text", id: `${id}::suffix`, text: "를 준용합니다." },
+    ],
+  };
 }
 
 export function judgeOmission(special: SubstitutedDoc, general: SubstitutedDoc | undefined, owner: OmissionOwner): OmissionOutcome {
-  const generalBodies = new Map<Id, string>();
-  for (const a of general?.children ?? []) if (a.kind === "article") generalBodies.set(a.id, articleBody(a));
+  const generalArticles = new Map<Id, RArticle<SInline>>();
+  for (const a of general?.children ?? []) if (a.kind === "article") generalArticles.set(a.id, a);
 
-  const omitted: OmissionRecord[] = [];
-  const children = special.children.filter((a) => {
-    if (a.kind !== "article" || a.linkedArticleId === undefined) return true;
-    const target = generalBodies.get(a.linkedArticleId);
-    if (target === undefined || target !== articleBody(a)) return true;
-    omitted.push({ ...owner, articleId: a.id, articleTitle: a.title, linkedArticleId: a.linkedArticleId });
-    return false;
+  const records: OmissionRecord[] = [];
+  const children = special.children.flatMap((a): SubstitutedDoc["children"] => {
+    if (a.kind !== "article" || a.linkedArticleId === undefined) return [a];
+    const target = generalArticles.get(a.linkedArticleId);
+    let disposition: OmissionRecord["disposition"] = "full";
+    let output: SubstitutedDoc["children"] = [a];
+    if (target && !containsErrors(a) && !containsErrors(target)) {
+      const specialBodies = paragraphBodies(a, false);
+      const generalBodies = paragraphBodies(target, true);
+      const matched = takeMatches(generalBodies, specialBodies);
+      if (matched.all && matched.unmatchedSpecial.length === 0) {
+        disposition = "omitted";
+        output = [];
+      } else if (matched.all) {
+        disposition = "applied";
+        output = [{ ...a, children: [applicationParagraph(a, a.linkedArticleId, owner), ...matched.unmatchedSpecial.map((index) => a.children[index])] }];
+      }
+    }
+    records.push({ ...owner, articleId: a.id, articleTitle: a.title, linkedArticleId: a.linkedArticleId, disposition });
+    return output;
   });
-  return { doc: { ...special, children }, omitted };
+  return { doc: { ...special, children }, records };
 }

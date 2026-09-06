@@ -201,33 +201,38 @@ class Walker {
     });
   }
 
-  paragraph(n: AnyParagraph, f: Frame): RParagraph<RInline> {
+  paragraph(n: AnyParagraph, f: Frame, excludeFromComparison = false): RParagraph<RInline> {
     const inner = { ...f, path: [...f.path, n.id] };
     return {
       kind: "paragraph",
       id: n.id,
       children: this.inlines(n.children, inner),
       ...(n.items ? { items: this.items(n.items, inner) } : {}),
+      ...(excludeFromComparison ? { excludeFromComparison: true } : {}),
     };
   }
 
   /** 조 안의 블록 자리 — 항 · 조건 블록 · 공용조항 block 참조 · 반복 블록. */
-  blocks(list: readonly AnyBlock[], f: Frame): (RParagraph<RInline> | ErrorNode)[] {
+  blocks(list: readonly AnyBlock[], f: Frame, excludeFromComparison = false): (RParagraph<RInline> | ErrorNode)[] {
     return list.flatMap((n): (RParagraph<RInline> | ErrorNode)[] => {
       const at = this.at(f, n.id);
       switch (n.kind) {
         case "paragraph":
-          return [this.paragraph(n, f)];
+          return [this.paragraph(n, f, excludeFromComparison)];
         case "condBlock": {
           const r = this.select(n.branches, f, n.id);
           if (r.kind === "error") return [this.error(n.id, r.issue)];
           if (r.kind === "none") return [];
-          return this.blocks(r.branch.children as AnyBlock[], { ...f, path: [...f.path, n.id, r.branch.id] });
+          return this.blocks(r.branch.children as AnyBlock[], { ...f, path: [...f.path, n.id, r.branch.id] }, excludeFromComparison);
         }
         case "clauseBlockRef": {
           const r = this.expand(n, "block", at);
           if (!r.ok) return [r.marker];
-          return this.blocks(r.body as ClauseBlock[], { ...f, path: [...f.path, n.id] });
+          return this.blocks(
+            r.body as ClauseBlock[],
+            { ...f, path: [...f.path, n.id] },
+            excludeFromComparison || (this.env.coordinate.document === "general" && n.excludeFromComparison === true),
+          );
         }
         case "forBlock":
           return [this.error(n.id, { kind: "structure", message: "블록 반복은 아직 조립하지 않습니다 (P7)", at })];

@@ -42,53 +42,59 @@ describe("★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망
     expect(booklet.issues).toEqual([]);
     expect(booklet.complete).toBe(true);
     expect(booklet.undocumented).toEqual([]);
+    expect(booklet.baseContracts).toEqual([{ productCoverageId: "pc-base", name: "상해사망(기본계약)", coverageId: "cov-base-death" }]);
   });
 
   it("특약 2벌 산출 — 본문은 완전 동일하고 제목만 다르다 (문면 1벌 + 탑재 구별)", () => {
     expect(booklet.specials).toHaveLength(1);
     const [group] = booklet.specials;
     expect(group.title).toBe("상해 관련 특별약관");
-    expect(group.docs.map((d) => d.title)).toEqual(["일반상해사망보장 특별약관", "일반상해사망보장 추가 특별약관"]);
+    expect(group.docs.map((d) => d.title)).toEqual(["일반상해사망 특별약관", "일반상해사망 추가 특별약관"]);
     expect(group.docs.map((d) => d.ownerId)).toEqual(["pc-basic", "pc-addon"]);
     expect(lines(group.docs[0])).toEqual(lines(group.docs[1]));
   });
 
-  it("특약 본문 — 인라인 조건(계약일) · const 슬롯(2.5%) · 파생 조건(면책여부합 → 제2조 산다) · number 슬롯 · 옵션 해소 · 준용규정 생략", () => {
+  it("특약 본문 — 전체수록 · 생략 · 일부준용을 적용하고 준용규정을 자동 보충한다", () => {
     expect(lines(booklet.specials[0].docs[0])).toEqual([
       "제1조(보험금의 지급사유)",
-      "  ① 회사는 피보험자가 계약일 이후 상해로 사망한 경우 사망보험금을 지급합니다.",
-      "  ② 사망보험금은 보험가입금액에 평균공시이율 2.5% 을 적용하여 계산합니다.",
-      "제2조(보험금을 지급하지 않는 사유)",
-      "  ① 회사는 다음 중 어느 한 가지로 보험금 지급사유가 발생한 때에는 보험금을 지급하지 않습니다.",
-      "    1. 피보험자가 고의로 자신을 해친 경우",
-      "    2. 보험수익자가 고의로 피보험자를 해친 경우",
-      "      가. 다만, 그 보험수익자가 보험금의 일부 보험수익자인 경우에는 다른 보험수익자에 대한 보험금은 지급합니다.",
-      "제3조(보험금의 감액지급)",
-      "  ① 계약일부터 24개월 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다.",
-      "제4조(특별약관의 소멸)",
-      "  ① 이 특별약관은 다음의 경우 소멸합니다.",
-      "  ② 이 특별약관은 피보험자가 사망한 때 소멸합니다.",
+      "  ① 회사는 피보험자가 계약일 이후 상해로 사망한 경우 사망보험금을 지급합니다. 평균공시이율 2.5%를 적용합니다.",
+      "제2조(보험금의 감액지급)",
+      "  ① 이 특별약관의 보험금의 감액지급은 보통약관 제6조(해약환급금)를 준용합니다.",
+      "  ② 계약일부터 24개월 이내에는 감액 지급하며, 보통약관 제6조(해약환급금)을 확인합니다.",
+      "제3조(특별약관의 소멸)",
+      "  ① 이 특별약관은 피보험자가 사망한 때 소멸합니다.",
+      "제4조(준용규정)",
+      "  ① 이 특별약관에서 정하지 않은 사항은 보통약관을 따릅니다.",
     ]);
   });
 
-  it("준용규정 조는 조연결 생략 판정 통과 — 탑재분 둘 다 기록되고 문서에서 빠진다 (ADR-0014)", () => {
-    expect(booklet.omitted).toEqual([
-      { productCoverageId: "pc-basic", productCoverageName: "일반상해사망보장", articleId: "s-art-apply", articleTitle: "준용규정", linkedArticleId: "g-art-apply" },
-      { productCoverageId: "pc-addon", productCoverageName: "일반상해사망보장 추가", articleId: "s-art-apply", articleTitle: "준용규정", linkedArticleId: "g-art-apply" },
+  it("연결 조 판정은 탑재분마다 전체수록 · 생략 · 일부준용으로 기록된다", () => {
+    expect(booklet.omitted.map(({ productCoverageId, articleId, disposition }) => [productCoverageId, articleId, disposition])).toEqual([
+      ["pc-basic", "s-art-pay", "full"],
+      ["pc-basic", "s-art-exempt", "omitted"],
+      ["pc-basic", "s-art-reduce", "applied"],
+      ["pc-addon", "s-art-pay", "full"],
+      ["pc-addon", "s-art-exempt", "omitted"],
+      ["pc-addon", "s-art-reduce", "applied"],
     ]);
   });
 
-  it("보통약관 — 담보 레벨 참조(갱신여부)는 기본계약으로 해소 · 상품 레벨 enum 슬롯은 표시명 · 준용 문구의 조 참조는 제1조(용어의 정의)", () => {
+  it("보통약관 — 기본계약 연결 조문으로 본문을 교체하고 제외 표시 문단은 그대로 수록한다", () => {
     expect(lines(booklet.general!)).toEqual([
       "제1조(용어의 정의)",
       "  ① 이 계약에서 사용하는 용어의 정의는 다음과 같습니다.",
       "제2조(보험금의 지급사유)",
-      "  ① 회사는 피보험자가 계약일 이후 기본계약의 보험금 지급사유가 발생한 때 보험금을 지급합니다.",
-      "  ② 이 계약은 간편심사 계약입니다.",
-      "제3조(장해의 분류)",
+      "  ① 피보험자가 보험기간 중 상해로 사망한 경우 보험금을 지급합니다.",
+      "제3조(보험금 지급에 관한 세부규정)",
+      "  ① 보험금 지급에 관한 세부사항은 산출방법서에 따릅니다.",
+      "제4조(보험금을 지급하지 않는 사유)",
+      "  ① 고의로 사고를 일으킨 경우에는 보험금을 지급하지 않습니다.",
+      "  ② 법령에 따라 보험금 지급이 제한되는 경우에는 보험금을 지급하지 않습니다.",
+      "제5조(장해의 분류)",
       "  ① 장해의 분류는 【별표1(장해분류표)】 에 따릅니다.",
-      "제4조(준용규정)",
-      "  ① 이 약관에서 정하지 않은 사항은 보통약관 제1조(용어의 정의) 및 관계 법령을 따릅니다.",
+      "제6조(해약환급금)",
+      "  ① 계약이 해지된 경우 해약환급금을 지급합니다.",
+      "  ② 해약환급금은 산출방법서에 따라 계산합니다.",
     ]);
   });
 
@@ -97,9 +103,9 @@ describe("★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망
     expect(booklet.appendices[0]).toMatchObject({ code: "APX_DISABILITY", name: "장해분류표", number: 1, firstAt: { document: "general", articleId: "g-art-disability" } });
   });
 
-  it("조립 문맥 조회(D-P6-7) — 실행이 읽은 값 자리가 상품담보별로 남는다 (보통약관이 읽은 갱신여부는 기본계약에)", () => {
+  it("조립 문맥 조회(D-P6-7) — 특약이 실제로 읽은 값 자리만 상품담보별로 남는다", () => {
     const basic = booklet.trace.find((t) => t.productCoverageId === "pc-basic")!;
-    expect(basic.reads.map((r) => `${r.owner.kind}:${r.path}`).sort()).toEqual(["product:D0002", "productBenefit:D0003.F01", "productCoverage:D0001", "productCoverage:D0007"]);
+    expect(basic.reads.map((r) => `${r.owner.kind}:${r.path}`).sort()).toEqual(["productBenefit:D0003.F01", "productCoverage:D0007"]);
     expect(basic.reads.find((r) => r.path === "D0003.F01")?.masterId).toBe("ben-death");
   });
 

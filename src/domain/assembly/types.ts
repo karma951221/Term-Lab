@@ -1,25 +1,26 @@
 /**
  * 조립 파이프라인의 타입 — 입력(AssemblyInput) · 단계별 중간 표현 · 출력(Booklet).
  *
- * 근거: 2차구현_계획 §3.4 · 조립_기획 · ADR-0016(부분 조립 + 오류 좌표) · ADR-0014(생략 자동 판정) ·
+ * 근거: 3차구현_계획 S4 · 조립_기획 · ADR-0016(부분 조립 + 오류 좌표) · ADR-0014(생략 자동 판정) ·
  * ADR-0011(보통약관 문맥 = 기본계약) · ADR-0017(옵션 해소) · ADR-0012(번호는 계산값).
  *
  * 파이프라인과 중간 표현 (아키텍처 문서에 옮길 것):
  *
  *   AssemblyInput
  *     │ 1. 문맥 구성            buildContexts        → AssemblyContexts  (상품담보별 EvalContext + 보통약관 문맥)
- *     │ 2. 조건 해소 (밟은 자리만)
- *     │ 3. 공용조항 인라인화     resolveDocument      → ResolvedDoc      (가지 선택·인라인화 끝, 슬롯·참조는 그대로)
- *     │ 4. 슬롯 치환            substituteSlots      → SubstitutedDoc   (슬롯이 텍스트/오류 마커로)
- *     │ 5. 생략 판정            judgeOmission        → SubstitutedDoc + OmissionRecord[]
- *     │ 6. 번호 계산            numberDocument       → NumberedDoc      (조·항·호·목 번호)
- *     │ 9. 특약 배치            placeSpecials        → 그룹별 정렬된 문서 목록 (+ unplaced 오류)
- *     │ 8. 별표 수집            collectAppendices    → BookletAppendix[] (책자 등장 순 번호)
- *     │ 7. 참조 슬롯 해소       renderDocument       → RenderedDoc      (조·별표 참조가 표기 문자열로)
+ *     │ 2. 조건·공용조항 해소    resolveDocument      → ResolvedDoc      (밟은 가지 인라인화, 슬롯·참조 유지)
+ *     │ 3. 슬롯 치환            substituteSlots      → SubstitutedDoc   (슬롯이 텍스트/오류 마커로)
+ *     │ 4. 기본계약 본문 대치    replaceGeneralWithBase
+ *     │ 5. 최소 준용규정 생성    ensureApplicationArticle
+ *     │ 6. 항 단위 준용 판정     judgeOmission        → SubstitutedDoc + OmissionRecord[]
+ *     │ 7. 번호 계산            numberDocument       → NumberedDoc      (조·항·호·목 번호)
+ *     │ 8. 특약 배치            placeSpecials        → 그룹별 정렬된 문서 목록 (+ unplaced 오류)
+ *     │ 9. 별표 수집            collectAppendices    → BookletAppendix[] (책자 등장 순 번호)
+ *     │ 10. 참조 슬롯 해소      renderDocument       → RenderedDoc      (조·별표 참조가 표기 문자열로)
  *     ▼
  *   Booklet
  *
- * 순서 메모: 별표 번호는 책자 전역 등장 순이라 배치(9)가 끝나야 수집(8)할 수 있고, 참조 해소(7)는 그 뒤에 온다.
+ * 순서 메모: 별표 번호는 책자 전역 등장 순이라 배치가 끝나야 수집할 수 있고, 참조 해소는 그 뒤에 온다.
  * 모든 중간 표현은 순수 데이터다 — 오류는 그 자리에 `ErrorNode` 로 심고 계속 간다.
  */
 
@@ -40,8 +41,8 @@ export interface AssemblyProduct {
   values: ReadonlyMap<SlotPath, ValueSlot>;
   /** 상품 레벨 선택 부착 코드. */
   attached: ReadonlySet<Code>;
-  /** 기본계약 상품담보 id. 없으면 보통약관의 담보 레벨 참조가 `noBaseContract` 오류 (ADR-0011). */
-  baseContractId?: Id;
+  /** 기본계약 상품담보 id 목록. 수가 조립 모드를 정하며 MVP는 1개 모드만 지원한다. */
+  baseContractIds: readonly Id[];
   /** 보통약관 템플릿 문서. 없으면 오류 + 특약만 조립. */
   general?: DocumentNode;
   generalDocumentId?: Id;
@@ -138,6 +139,8 @@ export interface RParagraph<I> {
   id: Id;
   children: I[];
   items?: (RItem<I> | ErrorNode)[];
+  /** 보통약관의 block 공용조항 참조에서 펼쳐져 자동 판정 비교 대상에서 빠지는 항. */
+  excludeFromComparison?: boolean;
 }
 export interface RArticle<I> {
   kind: "article";
@@ -261,10 +264,18 @@ export interface OmissionRecord {
   articleId: Id;
   articleTitle: string;
   linkedArticleId: Id;
+  disposition: "omitted" | "applied" | "full";
 }
 
 /** 문면 없는 담보의 탑재분 — 문서를 내지 않았다 (오류 아님 · D-P6-9). */
 export interface UndocumentedCoverage {
+  productCoverageId: Id;
+  name: string;
+  coverageId: Id;
+}
+
+/** 특약 벌로 출력하지 않은 기본계약 탑재분 기록. */
+export interface BaseContractRecord {
   productCoverageId: Id;
   name: string;
   coverageId: Id;
@@ -300,6 +311,7 @@ export interface Booklet {
   complete: boolean;
   omitted: OmissionRecord[];
   undocumented: UndocumentedCoverage[];
+  baseContracts: BaseContractRecord[];
   /** 상품담보별 실행이 읽은 값 (보통약관이 기본계약 값을 읽은 것은 기본계약 상품담보에 실린다). */
   trace: ContextTrace[];
 }

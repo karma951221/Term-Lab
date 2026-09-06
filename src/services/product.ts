@@ -90,6 +90,7 @@ export interface Confirmable {
 }
 
 export type SnapshotOwner = { kind: "productCoverage" | "productSubCoverage" | "productBenefit"; id: Id };
+export type CoverageSection = "base" | "special";
 export type OverrideScope = ClauseOptionOverride["scope"];
 export type SpecialGroupView = SpecialGroup & { members: ProductCoverage[] };
 export interface SyncResult {
@@ -142,7 +143,7 @@ export interface ProductService {
   removePlan(actor: Actor, planId: Id, opts?: Confirmable): Promise<Result<void>>;
 
   // ── 상품담보 = 탑재
-  mount(actor: Actor, productId: Id, coverageId: Id, selections: AttributeSelection[]): Promise<Result<ProductCoverage>>;
+  mount(actor: Actor, productId: Id, coverageId: Id, selections: AttributeSelection[], section?: CoverageSection): Promise<Result<ProductCoverage>>;
   getProductCoverage(id: Id): Promise<ProductCoverage | undefined>;
   listProductCoverages(productId: Id): Promise<ProductCoverage[]>;
   getSnapshot(id: Id): Promise<Result<ProductCoverageSnapshot>>;
@@ -163,6 +164,7 @@ export interface ProductService {
   // ── 기본계약
   designateBaseContract(actor: Actor, productId: Id, productCoverageId: Id): Promise<Result<BaseContractCheck>>;
   releaseBaseContract(actor: Actor, productId: Id, productCoverageId: Id): Promise<Result<void>>;
+  listBaseContractIds(productId: Id): Promise<Id[]>;
   /** 「정확히 1개」 검증 + 부착 검사. 0개 → invalid(noBaseContract). */
   checkBaseContract(productId: Id): Promise<Result<BaseContractCheck[]>>;
 
@@ -626,7 +628,7 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
       ),
 
     // 상품담보
-    mount: (actor, productId, coverageId, selections) =>
+    mount: (actor, productId, coverageId, selections, section = "special") =>
       db.transaction((tx) =>
         withProduct(tx, productId, async () => {
           const tree = await master.tree(coverageId);
@@ -638,6 +640,7 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
           const key = combinationKey(coverageId, attributes);
           if (await repo.findByCombination(tx, productId, key)) return reject({ reason: "duplicate", what: `상품담보 조합 ${tree.name} × ${attributes.map((a) => `${a.kindCode}=${a.valueCode}`).join(",") || "(속성 없음)"}` });
           const pc = await repo.insertProductCoverage(tx, { productId, coverageId, coverageName: tree.name, name: defaultCoverageName(tree.name, attributes, kinds, await repo.loadNamingTemplate(tx)), attributes, combinationKey: key }, actor.userId);
+          if (section === "base") await repo.insertBaseContract(tx, productId, pc.id, actor.userId);
           // 값 스냅샷 (ADR-0002): 담보 → 세부보장 → 급부
           await snapshotFrom(tx, { kind: "coverage", id: coverageId }, { kind: "productCoverage", id: pc.id }, actor.userId);
           for (const sub of tree.subCoverages) {
@@ -776,14 +779,14 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
         withProduct(tx, productId, (product) =>
           withCoverage(tx, productCoverageId, async (pc) => {
             if (pc.productId !== productId) return notFound(`상품 ${productId} 의 상품담보 ${productCoverageId}`);
-            const existing = await repo.listBaseContractIds(tx, productId);
-            if (existing.some((e) => e !== productCoverageId)) return reject({ reason: "duplicate", what: "기본계약 (MVP 는 정확히 1개 — 먼저 해제하세요)" });
             if (!product.generalDocumentId) return invalid([issue("brokenRef", "보통약관 템플릿이 선택되지 않았습니다", { document: "product", ownerId: productId })]);
             await repo.insertBaseContract(tx, productId, productCoverageId, actor.userId);
+            await repo.removeMember(tx, productCoverageId);
             return checkOne(tx, product, pc); // 부착 검사 — 실패는 거부가 아니라 오류 목록 (D-P5-13)
           }),
         ),
       ),
+    listBaseContractIds: (productId) => repo.listBaseContractIds(db, productId),
     releaseBaseContract: (actor, productId, productCoverageId) =>
       db.transaction((tx) =>
         withProduct(tx, productId, async () => {
@@ -797,7 +800,7 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
       withProduct(db, productId, async (product) => {
         const ids = await repo.listBaseContractIds(db, productId);
         if (ids.length === 0) return invalid([issue("noBaseContract", "기본계약이 지정되지 않았습니다", { document: "product", ownerId: productId, ownerName: product.name })]);
-        if (ids.length > 1) return invalid([issue("noBaseContract", `기본계약이 ${ids.length}개입니다 — MVP 는 정확히 1개`, { document: "product", ownerId: productId, ownerName: product.name })]);
+        if (ids.length > 1) return invalid([issue("unsupported", `기본계약이 ${ids.length}개입니다 — 2개 이상은 MVP 이후`, { document: "product", ownerId: productId, ownerName: product.name })]);
         const checks: BaseContractCheck[] = [];
         for (const id of ids) {
           const pc = await repo.loadProductCoverage(db, id);

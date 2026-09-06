@@ -120,6 +120,15 @@ export const alphaClauses: Clause[] = [
     options: [],
     required: { discriminators: [], attributes: [] },
   },
+  {
+    code: "C0003",
+    label: "보통약관 면책 보충",
+    description: "",
+    mode: "block",
+    body: [{ id: "c3-par", kind: "paragraph", children: [{ id: "c3-text", kind: "text", text: "법령에 따라 보험금 지급이 제한되는 경우에는 보험금을 지급하지 않습니다." }] }],
+    options: [],
+    required: { discriminators: [], attributes: [] },
+  },
 ];
 
 export const alphaAppendices: Appendix[] = [
@@ -129,7 +138,7 @@ export const alphaAppendices: Appendix[] = [
 
 // ───────────────────────────── 문서 ─────────────────────────────
 
-export function alphaGeneralDocument(): DocumentNode {
+export function alphaGeneralDocumentLegacy(): DocumentNode {
   return {
     id: "g-doc",
     kind: "document",
@@ -201,7 +210,7 @@ export function alphaGeneralDocument(): DocumentNode {
   };
 }
 
-export function alphaDeathDocument(): DocumentNode {
+export function alphaDeathDocumentLegacy(): DocumentNode {
   return {
     id: "s-doc-death",
     kind: "document",
@@ -308,6 +317,131 @@ export function alphaDeathDocument(): DocumentNode {
   };
 }
 
+/** 3차 관통 픽스처의 평평한 보통약관 — 기본계약 조가 제2·3조 본문을 대치한다. */
+export function alphaGeneralDocument(): DocumentNode {
+  return {
+    id: "g-doc",
+    kind: "document",
+    title: "알파Plus 보통약관",
+    children: [
+      { id: "g-art-def", kind: "article", title: "용어의 정의", children: [{ id: "g-par-def", kind: "paragraph", children: [{ id: "g-txt-def", kind: "text", text: "이 계약에서 사용하는 용어의 정의는 다음과 같습니다." }] }] },
+      { id: "g-art-pay", kind: "article", title: "보험금의 지급사유", children: [] },
+      { id: "g-art-detail", kind: "article", title: "보험금 지급에 관한 세부규정", children: [] },
+      {
+        id: "g-art-exempt",
+        kind: "article",
+        title: "보험금을 지급하지 않는 사유",
+        children: [
+          { id: "g-par-exempt", kind: "paragraph", children: [{ id: "g-txt-exempt", kind: "text", text: "고의로 사고를 일으킨 경우에는 보험금을 지급하지 않습니다." }] },
+          { id: "g-clause-exempt-extra", kind: "clauseBlockRef", clauseCode: "C0003", options: {}, excludeFromComparison: true },
+        ],
+      },
+      {
+        id: "g-art-disability",
+        kind: "article",
+        title: "장해의 분류",
+        children: [{ id: "g-par-dis", kind: "paragraph", children: [{ id: "g-txt-dis-1", kind: "text", text: "장해의 분류는 " }, { id: "g-apx-disability", kind: "appendixRef", appendixCode: "APX_DISABILITY" }, { id: "g-txt-dis-2", kind: "text", text: " 에 따릅니다." }] }],
+      },
+      {
+        id: "g-art-refund",
+        kind: "article",
+        title: "해약환급금",
+        children: [
+          { id: "g-par-refund-1", kind: "paragraph", children: [{ id: "g-txt-refund-1", kind: "text", text: "계약이 해지된 경우 해약환급금을 지급합니다." }] },
+          { id: "g-par-refund-2", kind: "paragraph", children: [{ id: "g-txt-refund-2", kind: "text", text: "해약환급금은 산출방법서에 따라 계산합니다." }] },
+        ],
+      },
+    ],
+  };
+}
+
+/** 기본계약 담보 문면 — 두 조 모두 대응 보통약관 조에 연결되어 1개 모드에서 대치된다. */
+export function alphaBaseDocument(): DocumentNode {
+  return {
+    id: "b-doc-death",
+    kind: "document",
+    title: "상해사망 기본계약 문면",
+    children: [
+      {
+        id: "b-art-pay",
+        kind: "article",
+        title: "보험금의 지급사유",
+        linkedArticleId: "g-art-pay",
+        children: [{ id: "b-par-pay", kind: "paragraph", children: [{ id: "b-txt-pay", kind: "text", text: "피보험자가 보험기간 중 상해로 사망한 경우 보험금을 지급합니다." }] }],
+      },
+      {
+        id: "b-art-detail",
+        kind: "article",
+        title: "보험금 지급에 관한 세부규정",
+        linkedArticleId: "g-art-detail",
+        children: [{ id: "b-par-detail", kind: "paragraph", children: [{ id: "b-txt-detail", kind: "text", text: "보험금 지급에 관한 세부사항은 산출방법서에 따릅니다." }] }],
+      },
+    ],
+  };
+}
+
+/** 일반상해사망 특약 — 통째·생략·준용 세 갈래와 자동 준용규정을 모두 통과한다. */
+export function alphaDeathDocument(): DocumentNode {
+  return {
+    id: "s-doc-death",
+    kind: "document",
+    title: "일반상해사망 특별약관",
+    children: [
+      {
+        id: "s-art-pay",
+        kind: "article",
+        title: "보험금의 지급사유",
+        linkedArticleId: "g-art-pay",
+        children: [
+          {
+            id: "s-par-pay",
+            kind: "paragraph",
+            children: [
+              { id: "s-txt-pay-1", kind: "text", text: "회사는 피보험자가 " },
+              { id: "s-inl-renew", kind: "inlineCond", branches: [{ id: "s-inl-renew-if", when: "exist(attr.A0001) and attr.A0001 = 'V02'", children: [{ id: "s-txt-pay-2", kind: "text", text: "최초계약일" }] }, { id: "s-inl-renew-else", children: [{ id: "s-txt-pay-3", kind: "text", text: "계약일" }] }] },
+              { id: "s-txt-pay-4", kind: "text", text: " 이후 상해로 사망한 경우 사망보험금을 지급합니다. 평균공시이율 " },
+              { id: "s-slot-rate", kind: "slot", ref: "D0004" },
+              { id: "s-txt-pay-5", kind: "text", text: "를 적용합니다." },
+            ],
+          },
+        ],
+      },
+      {
+        id: "s-cond-exempt",
+        kind: "condBlock",
+        branches: [{ id: "s-cond-exempt-if", when: "D0005 = true", children: [{ id: "s-art-exempt", kind: "article", title: "보험금을 지급하지 않는 사유", linkedArticleId: "g-art-exempt", children: [{ id: "s-par-exempt", kind: "paragraph", children: [{ id: "s-txt-exempt", kind: "text", text: "고의로 사고를 일으킨 경우에는 보험금을 지급하지 않습니다." }] }] }] }],
+      },
+      {
+        id: "s-art-reduce",
+        kind: "article",
+        title: "보험금의 감액지급",
+        linkedArticleId: "g-art-refund",
+        children: [
+          { id: "s-par-refund-1", kind: "paragraph", children: [{ id: "s-txt-refund-1", kind: "text", text: "계약이 해지된 경우 해약환급금을 지급합니다." }] },
+          { id: "s-par-refund-2", kind: "paragraph", children: [{ id: "s-txt-refund-2", kind: "text", text: "해약환급금은 산출방법서에 따라 계산합니다." }] },
+          {
+            id: "s-par-reduce-extra",
+            kind: "paragraph",
+            children: [
+              { id: "s-txt-reduce-1", kind: "text", text: "계약일부터 " },
+              { id: "s-slot-reduce", kind: "slot", ref: "D0007" },
+              { id: "s-txt-reduce-2", kind: "text", text: " 이내에는 감액 지급하며, " },
+              { id: "s-ref-refund", kind: "articleRef", scope: "general", targets: [{ nodeId: "g-art-refund" }], connector: "및" },
+              { id: "s-txt-reduce-3", kind: "text", text: "을 확인합니다." },
+            ],
+          },
+        ],
+      },
+      {
+        id: "s-art-lapse",
+        kind: "article",
+        title: "특별약관의 소멸",
+        children: [{ id: "s-clause-lapse", kind: "clauseBlockRef", clauseCode: "C0001", options: { O01: "V02" } }],
+      },
+    ],
+  };
+}
+
 // ───────────────────────────── 상품담보 조립 헬퍼 ─────────────────────────────
 
 export interface CoverageSpec {
@@ -378,6 +512,18 @@ export function deathCoverage(id: Id, name: string, attributes: CoverageSpec["at
   });
 }
 
+export function baseDeathCoverage(): AssemblyCoverage {
+  return coverageEntry({
+    id: "pc-base",
+    name: "상해사망(기본계약)",
+    coverageId: "cov-base-death",
+    coverageName: "상해사망(기본계약)",
+    attributes: [],
+    subCoverages: [{ id: "pc-base-sub", masterNodeId: "sub-base-death", name: "상해사망", benefits: [{ id: "pc-base-ben", masterNodeId: "ben-base-death", name: "사망보험금" }] }],
+    values: { "pc-base": { D0001: false }, "pc-base-ben": { "D0003.F01": false, "D0003.F02": 100 } },
+  });
+}
+
 export const alphaGroups: SpecialGroup[] = [{ id: "grp-injury", productId: "prod-alpha", title: "상해 관련 특별약관", order: 0 }];
 
 // ───────────────────────────── 진입점 ─────────────────────────────
@@ -389,16 +535,17 @@ export function alphaPlusFixture(): AssemblyInput {
       name: "알파Plus(축약)",
       values: new Map([["D0002", entered("V02")]]),
       attached: new Set(),
-      baseContractId: "pc-basic",
+      baseContractIds: ["pc-base"],
       general: alphaGeneralDocument(),
       generalDocumentId: "g-doc",
       overrides: [],
     },
     coverages: [
-      deathCoverage("pc-basic", "일반상해사망보장", [{ kindCode: "A0002", valueCode: "V01" }], "grp-injury"),
-      deathCoverage("pc-addon", "일반상해사망보장 추가", [{ kindCode: "A0002", valueCode: "V02" }], "grp-injury"),
+      baseDeathCoverage(),
+      deathCoverage("pc-basic", "일반상해사망", [{ kindCode: "A0002", valueCode: "V01" }], "grp-injury"),
+      deathCoverage("pc-addon", "일반상해사망 추가", [{ kindCode: "A0002", valueCode: "V02" }], "grp-injury"),
     ],
-    specialDocuments: new Map([["cov-death", alphaDeathDocument()]]),
+    specialDocuments: new Map([["cov-base-death", alphaBaseDocument()], ["cov-death", alphaDeathDocument()]]),
     clauses: alphaClauses,
     appendices: alphaAppendices,
     catalog: alphaCatalog,

@@ -58,7 +58,7 @@ export default async function ProductDetailPage({
     );
   }
   const actor = await currentActor();
-  const [generals, defs, enumsList, planOptions, plans, coverages, attributeKinds, productCoverages, groups, unplaced, overrides, missing] = await Promise.all([
+  const [generals, defs, enumsList, planOptions, plans, coverages, attributeKinds, productCoverages, baseContractIds, groups, unplaced, overrides, missing] = await Promise.all([
     services.document.list("general"),
     services.catalog.list(),
     services.catalog.listEnums(),
@@ -67,6 +67,7 @@ export default async function ProductDetailPage({
     services.coverage.list(),
     services.product.listAttributeKinds(),
     services.product.listProductCoverages(id),
+    services.product.listBaseContractIds(id),
     services.product.listGroups(id),
     services.product.listUnplaced(id),
     services.product.listOptionOverrides({ kind: "product", id }),
@@ -76,6 +77,11 @@ export default async function ProductDetailPage({
   const enumLookup = (code: string) => enumsList.find((e) => e.code === code);
   const productDefs = defs.filter((d) => (d.kind === "scalar" || d.kind === "struct") && d.level === "product" && d.alwaysExposed);
   const baseCheck = await services.product.checkBaseContract(id);
+  const baseContractSet = new Set(baseContractIds);
+  const coverageSections = [
+    { key: "base", title: "기본계약 담보", items: productCoverages.filter((coverage) => baseContractSet.has(coverage.id)) },
+    { key: "special", title: "특약 담보", items: productCoverages.filter((coverage) => !baseContractSet.has(coverage.id)) },
+  ] as const;
 
   let confirmNode: ReactNode = null;
   const c = sp.confirm;
@@ -215,75 +221,80 @@ export default async function ProductDetailPage({
       </form>
 
       <h2 className="ts-h2">탑재 (상품담보)</h2>
-      <form action={mountAction.bind(null, id)} className="ts-form">
-        <label className="ts-field">
-          <span>담보</span>
-          <select name="coverageId" required>
-            {coverages.map((cov) => (
-              <option key={cov.id} value={cov.id}>
-                {cov.name}
-              </option>
+      {coverageSections.map((section) => (
+        <section key={section.key} className="ts-panel">
+          <h3>{section.title}</h3>
+          <form action={mountAction.bind(null, id)} className="ts-form">
+            <input type="hidden" name="section" value={section.key} />
+            <label className="ts-field">
+              <span>담보</span>
+              <select name="coverageId" required>
+                {coverages.map((cov) => (
+                  <option key={cov.id} value={cov.id}>
+                    {cov.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {attributeKinds.map((k) => (
+              <label key={k.code} className="ts-field">
+                <span>{k.label}</span>
+                <select name={`attr:${k.code}`} defaultValue="">
+                  <option value="">—</option>
+                  {k.values.map((v) => (
+                    <option key={v.code} value={v.code}>
+                      {v.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             ))}
-          </select>
-        </label>
-        {attributeKinds.map((k) => (
-          <label key={k.code} className="ts-field">
-            <span>{k.label}</span>
-            <select name={`attr:${k.code}`} defaultValue="">
-              <option value="">—</option>
-              {k.values.map((v) => (
-                <option key={v.code} value={v.code}>
-                  {v.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        ))}
-        <div className="ts-form-actions">
-          <button type="submit">탑재</button>
-        </div>
-      </form>
+            <div className="ts-form-actions">
+              <button type="submit">{section.title}에 탑재</button>
+            </div>
+          </form>
 
-      <h3>상품담보 목록</h3>
-      <table className="ts-table">
-        <thead>
-          <tr>
-            <th>이름</th>
-            <th>담보</th>
-            <th>조작</th>
-          </tr>
-        </thead>
-        <tbody>
-          {productCoverages.map((pc) => (
-            <tr key={pc.id}>
-              <td>
-                <Link href={`/products/${id}/coverages/${pc.id}`}>{pc.name}</Link>
-              </td>
-              <td>{pc.coverageId}</td>
-              <td>
-                <form action={renameProductCoverageAction.bind(null, id, pc.id)} style={{ display: "inline-flex", gap: 4 }}>
-                  <input type="text" name="name" defaultValue={pc.name} />
-                  <button type="submit">이름 저장</button>
-                </form>{" "}
-                <form action={regenerateNameAction.bind(null, id, pc.id)} style={{ display: "inline" }}>
-                  <button type="submit">작명 재생성</button>
-                </form>{" "}
-                <form action={attachPlanAction.bind(null, id, pc.id)} style={{ display: "inline-flex", gap: 4 }}>
-                  <select name="planId">
-                    {plans.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.options.map(planOptionLabel).join(",")}
-                      </option>
-                    ))}
-                  </select>
-                  <button type="submit">세목 부착</button>
-                </form>{" "}
-                {c === `pc:${pc.id}` ? confirmNode : <Link href={`?confirm=pc:${pc.id}`}>탑재 해제…</Link>}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          <table className="ts-table">
+            <thead>
+              <tr>
+                <th>이름</th>
+                <th>담보</th>
+                <th>조작</th>
+              </tr>
+            </thead>
+            <tbody>
+              {section.items.map((pc) => (
+                <tr key={pc.id}>
+                  <td>
+                    <Link href={`/products/${id}/coverages/${pc.id}`}>{pc.name}</Link>
+                  </td>
+                  <td>{pc.coverageId}</td>
+                  <td>
+                    <form action={renameProductCoverageAction.bind(null, id, pc.id)} style={{ display: "inline-flex", gap: 4 }}>
+                      <input type="text" name="name" defaultValue={pc.name} />
+                      <button type="submit">이름 저장</button>
+                    </form>{" "}
+                    <form action={regenerateNameAction.bind(null, id, pc.id)} style={{ display: "inline" }}>
+                      <button type="submit">작명 재생성</button>
+                    </form>{" "}
+                    <form action={attachPlanAction.bind(null, id, pc.id)} style={{ display: "inline-flex", gap: 4 }}>
+                      <select name="planId">
+                        {plans.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.options.map(planOptionLabel).join(",")}
+                          </option>
+                        ))}
+                      </select>
+                      <button type="submit">세목 부착</button>
+                    </form>{" "}
+                    {c === `pc:${pc.id}` ? confirmNode : <Link href={`?confirm=pc:${pc.id}`}>탑재 해제…</Link>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      ))}
 
       <h2 className="ts-h2">기본계약</h2>
       {baseCheck.ok ? (

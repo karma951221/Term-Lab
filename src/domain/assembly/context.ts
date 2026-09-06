@@ -309,7 +309,8 @@ export function buildContexts(input: AssemblyInput): AssemblyContexts {
     envs.set(c.snapshot.id, env);
     specials.set(c.snapshot.id, contextOf(env, specialCoordinate(c)));
   }
-  const base = input.product.baseContractId !== undefined ? envs.get(input.product.baseContractId) : undefined;
+  // 2개 이상은 조립 계층에서 unsupported로 보고하되 부분 조립 문맥은 첫 등록분으로 계속 만든다.
+  const base = input.product.baseContractIds.length > 0 ? envs.get(input.product.baseContractIds[0]) : undefined;
   const general = contextOf(base ?? envOf(input, catalog, undefined, undefined), generalCoordinate(input.product));
   return { general, specials, traces };
 }

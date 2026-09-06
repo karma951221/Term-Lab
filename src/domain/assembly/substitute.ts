@@ -119,6 +119,7 @@ class Substituter {
       id: n.id,
       children: this.inlines(n.children),
       ...(n.items ? { items: n.items.map((it) => (it.kind === "error" ? it : this.item(it))) } : {}),
+      ...(n.excludeFromComparison ? { excludeFromComparison: true } : {}),
     };
   }
 

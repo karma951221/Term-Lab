@@ -7,7 +7,7 @@ import type { MissingSlot } from "../coverage/values";
 import type { SpecialGroup } from "../product/types";
 import type { Code, Id, Issue } from "../types";
 import { assemble, assembleSpecial, executionBasedFilter } from "./booklet";
-import { alphaPlusFixture, alphaGeneralDocument, coverageEntry, deathCoverage } from "./fixture";
+import { alphaPlusFixture, alphaGeneralDocument, baseDeathCoverage, coverageEntry, deathCoverage } from "./fixture";
 import type { AssemblyCoverage, AssemblyInput, RenderedDoc, RenderedInline } from "./types";
 
 // ───────────────────────────── 헬퍼 ─────────────────────────────
@@ -90,7 +90,7 @@ function withSurgery(coverages: AssemblyCoverage[], patch: Partial<AssemblyInput
   return {
     ...base,
     product: { ...base.product, general: surgeryFixture().general, generalDocumentId: "g-doc-surgery" },
-    coverages,
+    coverages: [baseDeathCoverage(), ...coverages],
     specialDocuments: new Map([["cov-surgery", special]]),
     clauses: surgeryClauses,
     ...patch,
@@ -106,12 +106,12 @@ function tinyDoc(id: Id, title: string, text: string, appendixCode?: Code): Docu
 
 describe("조립오류 S2 — 미입력 값 참조 → 오류 마커 + 좌표 + 「완성본 아님」", () => {
   const input = alphaPlusFixture();
-  const basic = input.coverages[0];
+  const basic = input.coverages.find((coverage) => coverage.snapshot.id === "pc-basic")!;
   (basic.values.get("pc-basic") as Map<string, unknown>).delete("D0007"); // 문면용 감액기간 미입력 (자리는 있다 — 부착됨)
   const { booklet, doc } = docsOf(input);
 
-  it("조립은 중단되지 않는다 — 제3조 슬롯 자리에 notEntered 마커, 나머지는 끝까지 조립", () => {
-    expect(lines(doc("pc-basic"))[6]).toBe("  ① 계약일부터 ⟦notEntered⟧ 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다.");
+  it("조립은 중단되지 않는다 — 슬롯 자리에 notEntered 마커, 나머지는 끝까지 조립", () => {
+    expect(lines(doc("pc-basic"))[5]).toBe("  ③ 계약일부터 ⟦notEntered⟧ 이내에는 감액 지급하며, 보통약관 제6조(해약환급금)을 확인합니다.");
     expect(lines(doc("pc-basic"))).toHaveLength(10);
   });
 
@@ -123,10 +123,10 @@ describe("조립오류 S2 — 미입력 값 참조 → 오류 마커 + 좌표 + 
       at: {
         document: "special",
         ownerId: "pc-basic",
-        ownerName: "일반상해사망보장",
+        ownerName: "일반상해사망",
         articleId: "s-art-reduce",
         articleTitle: "보험금의 감액지급",
-        nodePath: ["s-doc-death", "s-art-reduce", "s-par-reduce", "s-slot-reduce"],
+        nodePath: ["s-doc-death", "s-art-reduce", "s-par-reduce-extra", "s-slot-reduce"],
         refPath: "D0007",
       },
     });
@@ -134,7 +134,7 @@ describe("조립오류 S2 — 미입력 값 참조 → 오류 마커 + 좌표 + 
   });
 
   it("값 차이는 탑재분별 — 「추가」 쪽은 그대로 완성", () => {
-    expect(lines(doc("pc-addon"))[6]).toContain("24개월");
+    expect(lines(doc("pc-addon"))[4]).toContain("24개월");
   });
 
   it("값 입력 후 재조립하면 오류 소멸 (S1 상태로 복귀)", () => {
@@ -257,19 +257,22 @@ describe("조립오류 S6 — 생략 자동 판정: 리터럴 비교 · 탑재�
   });
   const viaClause: ParagraphNode["children"] = [{ id: "s6-c", kind: "clauseInlineRef", clauseCode: "C002", options: {} }];
   const coverages = [surgeryCoverage("pc-surgery", "수술비", { renew: false }), surgeryCoverage("pc-renew", "갱신형 수술비", { renew: true })];
-  const build = (body: ParagraphNode["children"]) => docsOf(withSurgery(coverages, { product: { ...alphaPlusFixture().product, general, generalDocumentId: "g6", baseContractId: "pc-surgery" } }, special(body)));
+  const build = (body: ParagraphNode["children"]) => docsOf(withSurgery(coverages, { product: { ...alphaPlusFixture().product, general, generalDocumentId: "g6", baseContractIds: ["pc-base"] } }, special(body)));
 
   it("같은 공용조항을 참조 → 「수술비」는 보통약관 조와 동일해 생략, 「갱신형 수술비」는 갱신 문구가 붙어 유지 (탑재분별 판정)", () => {
     const { booklet, doc } = build(viaClause);
     expect(lines(doc("pc-surgery")).map((l) => l.split("(")[0])).toEqual(["제1조", "  ① 수술을 보장합니다."]);
     expect(lines(doc("pc-renew"))).toEqual(["제1조(보험금의 지급사유)", "  ① 수술을 보장합니다.", "제2조(준용규정)", "  ① 이 약관에서 정하지 않은 사항은 보통약관을 따릅니다. 갱신형 계약은 갱신 특칙을 우선합니다."]);
-    expect(booklet.omitted).toEqual([{ productCoverageId: "pc-surgery", productCoverageName: "수술비", articleId: "s6-apply", articleTitle: "준용규정", linkedArticleId: "g6-apply" }]);
+    expect(booklet.omitted.map((record) => [record.productCoverageId, record.disposition]).sort()).toEqual([
+      ["pc-renew", "full"],
+      ["pc-surgery", "omitted"],
+    ]);
   });
 
   it("띄어쓰기 하나만 달라도 생략되지 않는다 — 유사도·정규화 없음", () => {
     const { booklet, doc } = build([{ id: "s6-t2", kind: "text", text: "이 약관에서 정하지 않은 사항은  보통약관을 따릅니다." }]);
     expect(lines(doc("pc-surgery"))).toHaveLength(4);
-    expect(booklet.omitted).toEqual([]);
+    expect(booklet.omitted.map((record) => record.disposition)).toEqual(["full", "full"]);
   });
 
   it("직접 쓴 문장이 리터럴 동일하면 생략된다 — 동일성의 근거는 결과 문자열뿐 (보통약관 쪽은 기본계약=비갱신 값으로 렌더되므로 둘 다 동일)", () => {
@@ -291,6 +294,7 @@ describe("그룹핑별표 S1·S2 — 그룹 타이틀 · 그룹 순서 · 그룹
     groups,
     specialDocuments: new Map([...base.specialDocuments, ["cov-surgery", tinyDoc("t-surgery", "수술비", "수술을 보장합니다.")]]),
     coverages: [
+      baseDeathCoverage(),
       surgeryCoverage("pc-renew", "갱신형 수술비", { renew: true, attributes: [{ kindCode: "A0001", valueCode: "V02" }], groupId: "grp-surgery" }),
       deathCoverage("pc-addon", "일반상해사망보장 추가", [{ kindCode: "A0002", valueCode: "V02" }], "grp-surgery"),
       surgeryCoverage("pc-surgery", "수술비", { renew: false, attributes: [{ kindCode: "A0001", valueCode: "V01" }], groupId: "grp-surgery" }),
@@ -346,6 +350,7 @@ describe("그룹핑별표 S3·S4 — 참조된 별표만 · 번호는 책자 등
         ["cov-dis", tinyDoc("t-dis", "장해", "장해의 분류는 ", "APX_DISABILITY")],
       ]),
       coverages: [
+        baseDeathCoverage(),
         coverageEntry({ id: "pc-burn", name: "화상", coverageId: "cov-burn", coverageName: "화상", attributes: [], subCoverages: [], values: {}, groupId: groupOfBurn }),
         coverageEntry({ id: "pc-dis", name: "장해", coverageId: "cov-dis", coverageName: "장해", attributes: [], subCoverages: [], values: {}, groupId: groupOfDisability }),
       ],
@@ -381,22 +386,25 @@ describe("그룹핑별표 S3·S4 — 참조된 별표만 · 번호는 책자 등
 
 // ───────────────────────────── 기본계약 · 공용조항 옵션 · 반복 자리 ─────────────────────────────
 
-describe("ADR-0011 — 보통약관 문맥은 기본계약. 미지정이면 오류 + 좌표(noBaseContract)로 부분 조립", () => {
-  it("기본계약 없음 — 보통약관의 담보 레벨 조건(갱신여부)만 noBaseContract, 특약은 정상", () => {
+describe("ADR-0011 — 기본계약을 지정하지 않아도 오류를 남기고 부분 조립", () => {
+  it("기본계약 없음 — noBaseContract와 미배치 전환을 알리고 특약은 정상 조립", () => {
     const input = alphaPlusFixture();
-    const b = assemble({ ...input, product: { ...input.product, baseContractId: undefined } });
-    expect(b.issues).toHaveLength(1);
-    expect(b.issues[0]).toMatchObject({ kind: "noBaseContract", at: { document: "general", ownerId: "g-doc", articleId: "g-art-pay", refPath: "D0001" } });
-    expect(lines(b.general!)[3]).toBe("  ① 회사는 피보험자가 ⟦noBaseContract⟧ 이후 기본계약의 보험금 지급사유가 발생한 때 보험금을 지급합니다.");
+    const b = assemble({ ...input, product: { ...input.product, baseContractIds: [] } });
+    expect(kinds(b.issues)).toEqual(["noBaseContract", "unplaced"]);
+    expect(b.issues[0]).toMatchObject({ kind: "noBaseContract", severity: "error", at: { document: "product", ownerId: "prod-alpha" } });
+    expect(b.general!.children.find((node) => node.id === "g-art-pay")).toMatchObject({ kind: "article", children: [] });
     expect(b.specials[0].docs).toHaveLength(2);
     expect(b.complete).toBe(false);
   });
 
-  it("기본계약 값이 갱신형이면 보통약관 문구도 따라간다 (최초계약일)", () => {
+  it("기본계약 문면을 바꾸면 연결된 보통약관 조 본문도 따라간다", () => {
     const input = alphaPlusFixture();
-    (input.coverages[0].values.get("pc-basic") as Map<string, unknown>).set("D0001", { entered: true, value: true });
+    const baseDoc = input.specialDocuments.get("cov-base-death")!;
+    const basePay = baseDoc.children.find((node) => node.kind === "article" && node.id === "b-art-pay") as ArticleNode;
+    const paragraph = basePay.children[0] as ParagraphNode;
+    paragraph.children = [{ id: "changed", kind: "text", text: "변경된 기본계약 지급사유입니다." }];
     const b = assemble(input);
-    expect(lines(b.general!)[3]).toContain("최초계약일");
+    expect(lines(b.general!)[3]).toBe("  ① 변경된 기본계약 지급사유입니다.");
     expect(b.complete).toBe(true);
   });
 
@@ -407,6 +415,16 @@ describe("ADR-0011 — 보통약관 문맥은 기본계약. 미지정이면 오�
     expect(kinds(b.issues)).toEqual(["brokenRef", "brokenRef"]);
     expect(b.issues[1].message).toContain("보통약관 템플릿이 없어");
   });
+
+  it("기본계약 2개 이상 — unsupported 오류를 남기고 기본계약들은 특약·미산출 목록에서 제외한다", () => {
+    const input = alphaPlusFixture();
+    const b = assemble({ ...input, product: { ...input.product, baseContractIds: ["pc-base", "pc-basic"] } });
+    expect(b.issues[0]).toMatchObject({ kind: "unsupported", severity: "error", message: "기본계약 2개 이상은 MVP 이후에 지원합니다" });
+    expect(b.specials.flatMap((group) => group.docs.map((doc) => doc.ownerId))).toEqual(["pc-addon"]);
+    expect(b.baseContracts.map((record) => record.productCoverageId)).toEqual(["pc-base", "pc-basic"]);
+    expect(b.undocumented).toEqual([]);
+    expect(b.complete).toBe(false);
+  });
 });
 
 describe("ADR-0017 — 공용조항 옵션 해소: 오버라이드 > 마스터, 미선택·무효는 오류 마커", () => {
@@ -414,22 +432,28 @@ describe("ADR-0017 — 공용조항 옵션 해소: 오버라이드 > 마스터, 
     const input = alphaPlusFixture();
     const doc = input.specialDocuments.get("cov-death")!;
     const lapse = doc.children.find((a) => a.kind === "article" && a.id === "s-art-lapse") as ArticleNode;
-    (lapse.children[1] as { options: Record<string, string> }).options = options;
+    (lapse.children[0] as { options: Record<string, string> }).options = options;
     if (!override) return docsOf(input);
-    const [basic, ...rest] = input.coverages;
-    return docsOf({ ...input, coverages: [{ ...basic, overrides: [{ id: "ov-1", scope: { kind: "productCoverage", id: "pc-basic" }, nodeId: "s-clause-lapse", clauseCode: "C0001", options: override }] }, ...rest] });
+    return docsOf({
+      ...input,
+      coverages: input.coverages.map((coverage) =>
+        coverage.snapshot.id === "pc-basic"
+          ? { ...coverage, overrides: [{ id: "ov-1", scope: { kind: "productCoverage", id: "pc-basic" }, nodeId: "s-clause-lapse", clauseCode: "C0001", options: override }] }
+          : coverage,
+      ),
+    });
   };
 
   it("상품담보 오버라이드가 마스터 선택을 이긴다 — 「기본」만 일반 문구, 「추가」는 마스터대로", () => {
     const { doc, booklet } = withOptions({ O01: "V02" }, { O01: "V01" });
-    expect(lines(doc("pc-basic"))[9]).toBe("  ② 이 특별약관은 보험기간이 끝난 때 소멸합니다.");
-    expect(lines(doc("pc-addon"))[9]).toBe("  ② 이 특별약관은 피보험자가 사망한 때 소멸합니다.");
+    expect(lines(doc("pc-basic"))[6]).toBe("  ① 이 특별약관은 보험기간이 끝난 때 소멸합니다.");
+    expect(lines(doc("pc-addon"))[6]).toBe("  ① 이 특별약관은 피보험자가 사망한 때 소멸합니다.");
     expect(booklet.complete).toBe(true);
   });
 
   it("옵션 미선택 → optionUnselected 마커 (항 자리) · 유효 집합 밖 오버라이드 → optionInvalid", () => {
     const unselected = withOptions({});
-    expect(lines(unselected.doc("pc-basic"))[9]).toBe("  ⟦optionUnselected⟧");
+    expect(lines(unselected.doc("pc-basic"))[6]).toBe("  ⟦optionUnselected⟧");
     expect(unselected.booklet.issues.map((i) => [i.kind, i.at.ownerId])).toEqual([
       ["optionUnselected", "pc-basic"],
       ["optionUnselected", "pc-addon"],
@@ -441,9 +465,8 @@ describe("ADR-0017 — 공용조항 옵션 해소: 오버라이드 > 마스터, 
 
   it("없는 공용조항 참조는 brokenRef 마커", () => {
     const input = alphaPlusFixture();
-    const b = assemble({ ...input, clauses: input.clauses.filter((c) => c.code !== "C0002") });
-    expect(kinds(b.issues)).toEqual(["brokenRef", "brokenRef", "brokenRef"]); // 보통약관 1 + 특약 2 (생략 불가)
-    expect(b.omitted).toEqual([]);
+    const b = assemble({ ...input, clauses: input.clauses.filter((c) => c.code !== "C0001") });
+    expect(kinds(b.issues)).toEqual(["brokenRef", "brokenRef"]);
   });
 });
 
@@ -453,7 +476,7 @@ describe("반복 자리(P7) · 밟은 자리 원칙", () => {
     const doc = input.specialDocuments.get("cov-death")!;
     (doc.children[0] as ArticleNode).children.push({ id: "s-for", kind: "forBlock", source: "subCoverage", children: [] });
     const { booklet, doc: d } = docsOf(input);
-    expect(lines(d("pc-basic"))[3]).toBe("  ⟦structure⟧");
+    expect(lines(d("pc-basic"))[2]).toBe("  ⟦structure⟧");
     expect(booklet.issues.map((i) => i.message)).toEqual(["블록 반복은 아직 조립하지 않습니다 (P7)", "블록 반복은 아직 조립하지 않습니다 (P7)"]);
   });
 
@@ -462,7 +485,7 @@ describe("반복 자리(P7) · 밟은 자리 원칙", () => {
     const item = (id: Id, level: MissingSlot["owner"]["level"], path: string): MissingSlot => ({ owner: { level, id }, ownerName: "", discriminatorCode: path.split(".")[0], label: "", path, at: {} });
     const items = [item("cov-death", "coverage", "D0007"), item("ben-death", "benefit", "D0003.F02"), item("ben-death", "benefit", "D0003.F01"), item("cov-death", "coverage", "D0001")];
     const tree = { id: "cov-death", name: "일반상해사망", description: "", subCoverages: [] };
-    expect(filter(items, tree).map((m) => m.path)).toEqual(["D0007", "D0003.F01", "D0001"]); // 지급률(F02)은 어떤 문서도 읽지 않았다
+    expect(filter(items, tree).map((m) => m.path)).toEqual(["D0007", "D0003.F01"]); // 지급률(F02)·갱신여부(D0001)는 어떤 문서도 읽지 않았다
     expect(filter(items, { ...tree, id: "cov-other" })).toEqual([]);
   });
 
@@ -472,6 +495,6 @@ describe("반복 자리(P7) · 밟은 자리 원칙", () => {
     expect(r.ok && r.value.complete).toBe(true);
     const none = assembleSpecial({ ...input, specialDocuments: new Map() }, "pc-basic");
     expect(!none.ok && none.rejection.reason).toBe("notFound");
-    expect(alphaGeneralDocument().children).toHaveLength(4);
+    expect(alphaGeneralDocument().children).toHaveLength(6);
   });
 });

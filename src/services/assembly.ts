@@ -83,7 +83,6 @@ export function createAssemblyService(db: Db, services: AssemblyServices): Assem
 
     const general = p.generalDocumentId ? await document.get(p.generalDocumentId) : undefined;
     const baseContractIds = await listBaseContractIds(db, productId);
-    const baseContractId = baseContractIds.length === 1 ? baseContractIds[0] : undefined; // 0개·2개 이상 = 미지정 (검증은 product.checkBaseContract)
 
     const groupViews = await product.listGroups(productId);
     const groupOf = new Map<Id, Id>();
@@ -119,7 +118,7 @@ export function createAssemblyService(db: Db, services: AssemblyServices): Assem
         name: p.name,
         values: productValues,
         attached: new Set(productAttached),
-        ...(baseContractId !== undefined ? { baseContractId } : {}),
+        baseContractIds,
         ...(general ? { general: general.tree, generalDocumentId: general.id } : {}),
         overrides: productOverrides,
       },

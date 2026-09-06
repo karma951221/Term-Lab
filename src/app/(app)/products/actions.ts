@@ -111,7 +111,8 @@ export async function mountAction(productId: Id, formData: FormData): Promise<vo
   const services = getServices();
   const kinds = await services.product.listAttributeKinds();
   const coverageId = str(formData, "coverageId");
-  const r = await services.product.mount(actor, productId, coverageId, parseSelections(formData, kinds));
+  const section = str(formData, "section") === "base" ? "base" : "special";
+  const r = await services.product.mount(actor, productId, coverageId, parseSelections(formData, kinds), section);
   if (!r.ok) redirect(errorRedirectPath(detailPath(productId), msg(r.rejection)));
   redirect(`${detailPath(productId)}/coverages/${r.value.id}`);
 }

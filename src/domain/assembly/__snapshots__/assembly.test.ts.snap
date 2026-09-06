@@ -51,48 +51,15 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
           {
             "children": [
               {
-                "id": "g-txt-pay-1",
+                "id": "b-txt-pay",
                 "kind": "text",
-                "text": "회사는 피보험자가 ",
-              },
-              {
-                "id": "g-txt-pay-3",
-                "kind": "text",
-                "text": "계약일",
-              },
-              {
-                "id": "g-txt-pay-4",
-                "kind": "text",
-                "text": " 이후 기본계약의 보험금 지급사유가 발생한 때 보험금을 지급합니다.",
+                "text": "피보험자가 보험기간 중 상해로 사망한 경우 보험금을 지급합니다.",
               },
             ],
-            "id": "g-par-pay-1",
+            "id": "b-par-pay",
             "kind": "paragraph",
             "label": "①",
             "number": 1,
-          },
-          {
-            "children": [
-              {
-                "id": "g-txt-pay-5",
-                "kind": "text",
-                "text": "이 계약은 ",
-              },
-              {
-                "id": "g-slot-notice",
-                "kind": "text",
-                "text": "간편심사",
-              },
-              {
-                "id": "g-txt-pay-6",
-                "kind": "text",
-                "text": " 계약입니다.",
-              },
-            ],
-            "id": "g-par-pay-2",
-            "kind": "paragraph",
-            "label": "②",
-            "number": 2,
           },
         ],
         "id": "g-art-pay",
@@ -100,6 +67,63 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
         "label": "제2조",
         "number": 2,
         "title": "보험금의 지급사유",
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "id": "b-txt-detail",
+                "kind": "text",
+                "text": "보험금 지급에 관한 세부사항은 산출방법서에 따릅니다.",
+              },
+            ],
+            "id": "b-par-detail",
+            "kind": "paragraph",
+            "label": "①",
+            "number": 1,
+          },
+        ],
+        "id": "g-art-detail",
+        "kind": "article",
+        "label": "제3조",
+        "number": 3,
+        "title": "보험금 지급에 관한 세부규정",
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "id": "g-txt-exempt",
+                "kind": "text",
+                "text": "고의로 사고를 일으킨 경우에는 보험금을 지급하지 않습니다.",
+              },
+            ],
+            "id": "g-par-exempt",
+            "kind": "paragraph",
+            "label": "①",
+            "number": 1,
+          },
+          {
+            "children": [
+              {
+                "id": "g-clause-exempt-extra/c3-text",
+                "kind": "text",
+                "text": "법령에 따라 보험금 지급이 제한되는 경우에는 보험금을 지급하지 않습니다.",
+              },
+            ],
+            "id": "g-clause-exempt-extra/c3-par",
+            "kind": "paragraph",
+            "label": "②",
+            "number": 2,
+          },
+        ],
+        "id": "g-art-exempt",
+        "kind": "article",
+        "label": "제4조",
+        "number": 4,
+        "title": "보험금을 지급하지 않는 사유",
       },
       {
         "children": [
@@ -131,8 +155,8 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
         ],
         "id": "g-art-disability",
         "kind": "article",
-        "label": "제3조",
-        "number": 3,
+        "label": "제5조",
+        "number": 5,
         "title": "장해의 분류",
       },
       {
@@ -140,39 +164,35 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
           {
             "children": [
               {
-                "id": "g-clause-apply/c2-t1",
+                "id": "g-txt-refund-1",
                 "kind": "text",
-                "text": "이 약관에서 정하지 않은 사항은 ",
-              },
-              {
-                "connector": "및",
-                "id": "g-clause-apply/c2-ref",
-                "kind": "articleRef",
-                "label": "보통약관 제1조(용어의 정의)",
-                "targets": [
-                  {
-                    "label": "제1조(용어의 정의)",
-                    "nodeId": "g-art-def",
-                  },
-                ],
-              },
-              {
-                "id": "g-clause-apply/c2-t2",
-                "kind": "text",
-                "text": " 및 관계 법령을 따릅니다.",
+                "text": "계약이 해지된 경우 해약환급금을 지급합니다.",
               },
             ],
-            "id": "g-par-apply",
+            "id": "g-par-refund-1",
             "kind": "paragraph",
             "label": "①",
             "number": 1,
           },
+          {
+            "children": [
+              {
+                "id": "g-txt-refund-2",
+                "kind": "text",
+                "text": "해약환급금은 산출방법서에 따라 계산합니다.",
+              },
+            ],
+            "id": "g-par-refund-2",
+            "kind": "paragraph",
+            "label": "②",
+            "number": 2,
+          },
         ],
-        "id": "g-art-apply",
+        "id": "g-art-refund",
         "kind": "article",
-        "label": "제4조",
-        "number": 4,
-        "title": "준용규정",
+        "label": "제6조",
+        "number": 6,
+        "title": "해약환급금",
       },
     ],
     "document": "general",
@@ -183,18 +203,52 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
   },
   "omitted": [
     {
-      "articleId": "s-art-apply",
-      "articleTitle": "준용규정",
-      "linkedArticleId": "g-art-apply",
+      "articleId": "s-art-pay",
+      "articleTitle": "보험금의 지급사유",
+      "disposition": "full",
+      "linkedArticleId": "g-art-pay",
       "productCoverageId": "pc-basic",
-      "productCoverageName": "일반상해사망보장",
+      "productCoverageName": "일반상해사망",
     },
     {
-      "articleId": "s-art-apply",
-      "articleTitle": "준용규정",
-      "linkedArticleId": "g-art-apply",
+      "articleId": "s-art-exempt",
+      "articleTitle": "보험금을 지급하지 않는 사유",
+      "disposition": "omitted",
+      "linkedArticleId": "g-art-exempt",
+      "productCoverageId": "pc-basic",
+      "productCoverageName": "일반상해사망",
+    },
+    {
+      "articleId": "s-art-reduce",
+      "articleTitle": "보험금의 감액지급",
+      "disposition": "applied",
+      "linkedArticleId": "g-art-refund",
+      "productCoverageId": "pc-basic",
+      "productCoverageName": "일반상해사망",
+    },
+    {
+      "articleId": "s-art-pay",
+      "articleTitle": "보험금의 지급사유",
+      "disposition": "full",
+      "linkedArticleId": "g-art-pay",
       "productCoverageId": "pc-addon",
-      "productCoverageName": "일반상해사망보장 추가",
+      "productCoverageName": "일반상해사망 추가",
+    },
+    {
+      "articleId": "s-art-exempt",
+      "articleTitle": "보험금을 지급하지 않는 사유",
+      "disposition": "omitted",
+      "linkedArticleId": "g-art-exempt",
+      "productCoverageId": "pc-addon",
+      "productCoverageName": "일반상해사망 추가",
+    },
+    {
+      "articleId": "s-art-reduce",
+      "articleTitle": "보험금의 감액지급",
+      "disposition": "applied",
+      "linkedArticleId": "g-art-refund",
+      "productCoverageId": "pc-addon",
+      "productCoverageName": "일반상해사망 추가",
     },
   ],
   "specials": [
@@ -219,20 +273,7 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                     {
                       "id": "s-txt-pay-4",
                       "kind": "text",
-                      "text": " 이후 상해로 사망한 경우 사망보험금을 지급합니다.",
-                    },
-                  ],
-                  "id": "s-par-pay-1",
-                  "kind": "paragraph",
-                  "label": "①",
-                  "number": 1,
-                },
-                {
-                  "children": [
-                    {
-                      "id": "s-txt-pay-5",
-                      "kind": "text",
-                      "text": "사망보험금은 보험가입금액에 평균공시이율 ",
+                      "text": " 이후 상해로 사망한 경우 사망보험금을 지급합니다. 평균공시이율 ",
                     },
                     {
                       "id": "s-slot-rate",
@@ -240,20 +281,21 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                       "text": "2.5%",
                     },
                     {
-                      "id": "s-txt-pay-6",
+                      "id": "s-txt-pay-5",
                       "kind": "text",
-                      "text": " 을 적용하여 계산합니다.",
+                      "text": "를 적용합니다.",
                     },
                   ],
-                  "id": "s-par-pay-2",
+                  "id": "s-par-pay",
                   "kind": "paragraph",
-                  "label": "②",
-                  "number": 2,
+                  "label": "①",
+                  "number": 1,
                 },
               ],
               "id": "s-art-pay",
               "kind": "article",
               "label": "제1조",
+              "linkedArticleId": "g-art-pay",
               "number": 1,
               "title": "보험금의 지급사유",
             },
@@ -262,68 +304,33 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                 {
                   "children": [
                     {
-                      "id": "s-txt-exempt-1",
+                      "id": "s-art-reduce::application::prefix",
                       "kind": "text",
-                      "text": "회사는 다음 중 어느 한 가지로 보험금 지급사유가 발생한 때에는 보험금을 지급하지 않습니다.",
-                    },
-                  ],
-                  "id": "s-par-exempt",
-                  "items": [
-                    {
-                      "children": [
-                        {
-                          "id": "s-txt-exempt-2",
-                          "kind": "text",
-                          "text": "피보험자가 고의로 자신을 해친 경우",
-                        },
-                      ],
-                      "id": "s-item-exempt-1",
-                      "kind": "item",
-                      "label": "1.",
-                      "number": 1,
+                      "text": "이 특별약관의 보험금의 감액지급은 ",
                     },
                     {
-                      "children": [
+                      "connector": "및",
+                      "id": "s-art-reduce::application::ref",
+                      "kind": "articleRef",
+                      "label": "보통약관 제6조(해약환급금)",
+                      "targets": [
                         {
-                          "id": "s-txt-exempt-3",
-                          "kind": "text",
-                          "text": "보험수익자가 고의로 피보험자를 해친 경우",
-                        },
-                      ],
-                      "id": "s-item-exempt-2",
-                      "kind": "item",
-                      "label": "2.",
-                      "number": 2,
-                      "subitems": [
-                        {
-                          "children": [
-                            {
-                              "id": "s-txt-exempt-4",
-                              "kind": "text",
-                              "text": "다만, 그 보험수익자가 보험금의 일부 보험수익자인 경우에는 다른 보험수익자에 대한 보험금은 지급합니다.",
-                            },
-                          ],
-                          "id": "s-sub-exempt",
-                          "kind": "subitem",
-                          "label": "가.",
-                          "number": 1,
+                          "label": "제6조(해약환급금)",
+                          "nodeId": "g-art-refund",
                         },
                       ],
                     },
+                    {
+                      "id": "s-art-reduce::application::suffix",
+                      "kind": "text",
+                      "text": "를 준용합니다.",
+                    },
                   ],
+                  "id": "s-art-reduce::application",
                   "kind": "paragraph",
                   "label": "①",
                   "number": 1,
                 },
-              ],
-              "id": "s-art-exempt",
-              "kind": "article",
-              "label": "제2조",
-              "number": 2,
-              "title": "보험금을 지급하지 않는 사유",
-            },
-            {
-              "children": [
                 {
                   "children": [
                     {
@@ -339,36 +346,41 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                     {
                       "id": "s-txt-reduce-2",
                       "kind": "text",
-                      "text": " 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다.",
+                      "text": " 이내에는 감액 지급하며, ",
+                    },
+                    {
+                      "connector": "및",
+                      "id": "s-ref-refund",
+                      "kind": "articleRef",
+                      "label": "보통약관 제6조(해약환급금)",
+                      "targets": [
+                        {
+                          "label": "제6조(해약환급금)",
+                          "nodeId": "g-art-refund",
+                        },
+                      ],
+                    },
+                    {
+                      "id": "s-txt-reduce-3",
+                      "kind": "text",
+                      "text": "을 확인합니다.",
                     },
                   ],
-                  "id": "s-par-reduce",
+                  "id": "s-par-reduce-extra",
                   "kind": "paragraph",
-                  "label": "①",
-                  "number": 1,
+                  "label": "②",
+                  "number": 2,
                 },
               ],
               "id": "s-art-reduce",
               "kind": "article",
-              "label": "제3조",
-              "number": 3,
+              "label": "제2조",
+              "linkedArticleId": "g-art-refund",
+              "number": 2,
               "title": "보험금의 감액지급",
             },
             {
               "children": [
-                {
-                  "children": [
-                    {
-                      "id": "s-txt-lapse",
-                      "kind": "text",
-                      "text": "이 특별약관은 다음의 경우 소멸합니다.",
-                    },
-                  ],
-                  "id": "s-par-lapse",
-                  "kind": "paragraph",
-                  "label": "①",
-                  "number": 1,
-                },
                 {
                   "children": [
                     {
@@ -389,22 +401,44 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                   ],
                   "id": "s-clause-lapse/c1-par",
                   "kind": "paragraph",
-                  "label": "②",
-                  "number": 2,
+                  "label": "①",
+                  "number": 1,
                 },
               ],
               "id": "s-art-lapse",
               "kind": "article",
+              "label": "제3조",
+              "number": 3,
+              "title": "특별약관의 소멸",
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "id": "s-doc-death::application-text",
+                      "kind": "text",
+                      "text": "이 특별약관에서 정하지 않은 사항은 보통약관을 따릅니다.",
+                    },
+                  ],
+                  "id": "s-doc-death::application-paragraph",
+                  "kind": "paragraph",
+                  "label": "①",
+                  "number": 1,
+                },
+              ],
+              "id": "s-doc-death::application-article",
+              "kind": "article",
               "label": "제4조",
               "number": 4,
-              "title": "특별약관의 소멸",
+              "title": "준용규정",
             },
           ],
           "document": "special",
           "id": "s-doc-death",
           "kind": "document",
           "ownerId": "pc-basic",
-          "title": "일반상해사망보장 특별약관",
+          "title": "일반상해사망 특별약관",
         },
         {
           "children": [
@@ -425,20 +459,7 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                     {
                       "id": "s-txt-pay-4",
                       "kind": "text",
-                      "text": " 이후 상해로 사망한 경우 사망보험금을 지급합니다.",
-                    },
-                  ],
-                  "id": "s-par-pay-1",
-                  "kind": "paragraph",
-                  "label": "①",
-                  "number": 1,
-                },
-                {
-                  "children": [
-                    {
-                      "id": "s-txt-pay-5",
-                      "kind": "text",
-                      "text": "사망보험금은 보험가입금액에 평균공시이율 ",
+                      "text": " 이후 상해로 사망한 경우 사망보험금을 지급합니다. 평균공시이율 ",
                     },
                     {
                       "id": "s-slot-rate",
@@ -446,20 +467,21 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                       "text": "2.5%",
                     },
                     {
-                      "id": "s-txt-pay-6",
+                      "id": "s-txt-pay-5",
                       "kind": "text",
-                      "text": " 을 적용하여 계산합니다.",
+                      "text": "를 적용합니다.",
                     },
                   ],
-                  "id": "s-par-pay-2",
+                  "id": "s-par-pay",
                   "kind": "paragraph",
-                  "label": "②",
-                  "number": 2,
+                  "label": "①",
+                  "number": 1,
                 },
               ],
               "id": "s-art-pay",
               "kind": "article",
               "label": "제1조",
+              "linkedArticleId": "g-art-pay",
               "number": 1,
               "title": "보험금의 지급사유",
             },
@@ -468,68 +490,33 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                 {
                   "children": [
                     {
-                      "id": "s-txt-exempt-1",
+                      "id": "s-art-reduce::application::prefix",
                       "kind": "text",
-                      "text": "회사는 다음 중 어느 한 가지로 보험금 지급사유가 발생한 때에는 보험금을 지급하지 않습니다.",
-                    },
-                  ],
-                  "id": "s-par-exempt",
-                  "items": [
-                    {
-                      "children": [
-                        {
-                          "id": "s-txt-exempt-2",
-                          "kind": "text",
-                          "text": "피보험자가 고의로 자신을 해친 경우",
-                        },
-                      ],
-                      "id": "s-item-exempt-1",
-                      "kind": "item",
-                      "label": "1.",
-                      "number": 1,
+                      "text": "이 특별약관의 보험금의 감액지급은 ",
                     },
                     {
-                      "children": [
+                      "connector": "및",
+                      "id": "s-art-reduce::application::ref",
+                      "kind": "articleRef",
+                      "label": "보통약관 제6조(해약환급금)",
+                      "targets": [
                         {
-                          "id": "s-txt-exempt-3",
-                          "kind": "text",
-                          "text": "보험수익자가 고의로 피보험자를 해친 경우",
-                        },
-                      ],
-                      "id": "s-item-exempt-2",
-                      "kind": "item",
-                      "label": "2.",
-                      "number": 2,
-                      "subitems": [
-                        {
-                          "children": [
-                            {
-                              "id": "s-txt-exempt-4",
-                              "kind": "text",
-                              "text": "다만, 그 보험수익자가 보험금의 일부 보험수익자인 경우에는 다른 보험수익자에 대한 보험금은 지급합니다.",
-                            },
-                          ],
-                          "id": "s-sub-exempt",
-                          "kind": "subitem",
-                          "label": "가.",
-                          "number": 1,
+                          "label": "제6조(해약환급금)",
+                          "nodeId": "g-art-refund",
                         },
                       ],
                     },
+                    {
+                      "id": "s-art-reduce::application::suffix",
+                      "kind": "text",
+                      "text": "를 준용합니다.",
+                    },
                   ],
+                  "id": "s-art-reduce::application",
                   "kind": "paragraph",
                   "label": "①",
                   "number": 1,
                 },
-              ],
-              "id": "s-art-exempt",
-              "kind": "article",
-              "label": "제2조",
-              "number": 2,
-              "title": "보험금을 지급하지 않는 사유",
-            },
-            {
-              "children": [
                 {
                   "children": [
                     {
@@ -545,36 +532,41 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                     {
                       "id": "s-txt-reduce-2",
                       "kind": "text",
-                      "text": " 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다.",
+                      "text": " 이내에는 감액 지급하며, ",
+                    },
+                    {
+                      "connector": "및",
+                      "id": "s-ref-refund",
+                      "kind": "articleRef",
+                      "label": "보통약관 제6조(해약환급금)",
+                      "targets": [
+                        {
+                          "label": "제6조(해약환급금)",
+                          "nodeId": "g-art-refund",
+                        },
+                      ],
+                    },
+                    {
+                      "id": "s-txt-reduce-3",
+                      "kind": "text",
+                      "text": "을 확인합니다.",
                     },
                   ],
-                  "id": "s-par-reduce",
+                  "id": "s-par-reduce-extra",
                   "kind": "paragraph",
-                  "label": "①",
-                  "number": 1,
+                  "label": "②",
+                  "number": 2,
                 },
               ],
               "id": "s-art-reduce",
               "kind": "article",
-              "label": "제3조",
-              "number": 3,
+              "label": "제2조",
+              "linkedArticleId": "g-art-refund",
+              "number": 2,
               "title": "보험금의 감액지급",
             },
             {
               "children": [
-                {
-                  "children": [
-                    {
-                      "id": "s-txt-lapse",
-                      "kind": "text",
-                      "text": "이 특별약관은 다음의 경우 소멸합니다.",
-                    },
-                  ],
-                  "id": "s-par-lapse",
-                  "kind": "paragraph",
-                  "label": "①",
-                  "number": 1,
-                },
                 {
                   "children": [
                     {
@@ -595,22 +587,44 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                   ],
                   "id": "s-clause-lapse/c1-par",
                   "kind": "paragraph",
-                  "label": "②",
-                  "number": 2,
+                  "label": "①",
+                  "number": 1,
                 },
               ],
               "id": "s-art-lapse",
               "kind": "article",
+              "label": "제3조",
+              "number": 3,
+              "title": "특별약관의 소멸",
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "id": "s-doc-death::application-text",
+                      "kind": "text",
+                      "text": "이 특별약관에서 정하지 않은 사항은 보통약관을 따릅니다.",
+                    },
+                  ],
+                  "id": "s-doc-death::application-paragraph",
+                  "kind": "paragraph",
+                  "label": "①",
+                  "number": 1,
+                },
+              ],
+              "id": "s-doc-death::application-article",
+              "kind": "article",
               "label": "제4조",
               "number": 4,
-              "title": "특별약관의 소멸",
+              "title": "준용규정",
             },
           ],
           "document": "special",
           "id": "s-doc-death",
           "kind": "document",
           "ownerId": "pc-addon",
-          "title": "일반상해사망보장 추가 특별약관",
+          "title": "일반상해사망 추가 특별약관",
         },
       ],
       "id": "grp-injury",

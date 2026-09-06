@@ -41,7 +41,9 @@ describe("assembly 서비스 (PGlite) — 관통 1 통합", () => {
   let documents: DocumentService;
   let product: ProductService;
   let productId: Id;
+  let covBase: Id;
   let covDeath: Id;
+  let pcBase: Id;
   let pcBasic: Id;
   let pcAddon: Id;
 
@@ -81,6 +83,10 @@ describe("assembly 서비스 (PGlite) — 관통 1 통합", () => {
     unwrap(await coverage.writeValue(editor, { level: "coverage", id: covDeath }, "D0007", "24개월"));
     unwrap(await coverage.writeValue(editor, { level: "benefit", id: ben.id }, "D0003.F01", true));
     unwrap(await coverage.writeValue(editor, { level: "benefit", id: ben.id }, "D0003.F02", 100));
+
+    const baseTree = unwrap(await coverage.create(editor, { name: "상해사망(기본계약)", benefitName: "사망보험금" }));
+    covBase = baseTree.id;
+    trees.set(covBase, baseTree);
 
     // 별표 · 공용조항 (C0001 소멸 block + 옵션 O01{V01 일반, V02 사망} · C0002 준용 inline)
     unwrap(await documents.createAppendix(editor, { code: "APX_DISABILITY", name: "장해분류표" }));
@@ -126,8 +132,37 @@ describe("assembly 서비스 (PGlite) — 관통 1 통합", () => {
               { id: "g-par-pay-2", kind: "paragraph", children: [{ id: "g-txt-pay-5", kind: "text", text: "이 계약은 " }, { id: "g-slot-notice", kind: "slot", ref: "D0002" }, { id: "g-txt-pay-6", kind: "text", text: " 계약입니다." }] },
             ],
           },
+          { id: "g-art-detail", kind: "article", title: "보험금 지급에 관한 세부규정", children: [] },
           { id: "g-art-disability", kind: "article", title: "장해의 분류", children: [{ id: "g-par-dis", kind: "paragraph", children: [{ id: "g-txt-dis-1", kind: "text", text: "장해의 분류는 " }, { id: "g-apx-disability", kind: "appendixRef", appendixCode: "APX_DISABILITY" }, { id: "g-txt-dis-2", kind: "text", text: " 에 따릅니다." }] }] },
           { id: "g-art-apply", kind: "article", title: "준용규정", children: [{ id: "g-par-apply", kind: "paragraph", children: [{ id: "g-clause-apply", kind: "clauseInlineRef", clauseCode: "C0002", options: {} }] }] },
+        ]),
+      ),
+    );
+
+    const baseDocument = unwrap(await documents.createSpecial(editor, covBase, "상해사망 기본계약 문면"));
+    unwrap(await documents.setGeneralDocument(editor, baseDocument.id, g.id));
+    unwrap(
+      await documents.apply(
+        editor,
+        baseDocument.id,
+        insertAll(baseDocument.tree.id, [
+          {
+            id: "b-art-pay",
+            kind: "article",
+            title: "보험금의 지급사유",
+            linkedArticleId: "g-art-pay",
+            children: [
+              { id: "b-par-pay-1", kind: "paragraph", children: [{ id: "b-txt-pay-1", kind: "text", text: "회사는 피보험자가 계약일 이후 기본계약의 보험금 지급사유가 발생한 때 보험금을 지급합니다." }] },
+              { id: "b-par-pay-2", kind: "paragraph", children: [{ id: "b-txt-pay-2", kind: "text", text: "이 계약은 간편심사 계약입니다." }] },
+            ],
+          },
+          {
+            id: "b-art-detail",
+            kind: "article",
+            title: "보험금 지급에 관한 세부규정",
+            linkedArticleId: "g-art-detail",
+            children: [{ id: "b-par-detail", kind: "paragraph", children: [{ id: "b-txt-detail", kind: "text", text: "보험금 지급에 관한 세부사항은 산출방법서에 따릅니다." }] }],
+          },
         ]),
       ),
     );
@@ -169,7 +204,7 @@ describe("assembly 서비스 (PGlite) — 관통 1 통합", () => {
       ),
     );
 
-    // 상품 — 담보속성 · 상품 · 값 · 탑재 ×2 · 기본계약 · 그룹
+    // 상품 — 담보속성 · 상품 · 값 · 기본계약 1 + 특약 2 · 그룹
     unwrap(await product.createAttributeKind(editor, { label: "갱신유형" })); // A0001
     unwrap(await product.addAttributeValue(editor, "A0001", { label: "비갱신형" }));
     unwrap(await product.addAttributeValue(editor, "A0001", { label: "갱신형", fragment: "갱신형" }));
@@ -179,9 +214,9 @@ describe("assembly 서비스 (PGlite) — 관통 1 통합", () => {
     unwrap(await product.setNamingTemplate(editor, "[A0001] [담보명] [A0002]"));
     productId = unwrap(await product.createProduct(editor, { name: "알파Plus(축약)", generalDocumentId: g.id })).id;
     unwrap(await product.setProductValue(editor, productId, "D0002", undefined, "V02"));
+    pcBase = unwrap(await product.mount(editor, productId, covBase, [], "base")).id;
     pcBasic = unwrap(await product.mount(editor, productId, covDeath, [{ kindCode: "A0002", valueCode: "V01" }])).id;
     pcAddon = unwrap(await product.mount(editor, productId, covDeath, [{ kindCode: "A0002", valueCode: "V02" }])).id;
-    unwrap(await product.designateBaseContract(editor, productId, pcBasic));
     const group = unwrap(await product.createGroup(editor, productId, { title: "상해 관련 특별약관" }));
     unwrap(await product.placeInGroup(editor, group.id, pcBasic));
     unwrap(await product.placeInGroup(editor, group.id, pcAddon));
@@ -200,9 +235,11 @@ describe("assembly 서비스 (PGlite) — 관통 1 통합", () => {
       "제2조(보험금의 지급사유)",
       "  ① 회사는 피보험자가 계약일 이후 기본계약의 보험금 지급사유가 발생한 때 보험금을 지급합니다.",
       "  ② 이 계약은 간편심사 계약입니다.",
-      "제3조(장해의 분류)",
+      "제3조(보험금 지급에 관한 세부규정)",
+      "  ① 보험금 지급에 관한 세부사항은 산출방법서에 따릅니다.",
+      "제4조(장해의 분류)",
       "  ① 장해의 분류는 【별표1(장해분류표)】 에 따릅니다.",
-      "제4조(준용규정)",
+      "제5조(준용규정)",
       "  ① 이 약관에서 정하지 않은 사항은 보통약관 제1조(용어의 정의) 및 관계 법령을 따릅니다.",
     ]);
     expect(b.specials.map((g) => [g.title, g.docs.map((d) => d.title)])).toEqual([["상해 관련 특별약관", ["일반상해사망 특별약관", "일반상해사망 추가 특별약관"]]]);
@@ -242,16 +279,15 @@ describe("assembly 서비스 (PGlite) — 관통 1 통합", () => {
     expect(unwrap(await coverage.completeness(covDeath)).map((m) => m.path)).toEqual(["D0003.F02"]);
   });
 
-  it("기본계약 미지정 → 보통약관의 담보 레벨 참조가 noBaseContract 오류 + 좌표, 특약은 그대로 (거부가 아니라 부분 조립)", async () => {
-    unwrap(await product.releaseBaseContract(editor, productId, pcBasic));
+  it("기본계약 미지정 → noBaseContract 오류를 남기고 특약은 그대로 부분 조립", async () => {
+    unwrap(await product.releaseBaseContract(editor, productId, pcBase));
     const b = unwrap(await svc.preview(productId));
     expect(b.complete).toBe(false);
-    expect(b.issues).toHaveLength(1);
-    expect(b.issues[0]).toMatchObject({ kind: "noBaseContract", at: { document: "general", articleId: "g-art-pay", articleTitle: "보험금의 지급사유", refPath: "D0001" } });
-    expect(b.issues[0].at.nodePath?.slice(-2)).toEqual(["g-inl-renew", "g-inl-renew-if"]);
+    expect(b.issues.map((issue) => issue.kind)).toEqual(["noBaseContract", "noBaseContract", "unplaced"]);
+    expect(b.issues[0]).toMatchObject({ kind: "noBaseContract", at: { document: "product", ownerId: productId } });
     expect(b.specials[0].docs).toHaveLength(2);
     expect(lines(b.specials[0].docs[0])).toHaveLength(10);
-    unwrap(await product.designateBaseContract(editor, productId, pcBasic));
+    unwrap(await product.designateBaseContract(editor, productId, pcBase));
     expect(unwrap(await svc.preview(productId)).complete).toBe(true);
   });
 

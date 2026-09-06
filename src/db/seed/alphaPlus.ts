@@ -123,6 +123,8 @@ export async function seedAlphaPlus(services: Services, actor: Actor): Promise<S
   unwrap(await coverage.writeValue(actor, { level: "coverage", id: covDeath }, "D0007", "24개월"));
   unwrap(await coverage.writeValue(actor, { level: "benefit", id: ben.id }, "D0003.F01", true));
   unwrap(await coverage.writeValue(actor, { level: "benefit", id: ben.id }, "D0003.F02", 100));
+  const baseTree = unwrap(await coverage.create(actor, { name: "상해사망(기본계약)", benefitName: "사망보험금" }));
+  const covBase = baseTree.id;
 
   // ── 별표 · 공용조항 (C0001 소멸 block + 옵션 O01{V01 일반, V02 사망} · C0002 준용 inline)
   unwrap(await document.createAppendix(actor, { code: "APX_DISABILITY", name: "장해분류표" }));
@@ -197,8 +199,37 @@ export async function seedAlphaPlus(services: Services, actor: Actor): Promise<S
             { id: "g-par-pay-2", kind: "paragraph", children: [{ id: "g-txt-pay-5", kind: "text", text: "이 계약은 " }, { id: "g-slot-notice", kind: "slot", ref: "D0002" }, { id: "g-txt-pay-6", kind: "text", text: " 계약입니다." }] },
           ],
         },
+        { id: "g-art-detail", kind: "article", title: "보험금 지급에 관한 세부규정", children: [] },
         { id: "g-art-disability", kind: "article", title: "장해의 분류", children: [{ id: "g-par-dis", kind: "paragraph", children: [{ id: "g-txt-dis-1", kind: "text", text: "장해의 분류는 " }, { id: "g-apx-disability", kind: "appendixRef", appendixCode: "APX_DISABILITY" }, { id: "g-txt-dis-2", kind: "text", text: " 에 따릅니다." }] }] },
         { id: "g-art-apply", kind: "article", title: "준용규정", children: [{ id: "g-par-apply", kind: "paragraph", children: [{ id: "g-clause-apply", kind: "clauseInlineRef", clauseCode: "C0002", options: {} }] }] },
+      ]),
+    ),
+  );
+
+  const baseDocument = unwrap(await document.createSpecial(actor, covBase, "상해사망 기본계약 문면"));
+  unwrap(await document.setGeneralDocument(actor, baseDocument.id, g.id));
+  unwrap(
+    await document.apply(
+      actor,
+      baseDocument.id,
+      insertAll(baseDocument.tree.id, [
+        {
+          id: "b-art-pay",
+          kind: "article",
+          title: "보험금의 지급사유",
+          linkedArticleId: "g-art-pay",
+          children: [
+            { id: "b-par-pay-1", kind: "paragraph", children: [{ id: "b-txt-pay-1", kind: "text", text: "회사는 피보험자가 계약일 이후 기본계약의 보험금 지급사유가 발생한 때 보험금을 지급합니다." }] },
+            { id: "b-par-pay-2", kind: "paragraph", children: [{ id: "b-txt-pay-2", kind: "text", text: "이 계약은 간편심사 계약입니다." }] },
+          ],
+        },
+        {
+          id: "b-art-detail",
+          kind: "article",
+          title: "보험금 지급에 관한 세부규정",
+          linkedArticleId: "g-art-detail",
+          children: [{ id: "b-par-detail", kind: "paragraph", children: [{ id: "b-txt-detail", kind: "text", text: "보험금 지급에 관한 세부사항은 산출방법서에 따릅니다." }] }],
+        },
       ]),
     ),
   );
@@ -258,17 +289,17 @@ export async function seedAlphaPlus(services: Services, actor: Actor): Promise<S
     ),
   );
 
-  // ── 상품 — 값 · 탑재 ×2 · 기본계약 · 그룹 (담보속성 카탈로그는 앞서 채번했다)
+  // ── 상품 — 값 · 기본계약 1 + 특약 2 · 그룹 (담보속성 카탈로그는 앞서 채번했다)
   const productId = unwrap(await product.createProduct(actor, { name: ALPHA_PLUS_PRODUCT_NAME, generalDocumentId: g.id })).id;
   unwrap(await product.setProductValue(actor, productId, "D0002", undefined, "V02"));
+  const pcBase = unwrap(await product.mount(actor, productId, covBase, [], "base")).id;
   const pcBasic = unwrap(await product.mount(actor, productId, covDeath, [{ kindCode: "A0002", valueCode: "V01" }])).id;
   const pcAddon = unwrap(await product.mount(actor, productId, covDeath, [{ kindCode: "A0002", valueCode: "V02" }])).id;
-  unwrap(await product.designateBaseContract(actor, productId, pcBasic));
   const group = unwrap(await product.createGroup(actor, productId, { title: "상해 관련 특별약관" }));
   unwrap(await product.placeInGroup(actor, group.id, pcBasic));
   unwrap(await product.placeInGroup(actor, group.id, pcAddon));
 
   await assertAssembles(services, productId);
-  console.log(`[seed:alphaPlus] 생성 완료 — 상품 ${productId} (기본계약 ${pcBasic} · 추가 ${pcAddon})`);
+  console.log(`[seed:alphaPlus] 생성 완료 — 상품 ${productId} (기본계약 ${pcBase} · 특약 ${pcBasic}, ${pcAddon})`);
   return { created: true, productId };
 }

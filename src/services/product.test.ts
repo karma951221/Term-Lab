@@ -175,8 +175,9 @@ describe("product 서비스 (PGlite)", () => {
     it("0종 0형 상품은 조합 0건이 정상 — 담보 탑재까지 정상 진행", async () => {
       const p = unwrap(await svc.createProduct(editor, { name: "0종0형 상품" }));
       expect(await svc.listPlans(p.id)).toEqual([]);
-      const pc = unwrap(await svc.mount(editor, p.id, DEATH, []));
+      const pc = unwrap(await svc.mount(editor, p.id, DEATH, [], "base"));
       expect(pc.name).toBe("일반상해사망");
+      expect(await svc.listBaseContractIds(p.id)).toEqual([pc.id]);
     });
   });
 
@@ -300,7 +301,7 @@ describe("product 서비스 (PGlite)", () => {
       expect((await svc.listPlans(productId)).length).toBe(2);
     });
 
-    it("기본계약 지정 → 보통약관 부착 검사 (미부착은 거부가 아니라 오류 목록, D-P5-13) · 2개째 지정은 거부", async () => {
+    it("기본계약 지정 → 보통약관 부착 검사 · 복수 저장은 허용하되 완결성은 unsupported", async () => {
       required = [
         { level: "coverage", discriminatorCode: "D0001" },
         { level: "coverage", discriminatorCode: "D0004", at: { document: "general", articleTitle: "감액" } },
@@ -309,7 +310,12 @@ describe("product 서비스 (PGlite)", () => {
       const r = unwrap(await svc.designateBaseContract(editor, productId, pcBasic));
       expect(r.productCoverageId).toBe(pcBasic);
       expect(r.issues.map((i) => [i.kind, i.at.refPath])).toEqual([["notAttached", "D0004"]]);
-      expect(reason(await svc.designateBaseContract(editor, productId, pcAddon))).toBe("duplicate");
+      unwrap(await svc.designateBaseContract(editor, productId, pcAddon));
+      expect(await svc.listBaseContractIds(productId)).toEqual([pcBasic, pcAddon]);
+      const multiple = await svc.checkBaseContract(productId);
+      expect(reason(multiple)).toBe("invalid");
+      if (!multiple.ok && multiple.rejection.reason === "invalid") expect(multiple.rejection.issues[0].kind).toBe("unsupported");
+      unwrap(await svc.releaseBaseContract(editor, productId, pcAddon));
       expect(unwrap(await svc.checkBaseContract(productId)).map((c) => c.productCoverageId)).toEqual([pcBasic]);
       // 기본계약인 상품담보의 탑재 해제는 거부 (D-P5-7)
       expect(reason(await svc.unmount(admin, pcBasic, { confirm: true }))).toBe("invalid");
