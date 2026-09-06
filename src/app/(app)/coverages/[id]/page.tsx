@@ -1,11 +1,11 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import { Confirm } from "@/app/_components/Confirm";
 import { ErrorBanner } from "@/app/_components/ErrorBanner";
+import { IconButton, IconDown, IconPlus, IconTrash, IconUp } from "@/app/_components/icons";
 import { ValueForm } from "@/app/_components/ValueForm";
 import { previewOutcome } from "@/app/_lib/rejection";
-import { formatCoordinate } from "@/domain/coordinate";
 import type { Coverage, CoverageNodeRef } from "@/domain/coverage";
 import { buildForm } from "@/forms";
 import { currentActor, getServices } from "@/lib/services";
@@ -73,8 +73,12 @@ export default async function CoverageDetailPage({
 
   const forms = await services.coverage.forms(selected);
   const attachable = await services.coverage.attachable(selected);
-  const completenessResult = await services.coverage.completeness(tree.id);
-  const missing = completenessResult.ok ? completenessResult.value : [];
+  const completenessResult = await services.coverage.completenessSummary(tree.id);
+  const completeness = completenessResult.ok ? completenessResult.value : { total: 0, missing: [] };
+  const missing = completeness.missing;
+  // 진행 표시는 채운 것을 센다 (디자인원칙 §9.2) — 분모는 부착된 값 자리 수.
+  const entered = completeness.total - missing.length;
+  const percent = completeness.total === 0 ? 100 : Math.round((entered / completeness.total) * 100);
 
   let detachNode: ReactNode = null;
   if (sp.detach) {
@@ -122,7 +126,7 @@ export default async function CoverageDetailPage({
       <ErrorBanner message={sp.error} />
 
       <div style={{ display: "flex", gap: 24 }}>
-        <div style={{ flex: "0 0 260px" }}>
+        <div style={{ flex: "0 0 320px", minWidth: 0 }}>
           <h2 className="ts-h2">트리</h2>
           <ul className="ts-tree">
             <li>
@@ -139,16 +143,14 @@ export default async function CoverageDetailPage({
                         {s.name}
                       </Link>
                       <form action={moveSubCoverageAction.bind(null, tree.id, s.id, -1)}>
-                        <button type="submit" disabled={i === 0} title="위로">
-                          ↑
-                        </button>
+                        <IconButton type="submit" disabled={i === 0} label={`위로 옮기기 · 세부보장 ${s.name}`} icon={<IconUp />} />
                       </form>
                       <form action={moveSubCoverageAction.bind(null, tree.id, s.id, 1)}>
-                        <button type="submit" disabled={i === tree.subCoverages.length - 1} title="아래로">
-                          ↓
-                        </button>
+                        <IconButton type="submit" disabled={i === tree.subCoverages.length - 1} label={`아래로 옮기기 · 세부보장 ${s.name}`} icon={<IconDown />} />
                       </form>
-                      <Link href={`?del=sub:${s.id}`}>삭제</Link>
+                      <Link href={`?del=sub:${s.id}`} className="ts-iconbtn danger" title={`세부보장 삭제 · ${s.name}`} aria-label={`세부보장 삭제 · ${s.name}`}>
+                        <IconTrash />
+                      </Link>
                     </div>
                     <ul className="ts-tree">
                       {s.benefits.map((b, j) => (
@@ -158,52 +160,61 @@ export default async function CoverageDetailPage({
                               {b.name}
                             </Link>
                             <form action={moveBenefitAction.bind(null, tree.id, s.id, b.id, -1)}>
-                              <button type="submit" disabled={j === 0} title="위로">
-                                ↑
-                              </button>
+                              <IconButton type="submit" disabled={j === 0} label={`위로 옮기기 · 급부 ${b.name}`} icon={<IconUp />} />
                             </form>
                             <form action={moveBenefitAction.bind(null, tree.id, s.id, b.id, 1)}>
-                              <button type="submit" disabled={j === s.benefits.length - 1} title="아래로">
-                                ↓
-                              </button>
+                              <IconButton type="submit" disabled={j === s.benefits.length - 1} label={`아래로 옮기기 · 급부 ${b.name}`} icon={<IconDown />} />
                             </form>
-                            <Link href={`?del=benefit:${b.id}`}>삭제</Link>
+                            <Link href={`?del=benefit:${b.id}`} className="ts-iconbtn danger" title={`급부 삭제 · ${b.name}`} aria-label={`급부 삭제 · ${b.name}`}>
+                              <IconTrash />
+                            </Link>
                           </div>
                         </li>
                       ))}
                     </ul>
-                    <form action={addBenefitAction.bind(null, tree.id, s.id)} style={{ display: "flex", gap: 4 }}>
-                      <input type="text" name="name" placeholder="새 급부명" required />
-                      <button type="submit">급부 추가</button>
+                    <form action={addBenefitAction.bind(null, tree.id, s.id)} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                      <input type="text" name="name" placeholder="새 급부명" required style={{ minWidth: 0, flex: 1 }} />
+                      <IconButton type="submit" label={`급부 추가 · 세부보장 ${s.name} 에`} icon={<IconPlus />} />
                     </form>
                   </li>
                 ))}
               </ul>
-              <form action={addSubCoverageAction.bind(null, tree.id)} style={{ display: "flex", gap: 4 }}>
-                <input type="text" name="name" placeholder="새 세부보장명" required />
-                <button type="submit">세부보장 추가</button>
+              <form action={addSubCoverageAction.bind(null, tree.id)} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                <input type="text" name="name" placeholder="새 세부보장명" required style={{ minWidth: 0, flex: 1 }} />
+                <IconButton type="submit" label={`세부보장 추가 · 담보 ${tree.name} 에`} icon={<IconPlus />} />
               </form>
             </li>
           </ul>
 
           {sp.del?.startsWith("sub:") || sp.del?.startsWith("benefit:") ? deleteNode : null}
 
-          <h2 className="ts-h2">완결성 ({missing.length})</h2>
-          <ul>
-            {missing.map((m, i) => (
-              <li key={i}>
-                {formatCoordinate({ ...m.at, ownerName: tree.name, subjectName: m.ownerName, nodeKind: "value", refPath: m.path }, { source: true })}
-              </li>
-            ))}
-          </ul>
-          {missing.length === 0 && <p className="ts-ok">미입력 없음.</p>}
+          <h2 className="ts-h2">
+            완결성
+            <span className="ts-count">
+              값 자리 <b>{completeness.total}</b> 중 <b>{entered}</b> 입력
+            </span>
+          </h2>
+          <p>
+            <span className="ts-progress" style={{ "--value": percent } as CSSProperties} aria-hidden="true" />
+          </p>
+          {missing.length === 0 ? (
+            <p className="ts-ok">{completeness.total === 0 ? "부착된 값 자리가 없다." : "부착된 값 자리가 모두 입력됐다."}</p>
+          ) : (
+            <ul>
+              {missing.map((m, i) => (
+                <li key={i}>
+                  {m.ownerName} › {m.label}({m.discriminatorCode}) · <Link href={`?node=${encodeNodeKey(m.owner.level, m.owner.id)}#def-${m.discriminatorCode}`}>고치러 가기</Link>
+                </li>
+              ))}
+            </ul>
+          )}
 
           <h2 className="ts-h2">담보약관 문면</h2>
           {tree.documentId ? (
             <Link href={`/documents/${tree.documentId}`}>문면 열기</Link>
           ) : (
-            <form action={createSpecialDocumentAction.bind(null, tree.id)} style={{ display: "flex", gap: 4 }}>
-              <input type="text" name="title" placeholder="문면 제목" defaultValue={`${tree.name} 특별약관`} />
+            <form action={createSpecialDocumentAction.bind(null, tree.id)} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              <input type="text" name="title" placeholder="문면 제목" defaultValue={`${tree.name} 특별약관`} style={{ minWidth: 0, flex: 1 }} />
               <button type="submit">문면 생성</button>
             </form>
           )}
@@ -260,7 +271,7 @@ export default async function CoverageDetailPage({
 
           {forms.ok &&
             forms.value.map((f) => (
-              <div key={f.def.code}>
+              <div key={f.def.code} id={`def-${f.def.code}`}>
                 <ValueForm
                   model={buildForm(f.def, enumLookup, new Map(Object.entries(f.slots)))}
                   action={writeCoverageValuesAction.bind(null, selected)}

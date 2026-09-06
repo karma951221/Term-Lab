@@ -144,6 +144,9 @@ describe("product 서비스 (PGlite)", () => {
       unwrap(await svc.setProductValue(editor, productId, "D0007", undefined, undefined));
       expect((await svc.getProductValues(productId)).has("D0007")).toBe(false);
       expect((await svc.productMissing(productId)).map((m) => m.path)).toEqual(["D0007"]);
+      // 완결성은 분모를 함께 준다 — 노출된 상품 레벨 값 자리는 고지유형(D0002) · 상품 선택값(D0007) 둘 (디자인원칙 §9.6)
+      expect(await svc.productCompleteness(productId)).toMatchObject({ total: 2 });
+      expect((await svc.productCompleteness(productId)).missing.map((m) => m.path)).toEqual(["D0007"]);
     });
   });
 
@@ -260,6 +263,10 @@ describe("product 서비스 (PGlite)", () => {
       // 완결성: 새 급부의 보험금지급 2 필드 + 1종수술급부 면책여부 + 감액기간 아님(입력함)
       const missing = await svc.coverageMissing(pcSurgery);
       expect(missing.map((m) => `${m.ownerName}:${m.path}`).sort()).toEqual(["1종수술급부:D0003.F01", "2종수술급부:D0003.F01", "2종수술급부:D0003.F02"]);
+      // 분모: 담보 레벨 갱신여부·감액기간 2 + 급부 2개 × 보험금지급 2 필드 = 6
+      const summary = await svc.coverageCompleteness(pcSurgery);
+      expect(summary.total).toBe(6);
+      expect(summary.missing).toHaveLength(3);
 
       await writeSlot(t.db, { kind: "productBenefit", id: newBen.id }, "D0003", "F01", true);
       trees.set(SURGERY, { id: SURGERY, name: "수술비", subCoverages: [{ id: SURGERY_SUB1, name: "1종수술", order: 0, benefits: [{ id: SURGERY_BEN1, name: "1종수술급부", order: 0 }] }] });
@@ -267,6 +274,14 @@ describe("product 서비스 (PGlite)", () => {
       expect(r2.removed).toBe(2);
       expect((await readSlots(t.db, { kind: "productBenefit", id: newBen.id })).size).toBe(0);
       expect(unwrap(await svc.getSnapshot(pcSurgery)).subCoverages).toHaveLength(1);
+    });
+
+    it("되돌릴 수 있는 필드 — 스냅샷이 마스터와 달라진 값 자리를 센다 (디자인원칙 §1.2)", async () => {
+      const before = await svc.snapshotDrift(pcBasic);
+      unwrap(await svc.setSnapshotValue(editor, pcBasic, { kind: "productCoverage", id: pcBasic }, "D0001", undefined, true)); // 마스터는 false
+      expect(await svc.snapshotDrift(pcBasic)).toBe(before + 1);
+      unwrap(await svc.setSnapshotValue(editor, pcBasic, { kind: "productCoverage", id: pcBasic }, "D0001", undefined, false)); // 마스터와 같아지면 다시 준다
+      expect(await svc.snapshotDrift(pcBasic)).toBe(before);
     });
   });
 

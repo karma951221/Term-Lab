@@ -208,6 +208,14 @@ describe("coverage 서비스 (PGlite)", () => {
       expect(missing).toHaveLength(16);
     });
 
+    it("완결성 요약은 분모를 함께 준다 — 「값 자리 N 중 M 입력」 (디자인원칙 §9.2·§9.6)", async () => {
+      const summary = unwrap(await svc.completenessSummary(accident.id));
+      // 부착: 담보 갱신유형 1 + 급부 2개 × 보험금지급 2 필드 = 5 (수술급여기준은 미부착이라 안 센다)
+      expect(summary.total).toBe(5);
+      expect(summary.missing).toEqual(unwrap(await svc.completeness(accident.id)));
+      expect(summary.total - summary.missing.length).toBe(1); // 첫 급부의 면책여부만 입력돼 있다
+    });
+
     it("실행 기반 필터를 주입하면 그 결과가 조회 결과다", async () => {
       const filtered = createCoverageService(t.db, { usage, completenessFilter: (items) => items.slice(0, 1) });
       expect(unwrap(await filtered.completeness(surgery.id))).toHaveLength(1);

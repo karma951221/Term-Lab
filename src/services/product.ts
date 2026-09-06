@@ -12,7 +12,7 @@
  *   `OptionValidator`(B2 옵션 집합) · `AttributeRefSource`(C1 식 참조). 기본 구현은 「없음/통과」.
  */
 import { destructive, type DestructiveAction } from "@/domain/auth";
-import { isValued, slotPath, slotType, validateValue, type Discriminator, type SlotPath } from "@/domain/catalog";
+import { isValued, slotPath, slotType, validateValue, valueSlotsOf, type Discriminator, type SlotPath } from "@/domain/catalog";
 import {
   addAttributeValue,
   checkGeneralAttachment,
@@ -90,6 +90,15 @@ export interface Confirmable {
 }
 
 export type SnapshotOwner = { kind: "productCoverage" | "productSubCoverage" | "productBenefit"; id: Id };
+
+/**
+ * 완결성 요약 — 미입력 목록에 **분모**를 붙인다 (디자인원칙 §9.2 목표 구배 · §9.6 앵커링).
+ * `total` 은 노출된 구분자(`exposedDiscriminators`)의 값 자리 수이고, 입력된 자리는 `total - missing.length`.
+ */
+export interface CompletenessSummary {
+  total: number;
+  missing: MissingSlot[];
+}
 export type CoverageSection = "base" | "special";
 export type OverrideScope = ClauseOptionOverride["scope"];
 export type SpecialGroupView = SpecialGroup & { members: ProductCoverage[] };
@@ -130,6 +139,8 @@ export interface ProductService {
   setProductValue(actor: Actor, id: Id, code: Code, fieldCode: Code | undefined, value: Value | undefined): Promise<Result<void>>;
   getProductValues(id: Id): Promise<Map<SlotPath, ValueSlot>>;
   productMissing(id: Id): Promise<MissingSlot[]>;
+  /** 상품 레벨 완결성 — 미입력 목록 + 분모(노출된 값 자리 수). */
+  productCompleteness(id: Id): Promise<CompletenessSummary>;
 
   // ── 세목
   listPlanOptions(productId: Id): Promise<PlanOption[]>;
@@ -157,6 +168,13 @@ export interface ProductService {
   syncStructure(id: Id): Promise<Result<SyncResult>>;
   unmount(actor: Actor, id: Id, opts?: Confirmable): Promise<Result<void>>;
   coverageMissing(id: Id): Promise<MissingSlot[]>;
+  /** 상품담보(스냅샷) 완결성 — 미입력 목록 + 분모(스냅샷 실체마다 노출된 값 자리 수). */
+  coverageCompleteness(id: Id): Promise<CompletenessSummary>;
+  /**
+   * 탑재 후 마스터와 달라진 값 자리 수 = 「되돌릴 수 있는 필드」(디자인원칙 §1.2).
+   * 스냅샷에 입력돼 있고 마스터의 같은 자리가 없거나 값이 다른 자리를 센다.
+   */
+  snapshotDrift(id: Id): Promise<number>;
   attachPlan(actor: Actor, id: Id, planId: Id): Promise<Result<void>>;
   detachPlan(actor: Actor, id: Id, planId: Id, opts?: Confirmable): Promise<Result<void>>;
   listAttachedPlans(id: Id): Promise<ProductPlan[]>;
@@ -209,6 +227,11 @@ function invalid<T>(issues: Issue[]): Result<T> {
 function issue(kind: Issue["kind"], message: string, at: Coordinate = {}): Issue {
   return { kind, message, at };
 }
+/** 완결성 분모 — 이 레벨에 노출된 구분자가 가진 값 자리 수 (디자인원칙 §9.6 「분모 없는 카운트를 두지 않는다」). */
+function countExposedSlots(level: AttachLevel, defs: readonly Discriminator[], attached: readonly Code[]): number {
+  return exposedDiscriminators(level, defs, attached).reduce((n, def) => n + valueSlotsOf(def).length, 0);
+}
+
 function cleanName(name: unknown): string | undefined {
   const t = typeof name === "string" ? name.trim() : "";
   return t.length > 0 ? t : undefined;
@@ -552,6 +575,17 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
       const slots = await readSlots(db, owner);
       return missingSlotsOf({ kind: "product", id }, p.name, "product", defs, await listAttached(db, owner), (path) => slots.get(path));
     },
+    productCompleteness: async (id) => {
+      const p = await repo.loadProduct(db, id);
+      if (!p) return { total: 0, missing: [] };
+      const { defs } = await catalogDefs(db);
+      const owner: ValueOwner = { kind: "product", id };
+      const [slots, attached] = [await readSlots(db, owner), await listAttached(db, owner)];
+      return {
+        total: countExposedSlots("product", defs, attached),
+        missing: missingSlotsOf({ kind: "product", id }, p.name, "product", defs, attached, (path) => slots.get(path)),
+      };
+    },
 
     // 세목
     listPlanOptions: (productId) => repo.listPlanOptions(db, productId),
@@ -745,6 +779,45 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
         out.push(...missingSlotsOf(owner, node ? node.name : pc.name, LEVEL_OF[owner.kind], defs, await listAttached(db, owner), (p) => slots.get(p)));
       }
       return out;
+    },
+    coverageCompleteness: async (id) => {
+      const pc = await repo.loadProductCoverage(db, id);
+      if (!pc) return { total: 0, missing: [] };
+      const { defs } = await catalogDefs(db);
+      const missing: MissingSlot[] = [];
+      let total = 0;
+      for (const { owner, node } of await snapshotOwners(db, id)) {
+        const slots = await readSlots(db, owner);
+        const attached = await listAttached(db, owner);
+        const level = LEVEL_OF[owner.kind];
+        total += countExposedSlots(level, defs, attached);
+        missing.push(...missingSlotsOf(owner, node ? node.name : pc.name, level, defs, attached, (p) => slots.get(p)));
+      }
+      return { total, missing };
+    },
+    snapshotDrift: async (id) => {
+      const pc = await repo.loadProductCoverage(db, id);
+      if (!pc) return 0;
+      const nodes = await repo.listNodes(db, id);
+      const pairs: { snapshot: ValueOwner; master: { kind: "coverage" | "subCoverage" | "benefit"; id: Id } }[] = [
+        { snapshot: { kind: "productCoverage", id }, master: { kind: "coverage", id: pc.coverageId } },
+        ...nodes.map((n) => ({
+          snapshot: { kind: n.kind === "sub" ? "productSubCoverage" : "productBenefit", id: n.id } as ValueOwner,
+          master: { kind: n.kind === "sub" ? "subCoverage" : "benefit", id: n.masterNodeId } as { kind: "subCoverage" | "benefit"; id: Id },
+        })),
+      ];
+      let changed = 0;
+      for (const { snapshot, master: from } of pairs) {
+        const mine = await readSlots(db, snapshot);
+        if (mine.size === 0) continue;
+        const theirs = master.masterSlots ? await master.masterSlots(from) : await readSlots(db, from);
+        for (const [path, slot] of mine) {
+          if (!slot.entered) continue;
+          const origin = theirs.get(path);
+          if (!origin?.entered || JSON.stringify(origin.value) !== JSON.stringify(slot.value)) changed += 1;
+        }
+      }
+      return changed;
     },
     attachPlan: (actor, id, planId) =>
       db.transaction((tx) =>

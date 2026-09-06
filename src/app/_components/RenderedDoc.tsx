@@ -16,10 +16,22 @@ import type {
   RenderedSubitem,
 } from "@/domain/assembly";
 
+/** 오류 표식 — 문자 글리프(⚠)가 아니라 그린다. 색은 `currentColor` 로 상속된다 (디자인원칙 §1.6). */
+function WarningIcon() {
+  return (
+    <svg className="ts-icon" width={12} height={12} viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+      <path d="M7 1.5 L13 12.5 L1 12.5 Z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <line x1="7" y1="5.5" x2="7" y2="9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="7" cy="10.8" r="0.9" fill="currentColor" />
+    </svg>
+  );
+}
+
 function ErrorMark({ node }: { node: ErrorNode }) {
   return (
     <span id={`node-${node.id}`} className="ts-doc-error" role="alert" title={node.issue.message}>
-      ⚠ {node.issue.message}
+      <WarningIcon />
+      {node.issue.message}
     </span>
   );
 }
@@ -74,22 +86,41 @@ function Item({ node }: { node: RenderedItem | ErrorNode }) {
   );
 }
 
+/**
+ * 항 — 호 목록을 품으면 `<div>` 로 낸다. `<p>` 안에는 `<ol>` 이 들어갈 수 없어서
+ * 파서가 목록을 밖으로 밀어내고 빈 `<p>` 를 남긴다 (문단 표시는 클래스가 한다).
+ */
 function Paragraph({ node }: { node: RenderedParagraph | ErrorNode }) {
-  if (node.kind === "error") return <p><ErrorMark node={node} /></p>;
-  return (
-    <p id={`node-${node.id}`} className="ts-doc-paragraph">
+  if (node.kind === "error")
+    return (
+      <p className="ts-doc-paragraph">
+        <ErrorMark node={node} />
+      </p>
+    );
+  const items = node.items ?? [];
+  const body = (
+    <>
       <span className="ts-doc-num">{node.label}</span>{" "}
       {node.children.map((c, i) => (
         <Inline key={i} node={c} />
       ))}
-      {node.items && node.items.length > 0 && (
-        <ol className="ts-doc-items">
-          {node.items.map((it, i) => (
-            <Item key={i} node={it} />
-          ))}
-        </ol>
-      )}
-    </p>
+    </>
+  );
+  if (items.length === 0)
+    return (
+      <p id={`node-${node.id}`} className="ts-doc-paragraph">
+        {body}
+      </p>
+    );
+  return (
+    <div id={`node-${node.id}`} className="ts-doc-paragraph">
+      {body}
+      <ol className="ts-doc-items">
+        {items.map((it, i) => (
+          <Item key={i} node={it} />
+        ))}
+      </ol>
+    </div>
   );
 }
 
