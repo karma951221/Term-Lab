@@ -657,17 +657,28 @@ button.danger:focus-visible {
   gap: 12px;
 }
 
-.ts-subtabs a {
+.ts-subtabs a,
+.ts-subtabs button {
   padding: 2px 0;
+  border: 0;
   border-bottom: 2px solid transparent;
+  background: none;
   color: var(--ts-ink-2);
+  font: inherit;
+  cursor: pointer;
   text-decoration: none;
 }
 
-.ts-subtabs a[aria-current="page"] {
+.ts-subtabs a[aria-current="page"],
+.ts-subtabs button[aria-current="page"] {
   border-bottom-color: var(--ts-mark);
   color: var(--ts-mark);
   font-weight: 700;
+}
+
+/* 변경이 있는 탭 표시 (담보_화면기획 §1) — 색이 아니라 점으로. */
+.ts-subtabs .ts-dot {
+  margin-left: 3px;
 }
 
 /* ── 7. L1 조회 ───────────────────────────────────────────────────────────── */
@@ -1678,4 +1689,166 @@ label.ts-field > textarea {
 
 .ts-doc-actions .ts-iconbtn {
   padding: 0;
+}
+
+
+/* ── 담보 상세 — 탭 + 구조 트리 + 노드 목록 (담보_화면기획 §1) ─────────────── */
+
+/* 기본 탭: 왼쪽 폼 그리드 + 오른쪽 사용처 · 문면. 트리는 아래 전폭. */
+.ts-detail-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 260px);
+  gap: 12px 32px;
+  align-items: start;
+}
+
+.ts-detail-main {
+  min-width: 0;
+}
+
+.ts-detail-side {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 4px 8px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.ts-detail-side dt {
+  color: var(--ts-ink-2);
+}
+
+.ts-detail-side dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.ts-detail-full {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.ts-inline-form {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.ts-inline-form input {
+  min-width: 0;
+  flex: 1;
+}
+
+.ts-tree-block {
+  margin-top: 8px;
+}
+
+/* 구조는 들여쓰기 + 순번으로 읽는다 — 세 층이 한눈에. */
+.ts-tree-num {
+  display: inline-block;
+  min-width: 14px;
+  color: var(--ts-ink-2);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.ts-tree-name {
+  min-width: 0;
+}
+
+.ts-tree-input {
+  min-width: 0;
+  flex: 0 1 260px;
+}
+
+.ts-linklike {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 값 탭: 왼쪽 그 층의 노드 목록(입력 n / 부착 m) + 오른쪽 선택한 노드의 값 폼. */
+.ts-node-split {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.ts-node-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ts-node-list button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  min-height: 28px;
+  padding: 2px 6px;
+  border: 0;
+  border-left: 2px solid transparent;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ts-node-list button[aria-current="true"] {
+  border-left-color: var(--ts-mark);
+  background: var(--ts-surface-2);
+}
+
+.ts-node-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ts-node-list .ts-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.ts-value-block {
+  margin-bottom: 12px;
+}
+
+.ts-detach {
+  margin: 2px 0 0;
+}
+
+/* 경고 — 거부는 아니고 「그래도 저장은 된다」 (담보명의 담보속성 값, Q-C). */
+.ts-warn {
+  margin: 2px 0 6px;
+  color: var(--ts-warn);
+  font-size: 12px;
+}
+
+/*
+ * 값 폼의 읽기 모드 (EditShell 안에 얹힌 embedded StructForm) — 입력칸을 잠긴 칸으로 보인다.
+ * 「테두리가 없으면 못 고친다」(디자인원칙 §1.2)를 폼 전체에도 그대로 적용한다.
+ */
+.ts-form-read input.ts-field-direct,
+.ts-form-read select.ts-field-direct,
+.ts-form-read textarea.ts-field-direct {
+  border-color: transparent;
+  background: var(--ts-surface-2);
+  color: var(--ts-ink-2);
+}
+
+/* 읽기 모드에서는 「비우기」·되돌리기 같은 행 조작과 제안 배지를 걷는다. */
+.ts-form-read .ts-badge.proposed,
+.ts-form-read .ts-iconbtn {
+  display: none;
 }

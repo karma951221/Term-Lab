@@ -50,7 +50,8 @@ export function EditShell<T extends EditData>({
 }: {
   initial: T;
   title: string;
-  code: string;
+  /** 코드가 있는 실체만 — 담보처럼 도메인에 코드가 없으면 넘기지 않는다 (없는 값을 화면이 지어내지 않는다). */
+  code?: string;
   headerMeta?: ReactNode;
   /** 목록으로 돌아가는 링크 — 헤더 위 좌상단에 둔다 (화면 하단에 조작을 두지 않는다). */
   backHref?: string;
@@ -100,7 +101,7 @@ export function EditShell<T extends EditData>({
   return <EditContext.Provider value={{ mode, pending, data, setValue: (name, value) => setData((current) => ({ ...current, [name]: value })) }}>
     {backHref ? <p className="ts-back"><Link href={backHref}>← {backLabel ?? "목록"}</Link></p> : null}
     <div className="ts-edit-head">
-      <h2 className="ts-h1">{shownTitle}</h2><code className="ts-mono ts-muted">{code}</code>{headerMeta}
+      <h2 className="ts-h1">{shownTitle}</h2>{code ? <code className="ts-mono ts-muted">{code}</code> : null}{headerMeta}
       <span className="ts-edit-actions">
         {mode === "read" ? <button type="button" onClick={() => setMode("edit")} disabled={pending}>편집</button> : <><IconButton icon={<IconClose />} label="편집 취소" disabled={pending} onClick={() => dirty ? setDiscardOpen(true) : setMode("read")} /><button type="button" className="primary" disabled={!dirty || pending} onClick={() => handle("save")}>{pending ? "저장 중…" : "저장"}</button></>}
         {deleteAction ? <IconButton icon={<IconTrash />} label={deleteTooltip ?? deleteLabel ?? `${shownTitle} 삭제`} danger disabled={pending} onClick={() => handle("delete")} /> : null}
