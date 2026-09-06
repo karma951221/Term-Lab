@@ -14,7 +14,7 @@
  *
  * 상호작용 로직은 전부 `formReducer`(순수)에 있다. 여기는 이벤트 → 액션 변환과 마크업뿐.
  */
-import { useId, useReducer, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useReducer, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 
 import { IconButton, IconFx, IconLock, IconRevert } from "@/app/_components/icons";
 import type { Issue } from "@/domain/types";
@@ -34,8 +34,17 @@ import {
 
 export interface StructFormProps {
   model: FormModel;
-  /** 제출 — issues 가 없을 때만 불린다. */
-  onSubmit: (submission: Submission) => void | Promise<void>;
+  /** 제출 — issues 가 없을 때만 불린다. `embedded` 면 안 쓴다. */
+  onSubmit?: (submission: Submission) => void | Promise<void>;
+  /**
+   * 바깥 편집 흐름(EditShell)에 얹혀 쓰는 모드 — 자기 저장 버튼을 내리고 초안을 `onChange` 로 올려보낸다.
+   * 「저장 하나가 화면의 변경을 다 담는다」(디자인원칙 §2 L2)를 값 폼에도 적용하기 위한 자리.
+   */
+  embedded?: boolean;
+  /** `embedded` 일 때 초안이 바뀔 때마다. 바깥이 모아서 한 번에 저장한다. */
+  onChange?: (submission: Submission) => void;
+  /** `embedded` 읽기 모드 — 입력칸을 잠근다. */
+  readOnly?: boolean;
   /** 제출 버튼 문구. 기본 「저장」. */
   submitLabel?: string;
   /** 서버 액션 진행 중 등 — 제출 버튼 비활성. */
@@ -310,7 +319,7 @@ function savedSignature(model: FormModel): string {
   return JSON.stringify(model.fields.map((f) => [f.path, f.state, f.value ?? null]));
 }
 
-export function StructForm({ model, onSubmit, submitLabel = "저장", pending, issues = [] }: StructFormProps) {
+export function StructForm({ model, onSubmit, submitLabel = "저장", pending, issues = [], embedded, onChange, readOnly }: StructFormProps) {
   const [state, dispatch] = useReducer(formReducer, model, initFormState);
   const [submitIssues, setSubmitIssues] = useState<Issue[]>([]);
   const [signature, setSignature] = useState(() => savedSignature(model));
@@ -327,6 +336,14 @@ export function StructForm({ model, onSubmit, submitLabel = "저장", pending, i
 
   const progress = formProgress(model);
 
+  // embedded: 초안이 바뀔 때마다 바깥(EditShell)으로 올린다. 저장은 바깥이 한 번에 한다.
+  // 읽기 모드에서는 올리지 않는다 — 안 고쳤는데 「변경됨」으로 잡히면 안 된다.
+  useEffect(() => {
+    if (embedded && onChange && !readOnly) onChange(toSubmission(live));
+    // onChange 는 매 렌더 새 함수일 수 있어 의존성에서 뺀다 — 초안(live)이 바뀔 때만 올린다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [embedded, live]);
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const submission = toSubmission(live);
@@ -335,7 +352,7 @@ export function StructForm({ model, onSubmit, submitLabel = "저장", pending, i
       return;
     }
     setSubmitIssues([]);
-    void onSubmit(submission);
+    void onSubmit?.(submission);
   };
 
   const allIssues = [...submitIssues, ...issues];
@@ -343,7 +360,7 @@ export function StructForm({ model, onSubmit, submitLabel = "저장", pending, i
   const unplaced = allIssues.filter((i) => !i.at.refPath || !live.fields[i.at.refPath]);
 
   return (
-    <form className="ts-form" data-discriminator={model.code} onSubmit={handleSubmit}>
+    <form className={readOnly ? "ts-form ts-form-read" : "ts-form"} data-discriminator={model.code} onSubmit={handleSubmit} inert={readOnly}>
       <h2 className="ts-form-title">
         {model.label}
         {progress.total > 0 && (
@@ -380,7 +397,7 @@ export function StructForm({ model, onSubmit, submitLabel = "저장", pending, i
           ))}
         </ul>
       )}
-      {progress.total > 0 && (
+      {progress.total > 0 && !embedded && (
         <div className="ts-form-actions">
           <button type="submit" className="primary" disabled={pending}>
             {submitLabel}
