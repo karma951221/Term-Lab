@@ -67,6 +67,18 @@
   box-sizing: border-box;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 html,
 body {
   margin: 0;
@@ -456,6 +468,18 @@ button.danger:focus-visible {
   flex-wrap: wrap;
 }
 
+.ts-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ts-list-head .ts-h1 {
+  margin-bottom: 0;
+}
+
 /* ── 7. L1 조회 ───────────────────────────────────────────────────────────── */
 
 .ts-l1 {
@@ -476,6 +500,107 @@ button.danger:focus-visible {
   padding: 6px 8px;
   background: var(--ts-surface-2);
   border-bottom: 1px solid var(--ts-rule-strong);
+}
+
+.ts-filterbar-stack {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--ts-surface-2);
+  border-bottom: 1px solid var(--ts-rule-strong);
+}
+
+.ts-filterbar-stack .ts-filterbar {
+  position: static;
+  border-bottom: 0;
+}
+
+.ts-searchbox {
+  color: var(--ts-ink-2) !important;
+}
+
+.ts-searchbox input {
+  width: min(320px, 32vw);
+}
+
+.ts-filter-clear {
+  min-height: 22px;
+  padding: 1px 6px;
+  border: 0;
+  background: none;
+  color: var(--ts-ink-2);
+  font-size: 12px;
+}
+
+.ts-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 6px;
+}
+
+.ts-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 22px;
+  padding: 1px 4px 1px 7px;
+  border: 1px solid var(--ts-rule-strong);
+  border-radius: 3px;
+  background: var(--ts-surface);
+  color: var(--ts-ink-2);
+  font-size: 12px;
+}
+
+.ts-chip button {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.ts-colfilter {
+  position: relative;
+}
+
+.ts-colfilter summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--ts-ink-3);
+}
+
+.ts-colfilter summary::-webkit-details-marker {
+  display: none;
+}
+
+.ts-colfilter-popover {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  z-index: 5;
+  min-width: 112px;
+  padding: 4px;
+  border: 1px solid var(--ts-rule-strong);
+  border-radius: 3px;
+  background: var(--ts-surface);
+}
+
+.ts-colfilter-popover button {
+  display: block;
+  width: 100%;
+  border: 0;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ts-colfilter-popover button[aria-pressed="true"] {
+  color: var(--ts-mark);
+  font-weight: 700;
 }
 
 .ts-filterbar label {

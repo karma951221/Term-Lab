@@ -15,6 +15,8 @@ export interface ListShellProps {
   toolbar?: ReactNode;
   /** 필터바 안에 놓일 입력·선택 필드들 (표 컬럼과 일치시킨다, §2 L1). 없으면 필터바 자체를 안 그린다. */
   filters?: ReactNode;
+  /** URL을 직접 갱신하는 client 필터면 true. 기존 GET 필터는 false. */
+  interactiveFilters?: boolean;
   /** 필터 적용 후 전체 건수. */
   total: number;
   /** 현재 페이지 (1부터). */
@@ -39,6 +41,7 @@ export function ListShell({
   heading,
   toolbar,
   filters,
+  interactiveFilters = false,
   total,
   page,
   pageSize,
@@ -65,17 +68,11 @@ export function ListShell({
     <div className="ts-l1">
       {heading}
       {toolbar}
-      {filters ? (
-        <form method="get" className="ts-filterbar">
-          {filters}
-        </form>
-      ) : null}
+      {filters ? (interactiveFilters ? <>{filters}</> : <form method="get" className="ts-filterbar">{filters}</form>) : null}
       {total === 0 ? empty : children}
       <div className="ts-pager">
-        <span className="ts-count">
-          총 <b>{total}</b>건 · {current}/{pageCount}
-        </span>
-        <span className="ts-pager-nav">
+        <span className="ts-count">총 <b>{total}</b>건{pageCount > 1 ? ` · ${current}/${pageCount}` : ""}</span>
+        {pageCount > 1 ? <span className="ts-pager-nav">
           {current > 1 ? (
             <Link href={pageHref(current - 1)}>이전</Link>
           ) : (
@@ -86,7 +83,7 @@ export function ListShell({
           ) : (
             <span className="ts-muted">다음</span>
           )}
-        </span>
+        </span> : null}
       </div>
     </div>
   );
