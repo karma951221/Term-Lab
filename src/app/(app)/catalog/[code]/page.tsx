@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Confirm } from "@/app/_components/Confirm";
 import { ErrorBanner } from "@/app/_components/ErrorBanner";
 import { previewOutcome } from "@/app/_lib/rejection";
+import { formatCoordinate } from "@/domain/coordinate";
 import { ATTACH_LEVEL_LABEL } from "@/domain/types";
 import { currentActor, getServices } from "@/lib/services";
 
@@ -46,10 +47,6 @@ function TypeKindSelect({ defaultValue = "" }: { defaultValue?: string }) {
       <option value="list<enum>">list&lt;enum&gt;</option>
     </select>
   );
-}
-
-function coordText(at: { document?: string; ownerName?: string; ownerId?: string; articleTitle?: string; refPath?: string }): string {
-  return [at.document, at.ownerName ?? at.ownerId, at.articleTitle, at.refPath].filter(Boolean).join(" · ") || "—";
 }
 
 export default async function CatalogDetailPage({
@@ -373,7 +370,7 @@ export default async function CatalogDetailPage({
           {usages.map((u, i) => (
             <tr key={i}>
               <td>{u.via}</td>
-              <td>{coordText(u.at)}</td>
+              <td>{formatCoordinate(u.at, { source: true })}</td>
             </tr>
           ))}
         </tbody>

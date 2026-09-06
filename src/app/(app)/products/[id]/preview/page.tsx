@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { IssueList } from "@/app/_components/IssueList";
 import { RenderedDoc, RenderedGroupView } from "@/app/_components/RenderedDoc";
 import { currentActor, getServices } from "@/lib/services";
 
@@ -31,21 +32,7 @@ export default async function ProductPreviewPage({ params }: { params: Promise<{
       {booklet.issues.length === 0 ? (
         <p className="ts-ok">오류 없음.</p>
       ) : (
-        <ul className="ts-issues">
-          {booklet.issues.map((issue, i) => (
-            <li key={i}>
-              [{issue.kind}] {issue.message}
-              {issue.at.articleTitle && ` · ${issue.at.articleTitle}`}
-              {issue.at.refPath && ` · ${issue.at.refPath}`}
-              {issue.at.nodePath && issue.at.nodePath.length > 0 && (
-                <>
-                  {" "}
-                  <a href={`#node-${issue.at.nodePath.at(-1)}`}>해당 자리로 이동</a>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+        <IssueList issues={booklet.issues} />
       )}
 
       {booklet.omitted.length > 0 && (

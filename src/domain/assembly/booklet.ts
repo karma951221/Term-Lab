@@ -16,12 +16,12 @@ import type { DocumentNode } from "../document/nodes";
 import type { CompletenessFilter } from "../coverage/values";
 import { sortInGroup } from "../product/groups";
 import type { ClauseOptionOverride, ProductCoverage } from "../product/types";
-import { type Id, type Issue, ok, reject, type Result } from "../types";
+import { type Coordinate, type Id, type Issue, ok, reject, type Result } from "../types";
 import { buildContexts, generalCoordinate, specialCoordinate, type AssemblyContext, type AssemblyContexts } from "./context";
 import { ensureApplicationArticle } from "./application";
 import { replaceGeneralWithBase } from "./base";
 import { judgeOmission } from "./omission";
-import { collectAppendices, numberDocument, renderDocument } from "./render";
+import { collectAppendices, locateIssues, numberDocument, renderDocument } from "./render";
 import { resolveDocument } from "./resolve";
 import { substituteSlots } from "./substitute";
 import type { AssemblyCoverage, AssemblyInput, Booklet, NumberedDoc, OmissionRecord, RenderedDoc, RenderedGroup, SpecialPreview, SubstitutedDoc, UndocumentedCoverage } from "./types";
@@ -66,10 +66,43 @@ function omissionAliases(records: readonly OmissionRecord[]): ReadonlyMap<Id, Id
   return new Map(records.filter((record) => record.disposition === "omitted").map((record) => [record.articleId, record.linkedArticleId]));
 }
 
-function prepare(doc: DocumentNode, ctx: AssemblyContext, s: Shared, opts: { coordinate: ReturnType<typeof specialCoordinate>; overrides: readonly ClauseOptionOverride[]; title?: string }): Prepared {
+function prepare(
+  doc: DocumentNode,
+  ctx: AssemblyContext,
+  s: Shared,
+  opts: { coordinate: ReturnType<typeof specialCoordinate>; overrides: readonly ClauseOptionOverride[]; source: Coordinate; valueSource: Coordinate; title?: string },
+): Prepared {
   const resolved = resolveDocument({ ...doc, ...(opts.title !== undefined ? { title: opts.title } : {}) }, ctx, { clauses: s.clauses, overrides: overrideMap(opts.overrides), coordinate: opts.coordinate });
   const substituted = substituteSlots(resolved.doc, ctx, { catalog: s.catalog, enums: s.enums });
-  return { doc: substituted.doc, issues: [...resolved.issues, ...substituted.issues] };
+  const issues = [...resolved.issues, ...substituted.issues].map((issue): Issue => {
+    if (issue.source) return issue;
+    if (issue.kind === "notEntered" || issue.kind === "notAttached") {
+      return { ...issue, source: { ...opts.valueSource, nodeKind: "value", refPath: issue.at.refPath } };
+    }
+    const nodeKind = issue.kind === "unusedAttribute" || issue.kind === "syntax" || issue.kind === "typeMismatch"
+      ? "condition"
+      : issue.kind === "optionInvalid" || issue.kind === "optionUnselected"
+        ? "option"
+        : issue.kind === "articleGone"
+          ? "articleRef"
+          : undefined;
+    return { ...issue, source: { ...opts.source, articleId: issue.at.articleId, articleTitle: issue.at.articleTitle, nodePath: issue.at.nodePath, ...(nodeKind ? { nodeKind } : {}), refPath: issue.at.refPath } };
+  });
+  return { doc: substituted.doc, issues };
+}
+
+function prepareCoordinates(input: AssemblyInput, doc: DocumentNode, coverage?: AssemblyCoverage): { source: Coordinate; valueSource: Coordinate } {
+  return {
+    source: coverage
+      ? { document: "coverageMaster", ownerId: doc.id, ownerName: coverage.snapshot.coverageName }
+      : { document: "general", ownerId: doc.id, ownerName: doc.title },
+    valueSource: {
+      document: "product",
+      ownerId: input.product.id,
+      ownerName: input.product.name,
+      ...(coverage ? { subjectName: coverage.snapshot.name, nodePath: [coverage.snapshot.id] } : {}),
+    },
+  };
 }
 
 function buildGeneral(input: AssemblyInput, contexts: AssemblyContexts, s: Shared): Built | undefined {
@@ -80,19 +113,20 @@ function buildGeneral(input: AssemblyInput, contexts: AssemblyContexts, s: Share
     const doc = base && input.specialDocuments.get(base.snapshot.coverageId);
     const ctx = base && contexts.specials.get(base.snapshot.id);
     if (base && doc && ctx) {
-      const basePrepared = prepare(doc, ctx, s, { coordinate: specialCoordinate(base), overrides: base.overrides });
+      const basePrepared = prepare(doc, ctx, s, { coordinate: specialCoordinate(base), overrides: base.overrides, ...prepareCoordinates(input, doc, base) });
       const replacedArticleIds = new Set(basePrepared.doc.children.flatMap((node) => (node.kind === "article" && node.linkedArticleId ? [node.linkedArticleId] : [])));
       // 대치될 보통약관 본문은 실행 경로가 아니다. 먼저 비운 뒤 해소해야 사라질 슬롯의 오류·조회 흔적이 남지 않는다.
       const generalSource: DocumentNode = {
         ...g,
         children: g.children.map((node) => (node.kind === "article" && replacedArticleIds.has(node.id) ? { ...node, children: [] } : node)),
       };
-      const generalPrepared = prepare(generalSource, contexts.general, s, { coordinate: generalCoordinate(input.product), overrides: input.product.overrides });
+      const generalPrepared = prepare(generalSource, contexts.general, s, { coordinate: generalCoordinate(input.product), overrides: input.product.overrides, ...prepareCoordinates(input, g) });
       const replaced = replaceGeneralWithBase(generalPrepared.doc, basePrepared.doc, { productCoverageId: base.snapshot.id, productCoverageName: base.snapshot.name });
-      return { numbered: numberDocument(replaced.doc), issues: [...generalPrepared.issues, ...basePrepared.issues, ...replaced.issues], omitted: [] };
+      const replacementIssues = replaced.issues.map((issue) => ({ ...issue, source: { document: "coverageMaster" as const, ownerId: doc.id, ownerName: base.snapshot.coverageName, articleId: issue.at.articleId, articleTitle: issue.at.articleTitle, nodePath: issue.at.articleId ? [doc.id, issue.at.articleId] : undefined } }));
+      return { numbered: numberDocument(replaced.doc), issues: [...generalPrepared.issues, ...basePrepared.issues, ...replacementIssues], omitted: [] };
     }
   }
-  const prepared = prepare(g, contexts.general, s, { coordinate: generalCoordinate(input.product), overrides: input.product.overrides });
+  const prepared = prepare(g, contexts.general, s, { coordinate: generalCoordinate(input.product), overrides: input.product.overrides, ...prepareCoordinates(input, g) });
   return { numbered: numberDocument(prepared.doc), issues: prepared.issues, omitted: [] };
 }
 
@@ -103,6 +137,7 @@ function buildSpecial(input: AssemblyInput, contexts: AssemblyContexts, s: Share
   const prepared = prepare(doc, ctx, s, {
     coordinate: specialCoordinate(c),
     overrides: c.overrides,
+    ...prepareCoordinates(input, doc, c),
     title: specialTitle(c.snapshot.name),
   });
   const withApplication = ensureApplicationArticle(prepared.doc);
@@ -156,9 +191,9 @@ export function assemble(input: AssemblyInput): Booklet {
   const omitted: OmissionRecord[] = [];
 
   if (input.product.baseContractIds.length === 0) {
-    issues.push({ kind: "noBaseContract", severity: "error", message: "기본계약이 지정되지 않았습니다", at: { document: "product", ownerId: input.product.id, ownerName: input.product.name } });
+    issues.push({ kind: "noBaseContract", severity: "error", message: "기본계약이 지정되지 않았습니다", at: { document: "product", ownerId: input.product.id, ownerName: input.product.name }, source: { document: "product", ownerId: input.product.id, ownerName: input.product.name } });
   } else if (input.product.baseContractIds.length > 1) {
-    issues.push({ kind: "unsupported", severity: "error", message: "기본계약 2개 이상은 MVP 이후에 지원합니다", at: { document: "product", ownerId: input.product.id, ownerName: input.product.name } });
+    issues.push({ kind: "unsupported", severity: "error", message: "기본계약 2개 이상은 MVP 이후에 지원합니다", at: { document: "product", ownerId: input.product.id, ownerName: input.product.name }, source: { document: "product", ownerId: input.product.id, ownerName: input.product.name } });
   }
 
   const general = buildGeneral(input, contexts, s);
@@ -184,14 +219,14 @@ export function assemble(input: AssemblyInput): Booklet {
   if (general) {
     const r = renderDocument(general.numbered, { document: "general", ownerId: generalCoordinate(input.product).ownerId!, appendices });
     renderedGeneral = r.doc;
-    issues.push(...general.issues, ...r.issues);
+    issues.push(...locateIssues(general.issues, general.numbered), ...r.issues);
   }
   const specials: RenderedGroup[] = builtGroups.map((g) => ({
     id: g.id,
     title: g.title,
     docs: g.docs.map(({ c, b }) => {
       const r = renderDocument(b.numbered, { document: "special", ownerId: c.snapshot.id, general: general?.numbered, aliases: omissionAliases(b.omitted), appendices });
-      issues.push(...b.issues, ...r.issues);
+      issues.push(...locateIssues(b.issues, b.numbered), ...r.issues);
       omitted.push(...b.omitted);
       return r.doc;
     }),
@@ -202,7 +237,7 @@ export function assemble(input: AssemblyInput): Booklet {
     issues.push({ kind: "unplaced", message: `상품담보 「${c.snapshot.name}」 이(가) 어느 특약 그룹에도 배치되지 않았습니다`, at: specialCoordinate(c) });
     const b = buildSpecial(input, contexts, s, c, general);
     if (b) {
-      issues.push(...b.issues);
+      issues.push(...locateIssues(b.issues, b.numbered));
       omitted.push(...b.omitted);
     }
   }
@@ -226,10 +261,10 @@ export function assembleSpecial(input: AssemblyInput, productCoverageId: Id): Re
   if (general) {
     const r = renderDocument(general.numbered, { document: "general", ownerId: generalCoordinate(input.product).ownerId!, appendices });
     renderedGeneral = r.doc;
-    issues.push(...general.issues, ...r.issues);
+    issues.push(...locateIssues(general.issues, general.numbered), ...r.issues);
   }
   const r = renderDocument(b.numbered, { document: "special", ownerId: c.snapshot.id, general: general?.numbered, aliases: omissionAliases(b.omitted), appendices });
-  issues.push(...b.issues, ...r.issues);
+  issues.push(...locateIssues(b.issues, b.numbered), ...r.issues);
   const trace = contexts.traces.filter((t) => t.productCoverageId === productCoverageId || input.product.baseContractIds.includes(t.productCoverageId));
   return ok({ doc: r.doc, general: renderedGeneral, appendices, issues, complete: !issues.some((item) => (item.severity ?? "error") === "error"), omitted: b.omitted, trace });
 }

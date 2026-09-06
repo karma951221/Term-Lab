@@ -799,8 +799,9 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
     checkBaseContract: (productId) =>
       withProduct(db, productId, async (product) => {
         const ids = await repo.listBaseContractIds(db, productId);
-        if (ids.length === 0) return invalid([issue("noBaseContract", "기본계약이 지정되지 않았습니다", { document: "product", ownerId: productId, ownerName: product.name })]);
-        if (ids.length > 1) return invalid([issue("unsupported", `기본계약이 ${ids.length}개입니다 — 2개 이상은 MVP 이후`, { document: "product", ownerId: productId, ownerName: product.name })]);
+        const productCoordinate = { document: "product" as const, ownerId: productId, ownerName: product.name };
+        if (ids.length === 0) return invalid([{ ...issue("noBaseContract", "기본계약이 지정되지 않았습니다", productCoordinate), source: productCoordinate }]);
+        if (ids.length > 1) return invalid([{ ...issue("unsupported", `기본계약이 ${ids.length}개입니다 — 2개 이상은 MVP 이후`, productCoordinate), source: productCoordinate }]);
         const checks: BaseContractCheck[] = [];
         for (const id of ids) {
           const pc = await repo.loadProductCoverage(db, id);

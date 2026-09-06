@@ -138,6 +138,42 @@ function targetIndex(d: NumberedDoc | undefined): Map<Id, ReferenceTarget> {
   return out;
 }
 
+function issueNodeKind(issue: Issue): string | undefined {
+  if (issue.at.nodeKind) return issue.at.nodeKind;
+  if (issue.kind === "notEntered" || issue.kind === "notAttached") return "slot";
+  if (issue.kind === "unusedAttribute" || issue.kind === "syntax" || issue.kind === "typeMismatch") return "condition";
+  if (issue.kind === "articleGone") return "articleRef";
+  if (issue.kind === "optionInvalid" || issue.kind === "optionUnselected") return "option";
+  return undefined;
+}
+
+/** 조립 후 계산 번호를 issue 결과·원천 좌표에 보탠다. */
+export function locateIssues(issues: readonly Issue[], numbered: NumberedDoc): Issue[] {
+  const index = targetIndex(numbered);
+  return issues.map((issue) => {
+    const structural = [issue.at.articleId ?? "", ...(issue.at.nodePath ?? [])].reverse().map((id) => index.get(id)).find(Boolean);
+    const numberedAt: Coordinate = structural
+      ? {
+          ...issue.at,
+          articleNumber: structural.article.n,
+          ...(structural.paragraph ? { paragraphNumber: structural.paragraph.n } : {}),
+          ...(structural.item ? { itemNumber: structural.item.n } : {}),
+          ...(structural.subitem ? { subitemNumber: structural.subitem.n } : {}),
+          ...(issueNodeKind(issue) ? { nodeKind: issueNodeKind(issue) } : {}),
+        }
+      : { ...issue.at, ...(issueNodeKind(issue) ? { nodeKind: issueNodeKind(issue) } : {}) };
+    const source = issue.source && issue.source.document !== "product" && structural
+      ? {
+          ...issue.source,
+          ...(structural.paragraph ? { paragraphNumber: structural.paragraph.n } : {}),
+          ...(structural.item ? { itemNumber: structural.item.n } : {}),
+          ...(structural.subitem ? { subitemNumber: structural.subitem.n } : {}),
+        }
+      : issue.source;
+    return { ...issue, at: numberedAt, ...(source ? { source } : {}) };
+  });
+}
+
 class Renderer {
   readonly issues: Issue[] = [];
   private readonly self: Map<Id, ReferenceTarget>;
@@ -256,5 +292,5 @@ class Renderer {
 export function renderDocument(numbered: NumberedDoc, env: RenderEnv): RenderOutcome {
   const r = new Renderer(numbered, env);
   const doc = r.render();
-  return { doc, issues: r.issues };
+  return { doc, issues: locateIssues(r.issues, numbered) };
 }

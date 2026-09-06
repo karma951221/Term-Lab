@@ -5,6 +5,7 @@ import { Confirm } from "@/app/_components/Confirm";
 import { ErrorBanner } from "@/app/_components/ErrorBanner";
 import { ValueForm } from "@/app/_components/ValueForm";
 import { previewOutcome } from "@/app/_lib/rejection";
+import { formatCoordinate } from "@/domain/coordinate";
 import type { Coverage, CoverageNodeRef } from "@/domain/coverage";
 import { buildForm } from "@/forms";
 import { currentActor, getServices } from "@/lib/services";
@@ -191,7 +192,7 @@ export default async function CoverageDetailPage({
           <ul>
             {missing.map((m, i) => (
               <li key={i}>
-                {m.ownerName} · {m.label}
+                {formatCoordinate({ ...m.at, ownerName: tree.name, subjectName: m.ownerName, nodeKind: "value", refPath: m.path }, { source: true })}
               </li>
             ))}
           </ul>

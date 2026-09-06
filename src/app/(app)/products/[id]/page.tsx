@@ -6,6 +6,7 @@ import { ErrorBanner } from "@/app/_components/ErrorBanner";
 import { IssueList } from "@/app/_components/IssueList";
 import { ValueForm } from "@/app/_components/ValueForm";
 import { previewOutcome } from "@/app/_lib/rejection";
+import { formatCoordinate } from "@/domain/coordinate";
 import { planOptionLabel } from "@/domain/product";
 import { buildForm } from "@/forms";
 import { currentActor, getServices } from "@/lib/services";
@@ -409,7 +410,7 @@ export default async function ProductDetailPage({
       <ul>
         {missing.map((m, i) => (
           <li key={i}>
-            {m.ownerName} · {m.path}
+            {formatCoordinate({ document: "product", ownerId: id, ownerName: product.name, subjectName: m.ownerName, nodeKind: "value", refPath: m.path }, { source: true })}
           </li>
         ))}
       </ul>

@@ -92,12 +92,20 @@ export interface Coordinate {
   ownerId?: Id;
   /** 사람이 읽을 소유 실체 이름 (상품담보명 등) */
   ownerName?: string;
+  /** 상품모델링 좌표에서 상품 아래 선택된 상품담보 등 하위 실체 이름. */
+  subjectName?: string;
   /** 0·2+ 모드에서 조 번호가 다시 시작되는 절/보장조항 블록 이름공간. */
   section?: { kind: "general" | "benefit"; label: string };
   /** 조 노드 id */
   articleId?: Id;
   /** 조 명 (계산된 번호는 조립 결과에서만 채운다) */
   articleTitle?: string;
+  /** 결과 문서에서 계산된 조 번호. 원천 좌표 표기에는 쓰지 않는다. */
+  articleNumber?: number;
+  /** 결과 문서에서 계산된 항·호·목 번호 또는 원천에서의 서수. */
+  paragraphNumber?: number;
+  itemNumber?: number;
+  subitemNumber?: number;
   /** 문서 루트에서 해당 노드까지의 노드 id 경로 */
   nodePath?: Id[];
   /** nodePath 마지막 노드의 종류 — 표시 렌더러가 종류를 안정적으로 고를 때 쓴다. */

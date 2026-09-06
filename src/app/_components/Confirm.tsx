@@ -1,9 +1,5 @@
-import type { Coordinate, Impact } from "@/domain/types";
-
-function coordText(c: Coordinate): string {
-  const parts = [c.document, c.ownerName ?? c.ownerId, c.articleTitle, c.refPath].filter(Boolean);
-  return parts.length > 0 ? parts.join(" · ") : "(좌표 없음)";
-}
+import { formatCoordinate } from "@/domain/coordinate";
+import type { Impact } from "@/domain/types";
 
 /**
  * 파괴적 액션의 확인 폼 — `needsConfirmation` 이 돌려준 Impact 를 그대로 보여주고,
@@ -39,7 +35,7 @@ export function Confirm({
             깨질 참조 ({impact.brokenRefs.length}건):
             <ul>
               {impact.brokenRefs.map((c, i) => (
-                <li key={i}>{coordText(c)}</li>
+                <li key={i}>{formatCoordinate(c, { source: true })}</li>
               ))}
             </ul>
           </li>

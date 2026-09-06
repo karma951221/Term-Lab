@@ -6,6 +6,7 @@ import type { ArticleNode, DocumentNode, ParagraphNode } from "../document/nodes
 import type { MissingSlot } from "../coverage/values";
 import type { SpecialGroup } from "../product/types";
 import type { Code, Id, Issue } from "../types";
+import { formatCoordinate } from "../coordinate";
 import { assemble, assembleSpecial, executionBasedFilter } from "./booklet";
 import { alphaPlusFixture, alphaGeneralDocument, baseDeathCoverage, coverageEntry, deathCoverage } from "./fixture";
 import type { AssemblyCoverage, AssemblyInput, RenderedDoc, RenderedInline } from "./types";
@@ -117,7 +118,7 @@ describe("조립오류 S2 — 미입력 값 참조 → 오류 마커 + 좌표 + 
 
   it("패널 항목 — 좌표(상품담보 → 조 → 노드 경로 · 참조 경로)와 원인 · complete=false", () => {
     expect(booklet.issues).toHaveLength(1);
-    expect(booklet.issues[0]).toEqual({
+    expect(booklet.issues[0]).toMatchObject({
       kind: "notEntered",
       message: "D0007 가 미입력입니다",
       at: {
@@ -130,6 +131,8 @@ describe("조립오류 S2 — 미입력 값 참조 → 오류 마커 + 좌표 + 
         refPath: "D0007",
       },
     });
+    expect(formatCoordinate(booklet.issues[0].at)).toBe("특약 › 일반상해사망 › 제2조(보험금의 감액지급) › ③ › 슬롯:D0007");
+    expect(formatCoordinate(booklet.issues[0].source!, { source: true })).toBe("상품모델링 › 알파Plus(축약) › 일반상해사망 › D0007");
     expect(booklet.complete).toBe(false);
   });
 

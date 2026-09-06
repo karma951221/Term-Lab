@@ -1,13 +1,10 @@
+import { formatCoordinate } from "@/domain/coordinate";
 import { describeKey } from "@/domain/refs";
 import { getServices } from "@/lib/services";
 
 import { parseRefTarget, type RelationQuery } from "./lib";
 
 export const dynamic = "force-dynamic";
-
-function coordText(at: { document?: string; ownerName?: string; ownerId?: string; articleTitle?: string; refPath?: string }): string {
-  return [at.document, at.ownerName ?? at.ownerId, at.articleTitle, at.refPath].filter(Boolean).join(" · ") || "—";
-}
 
 export default async function RelationsPage({ searchParams }: { searchParams: Promise<RelationQuery> }) {
   const q = await searchParams;
@@ -103,7 +100,7 @@ export default async function RelationsPage({ searchParams }: { searchParams: Pr
           <ul className="ts-issues">
             {integrity.broken.map((e, i) => (
               <li key={i}>
-                {describeKey(e.from)} → {describeKey(e.to)} ({e.via}) · {coordText(e.at)}
+                {describeKey(e.from)} → {describeKey(e.to)} ({e.via}) · {formatCoordinate(e.at, { source: true })}
               </li>
             ))}
           </ul>
@@ -123,7 +120,7 @@ async function RelationResult({ targetKey }: { targetKey: NonNullable<ReturnType
       <ul>
         {view.outgoing.map((e, i) => (
           <li key={i}>
-            {describeKey(e.to)} ({e.via}) · {coordText(e.at)}
+            {describeKey(e.to)} ({e.via}) · {formatCoordinate(e.at, { source: true })}
           </li>
         ))}
       </ul>
@@ -132,7 +129,7 @@ async function RelationResult({ targetKey }: { targetKey: NonNullable<ReturnType
       <ul>
         {view.incoming.map((e, i) => (
           <li key={i}>
-            {describeKey(e.from)} ({e.via}) · {coordText(e.at)}
+            {describeKey(e.from)} ({e.via}) · {formatCoordinate(e.at, { source: true })}
           </li>
         ))}
       </ul>
@@ -141,7 +138,7 @@ async function RelationResult({ targetKey }: { targetKey: NonNullable<ReturnType
       <ul>
         {view.overrides.map((e, i) => (
           <li key={i}>
-            {describeKey(e.from)} · {coordText(e.at)}
+            {describeKey(e.from)} · {formatCoordinate(e.at, { source: true })}
           </li>
         ))}
       </ul>
