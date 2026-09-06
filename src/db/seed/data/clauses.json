@@ -1,0 +1,125 @@
+[
+  {
+    "code": "C0001",
+    "label": "특별약관의 소멸",
+    "description": "",
+    "mode": "block",
+    "body": [
+      {
+        "id": "c1-par",
+        "kind": "paragraph",
+        "children": [
+          {
+            "id": "c1-t1",
+            "kind": "text",
+            "text": "이 특별약관은 "
+          },
+          {
+            "id": "c1-opt",
+            "kind": "optionSlot",
+            "optionCode": "O01"
+          },
+          {
+            "id": "c1-t2",
+            "kind": "text",
+            "text": " 소멸합니다."
+          }
+        ]
+      }
+    ],
+    "options": [
+      {
+        "code": "O01",
+        "label": "소멸 사유",
+        "order": 0,
+        "values": [
+          {
+            "code": "V01",
+            "label": "일반",
+            "order": 0,
+            "body": [
+              {
+                "id": "c1-o-gen",
+                "kind": "text",
+                "text": "보험기간이 끝난 때"
+              }
+            ]
+          },
+          {
+            "code": "V02",
+            "label": "사망",
+            "order": 1,
+            "body": [
+              {
+                "id": "c1-o-death",
+                "kind": "text",
+                "text": "피보험자가 사망한 때"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "required": {
+      "discriminators": [],
+      "attributes": []
+    }
+  },
+  {
+    "code": "C0002",
+    "label": "준용 문구",
+    "description": "",
+    "mode": "inline",
+    "body": [
+      {
+        "id": "c2-t1",
+        "kind": "text",
+        "text": "이 약관에서 정하지 않은 사항은 "
+      },
+      {
+        "id": "c2-ref",
+        "kind": "articleRef",
+        "targets": [
+          {
+            "nodeId": "g-art-def"
+          }
+        ],
+        "connector": "및"
+      },
+      {
+        "id": "c2-t2",
+        "kind": "text",
+        "text": " 및 관계 법령을 따릅니다."
+      }
+    ],
+    "options": [],
+    "required": {
+      "discriminators": [],
+      "attributes": []
+    }
+  },
+  {
+    "code": "C0003",
+    "label": "보통약관 면책 보충",
+    "description": "",
+    "mode": "block",
+    "body": [
+      {
+        "id": "c3-par",
+        "kind": "paragraph",
+        "children": [
+          {
+            "id": "c3-text",
+            "kind": "text",
+            "text": "법령에 따라 보험금 지급이 제한되는 경우에는 보험금을 지급하지 않습니다."
+          }
+        ]
+      }
+    ],
+    "options": [],
+    "required": {
+      "discriminators": [],
+      "attributes": []
+    }
+  }
+]

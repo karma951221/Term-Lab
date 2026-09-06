@@ -1,0 +1,56 @@
+[
+  {
+    "code": "base-death",
+    "name": "상해사망(기본계약)",
+    "benefitName": "사망보험금",
+    "coverageValues": [
+      {
+        "path": "D0001",
+        "value": false
+      }
+    ],
+    "benefitValues": [
+      {
+        "path": "D0003.F01",
+        "value": false
+      },
+      {
+        "path": "D0003.F02",
+        "value": 100
+      }
+    ]
+  },
+  {
+    "code": "death",
+    "name": "일반상해사망",
+    "benefitName": "사망보험금",
+    "attachments": [
+      "D0006",
+      "D0007"
+    ],
+    "coverageValues": [
+      {
+        "path": "D0001",
+        "value": false
+      },
+      {
+        "path": "D0006",
+        "value": 24
+      },
+      {
+        "path": "D0007",
+        "value": "24개월"
+      }
+    ],
+    "benefitValues": [
+      {
+        "path": "D0003.F01",
+        "value": true
+      },
+      {
+        "path": "D0003.F02",
+        "value": 100
+      }
+    ]
+  }
+]

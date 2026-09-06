@@ -49,6 +49,15 @@ describe("seedAlphaPlus — 관통 1 축약 시드 (PGlite)", () => {
       "해약환급금미지급형",
       "해약환급금미지급형(납입후50%)",
     ]);
+
+    const options = await services.product.listPlanOptions(r.productId);
+    expect(options.map((option) => [option.axis, option.number, option.name, option.planTypeCode])).toEqual([
+      ["type", 1, "보험료 납입면제 미적용형", "D0008"],
+      ["type", 2, "보험료 납입면제 적용형", "D0008"],
+    ]);
+    expect(await services.product.listPlans(r.productId)).toHaveLength(2);
+    expect(Object.fromEntries(await services.product.getPlanOptionValues(options[0].id))).toEqual({ "D0008.F01": { entered: true, value: false }, "D0008.F02": { entered: true, value: [] } });
+    expect(Object.fromEntries(await services.product.getPlanOptionValues(options[1].id))).toEqual({ "D0008.F01": { entered: true, value: true }, "D0008.F02": { entered: true, value: ["V01", "V02"] } });
   });
 
   it("두 번째 호출 — no-op (상품명으로 이미 있음을 판단), 상품 id 동일 · 여전히 complete=true", async () => {

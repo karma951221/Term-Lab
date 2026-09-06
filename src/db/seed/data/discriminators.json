@@ -1,0 +1,170 @@
+[
+  {
+    "kind": "scalar",
+    "code": "D0001",
+    "label": "갱신여부",
+    "description": "",
+    "level": "coverage",
+    "alwaysExposed": true,
+    "type": {
+      "kind": "boolean"
+    }
+  },
+  {
+    "kind": "scalar",
+    "code": "D0002",
+    "label": "고지유형",
+    "description": "",
+    "level": "product",
+    "alwaysExposed": true,
+    "type": {
+      "kind": "enum",
+      "enumCode": "E0001"
+    }
+  },
+  {
+    "kind": "struct",
+    "code": "D0003",
+    "label": "보험금지급",
+    "description": "",
+    "level": "benefit",
+    "alwaysExposed": true,
+    "fields": [
+      {
+        "code": "F01",
+        "label": "면책여부",
+        "type": {
+          "kind": "boolean"
+        },
+        "order": 0
+      },
+      {
+        "code": "F02",
+        "label": "지급률",
+        "type": {
+          "kind": "number"
+        },
+        "order": 1
+      }
+    ]
+  },
+  {
+    "kind": "const",
+    "code": "D0004",
+    "label": "평균공시이율",
+    "description": "",
+    "value": "2.5%"
+  },
+  {
+    "kind": "derived",
+    "code": "D0005",
+    "label": "면책여부합",
+    "description": "",
+    "level": "coverage",
+    "expression": "any(D0003.F01)"
+  },
+  {
+    "kind": "scalar",
+    "code": "D0006",
+    "label": "감액기간",
+    "description": "",
+    "level": "coverage",
+    "alwaysExposed": false,
+    "type": {
+      "kind": "number"
+    }
+  },
+  {
+    "kind": "scalar",
+    "code": "D0007",
+    "label": "감액기간문구",
+    "description": "",
+    "level": "coverage",
+    "alwaysExposed": false,
+    "type": {
+      "kind": "string"
+    }
+  },
+  {
+    "kind": "struct",
+    "code": "D0008",
+    "label": "납입면제",
+    "description": "",
+    "level": "plan",
+    "alwaysExposed": true,
+    "fields": [
+      {
+        "code": "F01",
+        "label": "적용여부",
+        "type": {
+          "kind": "boolean"
+        },
+        "order": 0
+      },
+      {
+        "code": "F02",
+        "label": "납입면제사유",
+        "type": {
+          "kind": "list<enum>",
+          "enumCode": "E0002"
+        },
+        "order": 1
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "code": "D0009",
+    "label": "무저해지",
+    "description": "",
+    "level": "plan",
+    "alwaysExposed": true,
+    "fields": [
+      {
+        "code": "F01",
+        "label": "유형",
+        "type": {
+          "kind": "enum",
+          "enumCode": "E0003"
+        },
+        "order": 0
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "code": "D0010",
+    "label": "계약전환",
+    "description": "",
+    "level": "plan",
+    "alwaysExposed": true,
+    "fields": [
+      {
+        "code": "F01",
+        "label": "전환여부",
+        "type": {
+          "kind": "boolean"
+        },
+        "order": 0
+      }
+    ]
+  },
+  {
+    "kind": "struct",
+    "code": "D0011",
+    "label": "영위업종적용",
+    "description": "",
+    "level": "plan",
+    "alwaysExposed": true,
+    "fields": [
+      {
+        "code": "F01",
+        "label": "적용여부",
+        "type": {
+          "kind": "boolean"
+        },
+        "order": 0
+      }
+    ]
+  }
+]

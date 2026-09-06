@@ -8,6 +8,13 @@
       "when": 1788592165131,
       "tag": "0000_mighty_hannibal_king",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788689831697,
+      "tag": "0001_curly_salo",
+      "breakpoints": true
     }
   ]
 }

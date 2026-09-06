@@ -32,9 +32,12 @@ test("관통 1: 로그인 → 상품 → 조립 미리보기가 완성본으로 
 
   await page.getByRole("link", { name: /조립 미리보기/ }).first().click();
   await expect(page).toHaveURL(/\/products\/.+\/preview/);
-  // 보통약관 + 특약 2벌(기본·추가) + 별표 1건, 오류 없음
+  // 대치된 보통약관 + 특약 2벌(기본·추가) + 별표 1건, 오류 없음
   await expect(page.getByRole("heading", { name: /알파Plus 보통약관/ })).toBeVisible();
+  await expect(page.getByText("피보험자가 보험기간 중 상해로 사망한 경우 보험금을 지급합니다.")).toBeVisible();
   await expect(page.getByRole("heading", { name: /^일반상해사망 특별약관/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: /일반상해사망 추가 특별약관/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "오류 패널 (0)" })).toBeVisible();
+  await expect(page.getByText("오류 없음.")).toBeVisible();
   await expect(page.getByText(/완성본 아님/)).toHaveCount(0);
 });
