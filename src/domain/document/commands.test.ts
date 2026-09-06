@@ -236,15 +236,15 @@ describe("텍스트 · 조 명 · 슬롯 · 참조 대상 · 옵션 수정", () 
         [
           { type: "setSlotRef", nodeId: "n6", ref: "D0003.F02" },
           { type: "setAppendixRef", nodeId: "n7", appendixCode: "APX_B" },
-          { type: "setArticleRef", nodeId: "n8", articleId: "n3", scope: "self" },
+          { type: "setArticleRef", nodeId: "n8", targets: [{ nodeId: "n3" }], connector: "및", scope: "self" },
         ],
         { env },
       ),
     );
     const p = (next.children[0] as ArticleNode).children[1] as ParagraphNode;
-    expect(p.children).toMatchObject([{ ref: "D0003.F02" }, { appendixCode: "APX_B" }, { articleId: "n3" }]);
+    expect(p.children).toMatchObject([{ ref: "D0003.F02" }, { appendixCode: "APX_B" }, { targets: [{ nodeId: "n3" }] }]);
     expect(rejection(applyCommand(base, { type: "setAppendixRef", nodeId: "n7", appendixCode: "APX_X" }, { env })).reason).toBe("invalid");
-    expect(rejection(applyCommand(base, { type: "setArticleRef", nodeId: "n8", articleId: "ghost", scope: "self" })).reason).toBe("invalid");
+    expect(rejection(applyCommand(base, { type: "setArticleRef", nodeId: "n8", targets: [{ nodeId: "ghost" }], connector: "및", scope: "self" })).reason).toBe("invalid");
   });
 
   it("공용조항 참조 — 게이트가 코드를 모르면 삽입 실패 · 옵션 미선택은 삽입 시 통과(ADR-0017) · 옵션 변경", () => {
@@ -299,8 +299,8 @@ describe("복제 (D-P4-9) — 하위 트리·조연결·참조 대상 id 를 그
     expect(next.children.map((c) => c.id)).toEqual(["n3", "c1", "n4"]);
     const copy = next.children[1] as ArticleNode;
     expect(copy.linkedArticleId).toBe("g1");
-    const refs = (copy.children[1] as ParagraphNode).children as { articleId: string }[];
-    expect(refs.map((r) => r.articleId)).toEqual(["c1", "n4"]);
+    const refs = (copy.children[1] as ParagraphNode).children.filter((node) => node.kind === "articleRef");
+    expect(refs.map((r) => r.targets[0]?.nodeId)).toEqual(["c1", "n4"]);
     expect(next).toMatchSnapshot();
   });
 });
@@ -317,7 +317,7 @@ describe("문서 복제 (D-P4-4) — cloneTree", () => {
     const ids = [...indexTree(copy).nodes.keys(), ...indexTree(copy).branches.keys()];
     expect(ids.every((id) => id.startsWith("c"))).toBe(true);
     const a = copy.children[0] as ArticleNode;
-    expect((a.children[0] as ParagraphNode).children).toMatchObject([{ articleId: a.id }, { articleId: "g1" }]);
+    expect((a.children[0] as ParagraphNode).children).toMatchObject([{ targets: [{ nodeId: a.id }] }, { targets: [{ nodeId: "g1" }] }]);
     expect(a.linkedArticleId).toBe("g1");
   });
 });

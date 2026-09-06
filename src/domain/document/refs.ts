@@ -69,7 +69,9 @@ export function collectRefs(doc: DocumentNode, base: Coordinate = {}): DocRef[] 
         out.push({ kind: "clause", clauseCode: n.clauseCode, options: n.options, mode: "inline", at });
         break;
       case "articleRef":
-        out.push({ kind: "article", articleId: n.articleId, scope: n.scope, at });
+        for (const target of n.targets) {
+          out.push({ kind: "article", articleId: target.nodeId, scope: n.scope, at: { ...at, refPath: target.nodeId } });
+        }
         break;
       case "appendixRef":
         out.push({ kind: "appendix", appendixCode: n.appendixCode, at });

@@ -142,7 +142,8 @@ export async function setSlotRefAction(documentId: Id, nodeId: Id, formData: For
 }
 
 export async function setArticleRefAction(documentId: Id, nodeId: Id, formData: FormData): Promise<void> {
-  await apply(documentId, [{ type: "setArticleRef", nodeId, articleId: str(formData, "articleId"), scope: (str(formData, "scope") || "self") as ArticleRefNode["scope"] }]);
+  const targets = str(formData, "targets").split(",").map((nodeId) => nodeId.trim()).filter(Boolean).map((nodeId) => ({ nodeId }));
+  await apply(documentId, [{ type: "setArticleRef", nodeId, targets, connector: str(formData, "connector") || "및", scope: (str(formData, "scope") || "self") as ArticleRefNode["scope"] }]);
 }
 
 export async function setAppendixRefAction(documentId: Id, nodeId: Id, formData: FormData): Promise<void> {

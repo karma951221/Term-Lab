@@ -51,6 +51,7 @@ export const alphaCatalog: Discriminator[] = [
   { kind: "const", code: "D0004", label: "평균공시이율", description: "", value: "2.5%" },
   { kind: "derived", code: "D0005", label: "면책여부합", description: "", level: "coverage", expression: "any(D0003.F01)" },
   { kind: "scalar", code: "D0006", label: "감액기간", description: "", level: "coverage", alwaysExposed: false, type: { kind: "number" } },
+  { kind: "scalar", code: "D0007", label: "감액기간문구", description: "", level: "coverage", alwaysExposed: false, type: { kind: "string" } },
 ];
 
 export const alphaAttributeKinds: AttributeKind[] = [
@@ -112,8 +113,8 @@ export const alphaClauses: Clause[] = [
     description: "",
     mode: "inline",
     body: [
-      { id: "c2-t1", kind: "text", text: "이 약관에서 정하지 않은 사항은 보통약관 " },
-      { id: "c2-ref", kind: "articleRef", articleId: "g-art-def" },
+      { id: "c2-t1", kind: "text", text: "이 약관에서 정하지 않은 사항은 " },
+      { id: "c2-ref", kind: "articleRef", targets: [{ nodeId: "g-art-def" }], connector: "및" },
       { id: "c2-t2", kind: "text", text: " 및 관계 법령을 따릅니다." },
     ],
     options: [],
@@ -281,8 +282,8 @@ export function alphaDeathDocument(): DocumentNode {
             kind: "paragraph",
             children: [
               { id: "s-txt-reduce-1", kind: "text", text: "계약일부터 " },
-              { id: "s-slot-reduce", kind: "slot", ref: "D0006" },
-              { id: "s-txt-reduce-2", kind: "text", text: "개월 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다." },
+              { id: "s-slot-reduce", kind: "slot", ref: "D0007" },
+              { id: "s-txt-reduce-2", kind: "text", text: " 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다." },
             ],
           },
         ],
@@ -369,10 +370,10 @@ export function deathCoverage(id: Id, name: string, attributes: CoverageSpec["at
     attributes,
     subCoverages: [{ id: `${id}-sub`, masterNodeId: "sub-death", name: "일반상해사망", benefits: [{ id: `${id}-ben`, masterNodeId: "ben-death", name: "사망보험금" }] }],
     values: {
-      [id]: { D0001: false, D0006: 24 },
+      [id]: { D0001: false, D0006: 24, D0007: "24개월" },
       [`${id}-ben`]: { "D0003.F01": true, "D0003.F02": 100 },
     },
-    attached: { [id]: ["D0006"] },
+    attached: { [id]: ["D0006", "D0007"] },
     groupId,
   });
 }

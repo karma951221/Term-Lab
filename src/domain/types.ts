@@ -92,12 +92,16 @@ export interface Coordinate {
   ownerId?: Id;
   /** 사람이 읽을 소유 실체 이름 (상품담보명 등) */
   ownerName?: string;
+  /** 0·2+ 모드에서 조 번호가 다시 시작되는 절/보장조항 블록 이름공간. */
+  section?: { kind: "general" | "benefit"; label: string };
   /** 조 노드 id */
   articleId?: Id;
   /** 조 명 (계산된 번호는 조립 결과에서만 채운다) */
   articleTitle?: string;
   /** 문서 루트에서 해당 노드까지의 노드 id 경로 */
   nodePath?: Id[];
+  /** nodePath 마지막 노드의 종류 — 표시 렌더러가 종류를 안정적으로 고를 때 쓴다. */
+  nodeKind?: string;
   /** 식 안의 참조 경로 (예: `cov_pay.exempt`) */
   refPath?: string;
 }
@@ -114,6 +118,8 @@ export type IssueKind =
   | "notAttached" // 요구 구분자 미부착 (값 자리 없음)
   | "typeMismatch" // 조건 자리에 boolean 아님 등
   | "unplaced" // 그룹에 배치되지 않은 상품담보
+  | "unsupported" // 기획은 확정됐으나 아직 지원하지 않는 조립 모드
+  | "unlinkedBaseArticle" // 1개 모드 기본계약 조에 조연결 없음 (warning)
   | "syntax" // 식 문법 오류
   | "structure"; // 문면 트리 규칙 위반 (허용 자식 · 인라인 조건 중첩 · 노드 id 중복 · else 위치 등, ADR-0012)
 
@@ -121,6 +127,10 @@ export interface Issue {
   kind: IssueKind;
   message: string;
   at: Coordinate;
+  /** 결과 완결성을 깨는 오류인지, 수정 권고 경고인지. */
+  severity?: "error" | "warning";
+  /** 고치러 갈 원천 좌표. `at` 은 조립 결과 자리다. */
+  source?: Coordinate;
 }
 
 // ───────────────────────────── 결과 ─────────────────────────────

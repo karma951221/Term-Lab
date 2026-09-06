@@ -249,6 +249,9 @@ export function analyzeBody(
       const at = { ...base, nodePath: e.path };
       const r = e.role === "condition" ? checkCondition(e.expr, opts.resolveType, at) : checkTypes(e.expr, opts.resolveType, { coordinate: at });
       if (!r.ok && r.rejection.reason === "invalid") issues.push(...r.rejection.issues);
+      else if (e.role === "slot" && r.ok && r.value.kind !== "string" && r.value.kind !== "enum") {
+        report("typeMismatch", `값 슬롯은 string·enum 만 허용합니다 (${r.value.kind} 불가)`, e.path, e.expr.kind === "ref" ? undefined : "");
+      }
     }
   }
 

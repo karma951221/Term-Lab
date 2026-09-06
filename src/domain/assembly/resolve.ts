@@ -145,7 +145,7 @@ class Walker {
       case "slot":
         return [{ kind: "slot", id: n.id, ref: n.ref, at }];
       case "articleRef":
-        return [{ kind: "articleRef", id: n.id, articleId: n.articleId, scope: "scope" in n ? n.scope : "general", at }];
+        return [{ kind: "articleRef", id: n.id, targets: n.targets.map((target) => ({ ...target })), connector: n.connector, scope: "scope" in n ? n.scope : "general", at }];
       case "appendixRef":
         return [{ kind: "appendixRef", id: n.id, appendixCode: n.appendixCode, at }];
       case "inlineCond": {

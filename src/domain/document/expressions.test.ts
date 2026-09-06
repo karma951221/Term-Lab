@@ -25,13 +25,40 @@ const resolve: TypeResolver = (ref) => {
 };
 
 describe("문면작성 S2 경계 — 조건식 자리는 문법 검사 + boolean 검사 (ADR-0013 언어 밖 규칙)", () => {
-  it("올바른 조건식·슬롯은 문제 없음", () => {
+  it("올바른 조건식과 string·enum 슬롯은 문제 없음", () => {
     const b = nodeBuilders(sequentialIds("n"));
     const doc = b.document("d", [
-      b.condBlock([b.branch("D0001 = true and any(D0003.F01)", [b.article("x", [b.paragraph([b.slot("D0004"), b.slot("D0003.F02")])])])]),
+      b.condBlock([b.branch("D0001 = true and any(D0003.F01)", [b.article("x", [b.paragraph([b.slot("D0004"), b.slot("D0002")])])])]),
       b.article("y", [b.paragraph([b.inlineCond([b.inlineBranch("attr.renew_type = 'renew'", [b.text("a")]), b.inlineBranch(undefined, [b.text("b")])])])]),
     ]);
     expect(validateExpressions(doc, resolve)).toEqual([]);
+  });
+
+  it("값 슬롯은 string·enum 만 허용하고 number·boolean·date·list<enum> 은 거부한다", () => {
+    const typed: TypeResolver = (ref) => {
+      if (ref.kind !== "discriminator") return undefined;
+      const kinds = {
+        text: { kind: "string" as const },
+        choice: { kind: "enum" as const, enumCode: "E1" },
+        amount: { kind: "number" as const },
+        enabled: { kind: "boolean" as const },
+        day: { kind: "date" as const },
+        choices: { kind: "list<enum>" as const, enumCode: "E1" },
+      };
+      return kinds[ref.code as keyof typeof kinds];
+    };
+    const b = nodeBuilders(sequentialIds("n"));
+    const doc = b.document("d", [
+      b.article("a", [b.paragraph([b.slot("text"), b.slot("choice"), b.slot("amount"), b.slot("enabled"), b.slot("day"), b.slot("choices")])]),
+    ]);
+
+    const issues = validateExpressions(doc, typed);
+    expect(issues.map((issue) => [issue.kind, issue.at.refPath])).toEqual([
+      ["typeMismatch", "amount"],
+      ["typeMismatch", "enabled"],
+      ["typeMismatch", "day"],
+      ["typeMismatch", "choices"],
+    ]);
   });
 
   it("파싱 실패 → syntax · boolean 아님 → typeMismatch · 없는 참조 → brokenRef, 전부 노드 경로 좌표", () => {

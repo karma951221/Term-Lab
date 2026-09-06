@@ -107,11 +107,11 @@ function tinyDoc(id: Id, title: string, text: string, appendixCode?: Code): Docu
 describe("조립오류 S2 — 미입력 값 참조 → 오류 마커 + 좌표 + 「완성본 아님」", () => {
   const input = alphaPlusFixture();
   const basic = input.coverages[0];
-  (basic.values.get("pc-basic") as Map<string, unknown>).delete("D0006"); // 감액기간 미입력 (자리는 있다 — 부착됨)
+  (basic.values.get("pc-basic") as Map<string, unknown>).delete("D0007"); // 문면용 감액기간 미입력 (자리는 있다 — 부착됨)
   const { booklet, doc } = docsOf(input);
 
   it("조립은 중단되지 않는다 — 제3조 슬롯 자리에 notEntered 마커, 나머지는 끝까지 조립", () => {
-    expect(lines(doc("pc-basic"))[6]).toBe("  ① 계약일부터 ⟦notEntered⟧개월 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다.");
+    expect(lines(doc("pc-basic"))[6]).toBe("  ① 계약일부터 ⟦notEntered⟧ 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다.");
     expect(lines(doc("pc-basic"))).toHaveLength(10);
   });
 
@@ -119,7 +119,7 @@ describe("조립오류 S2 — 미입력 값 참조 → 오류 마커 + 좌표 + 
     expect(booklet.issues).toHaveLength(1);
     expect(booklet.issues[0]).toEqual({
       kind: "notEntered",
-      message: "D0006 가 미입력입니다",
+      message: "D0007 가 미입력입니다",
       at: {
         document: "special",
         ownerId: "pc-basic",
@@ -127,7 +127,7 @@ describe("조립오류 S2 — 미입력 값 참조 → 오류 마커 + 좌표 + 
         articleId: "s-art-reduce",
         articleTitle: "보험금의 감액지급",
         nodePath: ["s-doc-death", "s-art-reduce", "s-par-reduce", "s-slot-reduce"],
-        refPath: "D0006",
+        refPath: "D0007",
       },
     });
     expect(booklet.complete).toBe(false);
@@ -189,7 +189,7 @@ describe("조립오류 S4 — 분기로 사라진 조를 가리키는 조 참조
   /** 제1조 ① 끝에 「보험기간」 조 참조 슬롯을 단다. */
   const special = surgeryFixture().special;
   const art = special.children[0] as ArticleNode;
-  (art.children[0] as ParagraphNode).children.push({ id: "s-txt-ref", kind: "text", text: " 보험기간은 " }, { id: "s-aref-term", kind: "articleRef", articleId: "s-art-term", scope: "self" });
+  (art.children[0] as ParagraphNode).children.push({ id: "s-txt-ref", kind: "text", text: " 보험기간은 " }, { id: "s-aref-term", kind: "articleRef", targets: [{ nodeId: "s-art-term" }], connector: "및", scope: "self" });
   const { booklet, doc } = docsOf(withSurgery([surgeryCoverage("pc-surgery", "수술비", { renew: false }), surgeryCoverage("pc-renew", "갱신형 수술비", { renew: true })], {}, special));
 
   it("「갱신형 수술비」 — 보험기간 조가 살아 제2조가 되고 참조는 「제2조(보험기간)」, 이후 조 번호가 밀린다", () => {
@@ -460,9 +460,9 @@ describe("반복 자리(P7) · 밟은 자리 원칙", () => {
   it("실행 기반 완결성 필터 — 책자가 실제로 읽은 자리의 미입력만 남긴다", () => {
     const filter = executionBasedFilter(assemble(alphaPlusFixture()));
     const item = (id: Id, level: MissingSlot["owner"]["level"], path: string): MissingSlot => ({ owner: { level, id }, ownerName: "", discriminatorCode: path.split(".")[0], label: "", path, at: {} });
-    const items = [item("cov-death", "coverage", "D0006"), item("ben-death", "benefit", "D0003.F02"), item("ben-death", "benefit", "D0003.F01"), item("cov-death", "coverage", "D0001")];
+    const items = [item("cov-death", "coverage", "D0007"), item("ben-death", "benefit", "D0003.F02"), item("ben-death", "benefit", "D0003.F01"), item("cov-death", "coverage", "D0001")];
     const tree = { id: "cov-death", name: "일반상해사망", description: "", subCoverages: [] };
-    expect(filter(items, tree).map((m) => m.path)).toEqual(["D0006", "D0003.F01", "D0001"]); // 지급률(F02)은 어떤 문서도 읽지 않았다
+    expect(filter(items, tree).map((m) => m.path)).toEqual(["D0007", "D0003.F01", "D0001"]); // 지급률(F02)은 어떤 문서도 읽지 않았다
     expect(filter(items, { ...tree, id: "cov-other" })).toEqual([]);
   });
 

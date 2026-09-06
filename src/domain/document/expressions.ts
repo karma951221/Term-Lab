@@ -41,7 +41,15 @@ export function validateExpressions(doc: DocumentNode, resolve: TypeResolver, ba
       return;
     }
     const checked = checkTypes(parsed.value, resolve, { coordinate: at });
-    if (!checked.ok && checked.rejection.reason === "invalid") issues.push(...checked.rejection.issues);
+    if (!checked.ok && checked.rejection.reason === "invalid") {
+      issues.push(...checked.rejection.issues);
+    } else if (checked.ok && checked.value.kind !== "string" && checked.value.kind !== "enum") {
+      issues.push({
+        kind: "typeMismatch",
+        message: `값 슬롯은 string·enum 만 허용합니다 (${checked.value.kind} 불가)`,
+        at: { ...at, refPath: src },
+      });
+    }
   };
 
   for (const e of ix.nodes.values()) {

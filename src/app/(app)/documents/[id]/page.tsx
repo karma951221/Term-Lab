@@ -121,7 +121,7 @@ function InsertMenu({
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
           <input type="text" name="title" placeholder="조 제목" />
           <input type="text" name="text" placeholder="텍스트" />
-          <input type="text" name="ref" placeholder="슬롯 참조 경로 (D0001.F01)" className="ts-mono" />
+          <input type="text" name="ref" list="slot-candidates" placeholder="슬롯 참조 경로 (D0001.F01)" className="ts-mono" />
           <input type="text" name="when" placeholder="조건식 (when)" className="ts-mono" />
           <input type="text" name="thenText" placeholder="참일 때 텍스트" />
           <input type="text" name="elseText" placeholder="else 텍스트" />
@@ -306,7 +306,7 @@ function renderNode(node: Node, ctx: Ctx): ReactNode {
         <span key={node.id} className="ts-node-inline">
           <span className="ts-derived-mark">ƒ</span>
           <form action={setSlotRefAction.bind(null, ctx.documentId, node.id)} style={{ display: "inline-flex", gap: 2 }}>
-            <input type="text" name="ref" defaultValue={node.ref} className="ts-mono" />
+            <input type="text" name="ref" list="slot-candidates" defaultValue={node.ref} className="ts-mono" />
             <button type="submit">✓</button>
           </form>
           {actions}
@@ -337,7 +337,8 @@ function renderNode(node: Node, ctx: Ctx): ReactNode {
               <option value="self">이 문서</option>
               <option value="general">보통약관</option>
             </select>
-            <input type="text" name="articleId" defaultValue={node.articleId} className="ts-mono" />
+            <input type="text" name="targets" defaultValue={node.targets.map((target) => target.nodeId).join(", ")} className="ts-mono" />
+            <input type="text" name="connector" defaultValue={node.connector} aria-label="연결어" />
             <button type="submit">저장</button>
           </form>
           {actions}
@@ -396,6 +397,17 @@ export default async function DocumentDetailPage({
   }
   const actor = await currentActor();
   const appendices = await services.document.listAppendices();
+  const discriminators = await services.catalog.list();
+  const slotCandidates = discriminators.flatMap((def) => {
+    if (def.kind === "const") return [{ path: def.code, label: def.label }];
+    if (def.kind === "scalar" && (def.type.kind === "string" || def.type.kind === "enum")) return [{ path: def.code, label: def.label }];
+    if (def.kind === "struct") {
+      return def.fields
+        .filter((field) => field.type.kind === "string" || field.type.kind === "enum")
+        .map((field) => ({ path: `${def.code}.${field.code}`, label: `${def.label}.${field.label}` }));
+    }
+    return [];
+  });
   const issues = await services.document.validate(id);
 
   let branchEval: Map<Id, BranchEvaluation> | undefined;
@@ -458,6 +470,9 @@ export default async function DocumentDetailPage({
       {issues.length === 0 ? <p className="ts-ok">문제 없음.</p> : <IssueList issues={issues} />}
 
       <h2 className="ts-h2">구조</h2>
+      <datalist id="slot-candidates">
+        {slotCandidates.map((candidate) => <option key={candidate.path} value={candidate.path}>{candidate.label}</option>)}
+      </datalist>
       {renderNode(doc.tree, ctx)}
 
       <h2 className="ts-h2">삭제</h2>

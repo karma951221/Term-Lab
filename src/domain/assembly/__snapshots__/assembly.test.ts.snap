@@ -142,13 +142,19 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
               {
                 "id": "g-clause-apply/c2-t1",
                 "kind": "text",
-                "text": "이 약관에서 정하지 않은 사항은 보통약관 ",
+                "text": "이 약관에서 정하지 않은 사항은 ",
               },
               {
-                "articleId": "g-art-def",
+                "connector": "및",
                 "id": "g-clause-apply/c2-ref",
                 "kind": "articleRef",
-                "label": "제1조(용어의 정의)",
+                "label": "보통약관 제1조(용어의 정의)",
+                "targets": [
+                  {
+                    "label": "제1조(용어의 정의)",
+                    "nodeId": "g-art-def",
+                  },
+                ],
               },
               {
                 "id": "g-clause-apply/c2-t2",
@@ -328,12 +334,12 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                     {
                       "id": "s-slot-reduce",
                       "kind": "text",
-                      "text": "24",
+                      "text": "24개월",
                     },
                     {
                       "id": "s-txt-reduce-2",
                       "kind": "text",
-                      "text": "개월 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다.",
+                      "text": " 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다.",
                     },
                   ],
                   "id": "s-par-reduce",
@@ -534,12 +540,12 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
                     {
                       "id": "s-slot-reduce",
                       "kind": "text",
-                      "text": "24",
+                      "text": "24개월",
                     },
                     {
                       "id": "s-txt-reduce-2",
                       "kind": "text",
-                      "text": "개월 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다.",
+                      "text": " 이내에 발생한 사망에 대해서는 사망보험금의 50%를 지급합니다.",
                     },
                   ],
                   "id": "s-par-reduce",

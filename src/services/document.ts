@@ -17,6 +17,7 @@ import {
   cloneTree,
   collectRefs,
   createAppendix,
+  indexTree,
   numberTree,
   preEvaluate,
   renameAppendix,
@@ -177,21 +178,28 @@ export function createDocumentService(db: Db, deps: DocumentServiceDeps = {}): D
   /** 저장 검증 환경 — 대응 보통약관의 조 집합 · 별표 존재 · 공용조항 게이트 · 좌표. */
   async function envOf(tx: Db, doc: DocumentRecord): Promise<TreeEnv> {
     let generalArticleIds: ReadonlySet<Id> | undefined;
+    let generalReferenceIds: ReadonlySet<Id> | undefined;
     if (doc.kind === "special") {
       const ids = new Set<Id>();
+      const refs = new Set<Id>();
       if (doc.generalDocumentId) {
         const g = await repo.loadDocument(tx, doc.generalDocumentId);
-        if (g) for (const c of g.tree.children) if (c.kind === "article") ids.add(c.id);
-        // 조 자리 조건 블록 안의 조도 대상이 된다
-        if (g) for (const c of g.tree.children) if (c.kind === "condBlock") collectArticleIds(c, ids);
+        if (g) {
+          for (const entry of indexTree(g.tree).nodes.values()) {
+            if (entry.node.kind === "article") ids.add(entry.node.id);
+            if (["article", "paragraph", "item", "subitem"].includes(entry.node.kind)) refs.add(entry.node.id);
+          }
+        }
       }
       generalArticleIds = ids;
+      generalReferenceIds = refs;
     }
     const appendixCodes = new Set((await repo.listAppendices(tx)).map((a) => a.code));
     const clauseGate = deps.clauseGate ? await deps.clauseGate(tx) : undefined;
     return {
       kind: doc.kind,
       generalArticleIds,
+      generalReferenceIds,
       appendixExists: (c) => appendixCodes.has(c),
       ...(clauseGate ? { clauseGate } : {}),
       coordinate: coordinateOf(doc),

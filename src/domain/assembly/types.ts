@@ -104,7 +104,8 @@ export interface RSlot {
 export interface RArticleRef {
   kind: "articleRef";
   id: Id;
-  articleId: Id;
+  targets: { nodeId: Id }[];
+  connector: string;
   scope: "self" | "general";
   at: Coordinate;
 }
@@ -179,7 +180,8 @@ export interface RenderedText {
 export interface RenderedArticleRef {
   kind: "articleRef";
   id: Id;
-  articleId: Id;
+  targets: { nodeId: Id; label: string }[];
+  connector: string;
   label: string;
 }
 /** 별표 참조 — 책자 전역 번호와 표기 「【별표N(이름)】」. */

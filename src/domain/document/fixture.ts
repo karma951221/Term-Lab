@@ -123,10 +123,10 @@ export function surgeryFixture(): SurgeryFixture {
             id: "s-par-apply-1",
             kind: "paragraph",
             children: [
-              { id: "s-txt-13", kind: "text", text: "이 특별약관에서 정하지 않은 사항은 보통약관 " },
-              { id: "s-aref-general", kind: "articleRef", articleId: "g-art-pay", scope: "general" },
+              { id: "s-txt-13", kind: "text", text: "이 특별약관에서 정하지 않은 사항은 " },
+              { id: "s-aref-general", kind: "articleRef", targets: [{ nodeId: "g-art-pay" }], connector: "및", scope: "general" },
               { id: "s-txt-14", kind: "text", text: " 및 이 특별약관 " },
-              { id: "s-aref-self", kind: "articleRef", articleId: "s-art-pay", scope: "self" },
+              { id: "s-aref-self", kind: "articleRef", targets: [{ nodeId: "s-art-pay" }], connector: "및", scope: "self" },
               { id: "s-txt-15", kind: "text", text: " · " },
               { id: "s-apx-burn", kind: "appendixRef", appendixCode: "APX_BURN" },
               { id: "s-txt-16", kind: "text", text: " 을 따릅니다. " },

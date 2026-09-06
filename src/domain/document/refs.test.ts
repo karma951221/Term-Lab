@@ -5,6 +5,28 @@ import { surgeryFixture } from "./fixture";
 import { collectRefs, requiredDiscriminators } from "./refs";
 
 describe("문면_기획 참조 무결성 — collectRefs 는 문서가 읽는 참조 전부를 좌표와 함께 뽑는다 (C1 역인덱스 재료)", () => {
+  it("다중 조 참조를 대상 단위 간선으로 수집한다", () => {
+    const b = nodeBuilders(sequentialIds("n"));
+    const doc = b.document("d", [
+      b.article("a", [
+        b.paragraph([
+          {
+            id: "refs",
+            kind: "articleRef",
+            targets: [{ nodeId: "g1" }, { nodeId: "g2" }],
+            connector: "또는",
+            scope: "general",
+          },
+        ]),
+      ]),
+    ]);
+
+    expect(collectRefs(doc).filter((ref) => ref.kind === "article")).toEqual([
+      expect.objectContaining({ kind: "article", articleId: "g1", scope: "general" }),
+      expect.objectContaining({ kind: "article", articleId: "g2", scope: "general" }),
+    ]);
+  });
+
   it("구분자(식 안·슬롯) · 담보속성 · 공용조항 · 조(자기·보통약관) · 별표 · 조연결", () => {
     const { special } = surgeryFixture();
     const refs = collectRefs(special, { document: "special", ownerId: "cov-surgery" });

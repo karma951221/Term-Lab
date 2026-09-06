@@ -67,6 +67,7 @@ describe("assembly 서비스 (PGlite) — 관통 1 통합", () => {
     unwrap(await catalog.create(editor, { kind: "const", label: "평균공시이율", value: "2.5%" }));
     unwrap(await catalog.create(editor, { kind: "derived", label: "면책여부합", level: "coverage", expression: "any(D0003.F01)" }));
     unwrap(await catalog.create(editor, { kind: "scalar", label: "감액기간", level: "coverage", type: { kind: "number" } }));
+    unwrap(await catalog.create(editor, { kind: "scalar", label: "감액기간문구", level: "coverage", type: { kind: "string" } }));
 
     // 담보 마스터 — 일반상해사망 (세부보장 1 · 급부 1) + 값 + 감액기간 부착
     const tree = unwrap(await coverage.create(editor, { name: "일반상해사망", benefitName: "사망보험금" }));
@@ -76,6 +77,8 @@ describe("assembly 서비스 (PGlite) — 관통 1 통합", () => {
     unwrap(await coverage.writeValue(editor, { level: "coverage", id: covDeath }, "D0001", false));
     unwrap(await coverage.attach(editor, { level: "coverage", id: covDeath }, "D0006"));
     unwrap(await coverage.writeValue(editor, { level: "coverage", id: covDeath }, "D0006", 24));
+    unwrap(await coverage.attach(editor, { level: "coverage", id: covDeath }, "D0007"));
+    unwrap(await coverage.writeValue(editor, { level: "coverage", id: covDeath }, "D0007", "24개월"));
     unwrap(await coverage.writeValue(editor, { level: "benefit", id: ben.id }, "D0003.F01", true));
     unwrap(await coverage.writeValue(editor, { level: "benefit", id: ben.id }, "D0003.F02", 100));
 
@@ -97,7 +100,7 @@ describe("assembly 서비스 (PGlite) — 관통 1 통합", () => {
       await clause.create(editor, {
         label: "준용 문구",
         mode: "inline",
-        body: [{ id: "c2-t1", kind: "text", text: "이 약관에서 정하지 않은 사항은 보통약관 " }, { id: "c2-ref", kind: "articleRef", articleId: "g-art-def" }, { id: "c2-t2", kind: "text", text: " 및 관계 법령을 따릅니다." }],
+        body: [{ id: "c2-t1", kind: "text", text: "이 약관에서 정하지 않은 사항은 " }, { id: "c2-ref", kind: "articleRef", targets: [{ nodeId: "g-art-def" }], connector: "및" }, { id: "c2-t2", kind: "text", text: " 및 관계 법령을 따릅니다." }],
       }),
     );
     unwrap(
@@ -159,7 +162,7 @@ describe("assembly 서비스 (PGlite) — 관통 1 통합", () => {
             kind: "condBlock",
             branches: [{ id: "s-cond-exempt-if", when: "D0005 = true", children: [{ id: "s-art-exempt", kind: "article", title: "보험금을 지급하지 않는 사유", children: [{ id: "s-par-exempt", kind: "paragraph", children: [{ id: "s-txt-exempt", kind: "text", text: "고의 사고에는 지급하지 않습니다." }] }] }] }],
           },
-          { id: "s-art-reduce", kind: "article", title: "보험금의 감액지급", children: [{ id: "s-par-reduce", kind: "paragraph", children: [{ id: "s-txt-reduce-1", kind: "text", text: "계약일부터 " }, { id: "s-slot-reduce", kind: "slot", ref: "D0006" }, { id: "s-txt-reduce-2", kind: "text", text: "개월 이내의 사망은 감액 지급합니다." }] }] },
+          { id: "s-art-reduce", kind: "article", title: "보험금의 감액지급", children: [{ id: "s-par-reduce", kind: "paragraph", children: [{ id: "s-txt-reduce-1", kind: "text", text: "계약일부터 " }, { id: "s-slot-reduce", kind: "slot", ref: "D0007" }, { id: "s-txt-reduce-2", kind: "text", text: " 이내의 사망은 감액 지급합니다." }] }] },
           { id: "s-art-lapse", kind: "article", title: "특별약관의 소멸", children: [{ id: "s-par-lapse", kind: "paragraph", children: [{ id: "s-txt-lapse", kind: "text", text: "이 특별약관은 다음의 경우 소멸합니다." }] }, { id: "s-clause-lapse", kind: "clauseBlockRef", clauseCode: "C0001", options: { O01: "V02" } }] },
           { id: "s-art-apply", kind: "article", title: "준용규정", linkedArticleId: "g-art-apply", children: [{ id: "s-par-apply", kind: "paragraph", children: [{ id: "s-clause-apply", kind: "clauseInlineRef", clauseCode: "C0002", options: {} }] }] },
         ]),

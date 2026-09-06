@@ -148,16 +148,26 @@ exports[`복제 (D-P4-9) — 하위 트리·조연결·참조 대상 id 를 그�
         {
           "children": [
             {
-              "articleId": "n3",
+              "connector": "및",
               "id": "n6",
               "kind": "articleRef",
               "scope": "self",
+              "targets": [
+                {
+                  "nodeId": "n3",
+                },
+              ],
             },
             {
-              "articleId": "n4",
+              "connector": "및",
               "id": "n7",
               "kind": "articleRef",
               "scope": "self",
+              "targets": [
+                {
+                  "nodeId": "n4",
+                },
+              ],
             },
           ],
           "id": "n8",
@@ -185,16 +195,26 @@ exports[`복제 (D-P4-9) — 하위 트리·조연결·참조 대상 id 를 그�
         {
           "children": [
             {
-              "articleId": "c1",
+              "connector": "및",
               "id": "c5",
               "kind": "articleRef",
               "scope": "self",
+              "targets": [
+                {
+                  "nodeId": "c1",
+                },
+              ],
             },
             {
-              "articleId": "n4",
+              "connector": "및",
               "id": "c6",
               "kind": "articleRef",
               "scope": "self",
+              "targets": [
+                {
+                  "nodeId": "n4",
+                },
+              ],
             },
           ],
           "id": "c4",

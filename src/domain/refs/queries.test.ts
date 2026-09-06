@@ -93,7 +93,7 @@ describe("cycles — 파생식 순환 · 조 참조 순환", () => {
       id: `${id}-root`,
       kind: "document" as const,
       title: id,
-      children: refs.map(([art, target]) => ({ id: art, kind: "article" as const, title: art, children: [{ id: `${art}-p`, kind: "paragraph" as const, children: [{ id: `${art}-r`, kind: "articleRef" as const, articleId: target, scope: "self" as const }] }] })),
+      children: refs.map(([art, target]) => ({ id: art, kind: "article" as const, title: art, children: [{ id: `${art}-p`, kind: "paragraph" as const, children: [{ id: `${art}-r`, kind: "articleRef" as const, targets: [{ nodeId: target }], connector: "및", scope: "self" as const }] }] })),
     });
     const g = buildGraph({ documents: [{ id: "d", kind: "general", title: "d", tree: tree("d", [["a1", "a2"], ["a2", "a1"], ["a3", "a3"]]) }] });
     expect(cycles(g).map((c) => c.nodes.map((n) => (n.kind === "article" ? n.articleId : "?")).sort())).toEqual([["a1", "a2"], ["a3"]]);

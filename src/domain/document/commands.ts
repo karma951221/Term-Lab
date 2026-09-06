@@ -56,7 +56,7 @@ export type Command =
   /** 조 명 또는 문서 제목. */
   | { type: "setTitle"; nodeId: Id; title: string }
   | { type: "setSlotRef"; nodeId: Id; ref: string }
-  | { type: "setArticleRef"; nodeId: Id; articleId: Id; scope: ArticleRefNode["scope"] }
+  | { type: "setArticleRef"; nodeId: Id; targets: { nodeId: Id }[]; connector: string; scope: ArticleRefNode["scope"] }
   | { type: "setAppendixRef"; nodeId: Id; appendixCode: Code }
   | { type: "setClauseOptions"; nodeId: Id; options: Record<Code, Code> }
   | { type: "setFor"; nodeId: Id; source?: string; alias?: string; separator?: string }
@@ -176,12 +176,15 @@ function danglingRefs(ix: TreeIndex, removed: ReadonlySet<Id>, env: TreeEnv): Is
   const out: Issue[] = [];
   for (const e of ix.nodes.values()) {
     const n = e.node;
-    if (n.kind !== "articleRef" || n.scope !== "self" || removed.has(n.id) || !removed.has(n.articleId)) continue;
-    out.push({
-      kind: "brokenRef",
-      message: `조 ${n.articleId} 를 가리키는 조 참조 슬롯이 남아 있습니다`,
-      at: coordinateOf(ix, e, env.coordinate),
-    });
+    if (n.kind !== "articleRef" || n.scope !== "self" || removed.has(n.id)) continue;
+    for (const target of n.targets) {
+      if (!removed.has(target.nodeId)) continue;
+      out.push({
+        kind: "brokenRef",
+        message: `노드 ${target.nodeId} 를 가리키는 참조 슬롯이 남아 있습니다`,
+        at: { ...coordinateOf(ix, e, env.coordinate), refPath: target.nodeId },
+      });
+    }
   }
   return out;
 }
@@ -222,8 +225,7 @@ function cloneSubtree<T extends Node>(root: T, newId: IdSource): T {
   relabel(copy);
   for (const n of nodesIn(copy)) {
     if (n.kind === "articleRef" && n.scope === "self") {
-      const mapped = map.get(n.articleId);
-      if (mapped !== undefined) n.articleId = mapped;
+      n.targets = n.targets.map(({ nodeId }) => ({ nodeId: map.get(nodeId) ?? nodeId }));
     }
   }
   return copy;
@@ -335,7 +337,8 @@ export function applyCommand(doc: DocumentNode, cmd: Command, opts: ApplyOptions
       const n = e.value.node;
       if (cmd.type === "setArticleRef") {
         if (n.kind !== "articleRef") return structure("조 참조 슬롯이 아닙니다", e.value.path);
-        n.articleId = cmd.articleId;
+        n.targets = cmd.targets.map((target) => ({ ...target }));
+        n.connector = cmd.connector;
         n.scope = cmd.scope;
       } else if (cmd.type === "setAppendixRef") {
         if (n.kind !== "appendixRef") return structure("별표 참조 슬롯이 아닙니다", e.value.path);

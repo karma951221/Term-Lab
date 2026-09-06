@@ -55,7 +55,8 @@ export interface InlineCondNode {
 export interface ArticleRefNode {
   id: Id;
   kind: "articleRef";
-  articleId: Id;
+  targets: { nodeId: Id }[];
+  connector: string;
 }
 
 /** 별표 참조 슬롯 — 별표 불변 코드. 번호는 책자별 계산값. */

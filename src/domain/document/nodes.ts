@@ -64,7 +64,9 @@ export interface InlineForNode {
 export interface ArticleRefNode {
   id: Id;
   kind: "articleRef";
-  articleId: Id;
+  targets: { nodeId: Id }[];
+  /** 마지막 대상 앞 연결어. */
+  connector: string;
   scope: "self" | "general";
 }
 
@@ -150,6 +152,8 @@ export interface ClauseBlockRefNode {
   kind: "clauseBlockRef";
   clauseCode: Code;
   options: Record<Code, Code>;
+  /** 보통약관의 항 단위 준용·생략 판정에서 이 block 참조가 만든 항을 뺀다. */
+  excludeFromComparison?: boolean;
 }
 
 /** 조. 메타는 조 명 · 조연결뿐. */
@@ -425,8 +429,10 @@ export const PERMISSIVE_GATE: ClauseGate = {
 export interface TreeEnv {
   /** 문서 종류. general 이면 조연결·보통약관 조 참조가 금지된다 (D-P4-20·22). */
   kind?: "special" | "general";
-  /** 대응 보통약관(D-P4-5)의 조 id 집합. 조연결·`scope:'general'` 참조의 대상 검증. */
+  /** 대응 보통약관(D-P4-5)의 조 id 집합. 조연결 대상 검증. */
   generalArticleIds?: ReadonlySet<Id>;
+  /** 대응 보통약관의 조·항·호·목 id 집합. `scope:'general'` 참조 대상 검증. */
+  generalReferenceIds?: ReadonlySet<Id>;
   appendixExists?: (code: Code) => boolean;
   clauseGate?: ClauseGate;
   /** 이슈 좌표의 기본값 (document · ownerId 등). */
@@ -479,14 +485,19 @@ export function checkNodeRefs(e: NodeEntry, ix: TreeIndex, env: TreeEnv, atSave:
       }
       return [];
     case "articleRef":
-      if (n.scope === "self") {
-        return ix.nodes.get(n.articleId)?.node.kind === "article" ? [] : one("brokenRef", `조 참조 대상 ${n.articleId} 가 이 문서에 없습니다`);
-      }
-      if (env.kind === "general") return one("structure", "보통약관 문서에서는 보통약관 조 참조를 쓸 수 없습니다");
-      if (env.generalArticleIds && !env.generalArticleIds.has(n.articleId)) {
-        return one("brokenRef", `보통약관 조 참조 대상 ${n.articleId} 가 대응 보통약관에 없습니다`);
-      }
-      return [];
+      if (n.targets.length === 0) return one("structure", "조 참조 슬롯에는 대상이 하나 이상 있어야 합니다");
+      if (n.scope === "general" && env.kind === "general") return one("structure", "보통약관 문서에서는 보통약관 조 참조를 쓸 수 없습니다");
+      return n.targets.flatMap(({ nodeId }) => {
+        const target = ix.nodes.get(nodeId)?.node;
+        const exists = n.scope === "self"
+          ? target !== undefined && ["article", "paragraph", "item", "subitem"].includes(target.kind)
+          : !(env.generalReferenceIds ?? env.generalArticleIds) || (env.generalReferenceIds ?? env.generalArticleIds)!.has(nodeId);
+        if (exists) return [];
+        const message = n.scope === "self"
+          ? `참조 대상 ${nodeId} 가 이 문서에 없습니다`
+          : `보통약관 참조 대상 ${nodeId} 가 대응 보통약관에 없습니다`;
+        return [{ kind: "brokenRef" as const, message, at: { ...at, refPath: nodeId } }];
+      });
     case "appendixRef":
       return env.appendixExists && !env.appendixExists(n.appendixCode) ? one("brokenRef", `별표 ${n.appendixCode} 가 별표 마스터에 없습니다`) : [];
     case "clauseBlockRef":

@@ -171,6 +171,29 @@ describe("노드 id 유일성 (ADR-0012 — 노드 id 는 트리 안에서 유�
 });
 
 describe("문면작성 S4·S6 — 참조 대상 존재 검증", () => {
+  it("다중 조 참조는 깨진 대상을 대상마다 brokenRef 로 보고한다", () => {
+    const b = make();
+    const doc = b.document("d", [
+      b.article("a", [
+        b.paragraph([
+          {
+            id: "refs",
+            kind: "articleRef",
+            targets: [{ nodeId: "missing-1" }, { nodeId: "missing-2" }],
+            connector: "및",
+            scope: "self",
+          },
+        ]),
+      ]),
+    ]);
+
+    const issues = validateTree(doc);
+    expect(issues.map((issue) => [issue.kind, issue.at.refPath])).toEqual([
+      ["brokenRef", "missing-1"],
+      ["brokenRef", "missing-2"],
+    ]);
+  });
+
   it("같은 문서 조 참조는 대상 조가 있어야 한다 — 없으면 brokenRef", () => {
     const b = make();
     const doc = b.document("d", [

@@ -88,9 +88,21 @@ export function nodeBuilders(newId: IdSource = randomIds) {
       children,
       ...(opts.separator !== undefined ? { separator: opts.separator } : {}),
     }),
-    articleRef: (articleId: Id, scope: ArticleRefNode["scope"] = "self"): ArticleRefNode => ({ id: newId(), kind: "articleRef", articleId, scope }),
+    articleRef: (targets: Id | readonly Id[], scope: ArticleRefNode["scope"] = "self", connector = "및"): ArticleRefNode => ({
+      id: newId(),
+      kind: "articleRef",
+      targets: (typeof targets === "string" ? [targets] : targets).map((nodeId) => ({ nodeId })),
+      connector,
+      scope,
+    }),
     appendixRef: (appendixCode: Code): AppendixRefNode => ({ id: newId(), kind: "appendixRef", appendixCode }),
-    clauseBlock: (clauseCode: Code, options: Record<Code, Code> = {}): ClauseBlockRefNode => ({ id: newId(), kind: "clauseBlockRef", clauseCode, options }),
+    clauseBlock: (clauseCode: Code, options: Record<Code, Code> = {}, excludeFromComparison?: boolean): ClauseBlockRefNode => ({
+      id: newId(),
+      kind: "clauseBlockRef",
+      clauseCode,
+      options,
+      ...(excludeFromComparison !== undefined ? { excludeFromComparison } : {}),
+    }),
     clauseInline: (clauseCode: Code, options: Record<Code, Code> = {}): ClauseInlineRefNode => ({ id: newId(), kind: "clauseInlineRef", clauseCode, options }),
   };
 }

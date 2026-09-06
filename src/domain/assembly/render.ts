@@ -151,15 +151,25 @@ class Renderer {
       case "error":
         return n;
       case "articleRef": {
-        const info = this.self.get(n.articleId) ?? this.general.get(n.articleId);
-        if (!info) {
-          const at: Coordinate = { ...n.at, refPath: n.articleId };
-          if (n.scope === "general" && !this.env.general) {
-            return this.error(n.id, { kind: "brokenRef", message: "보통약관 템플릿이 없어 보통약관 조 참조를 해소할 수 없습니다", at });
+        const targets: { nodeId: Id; label: string }[] = [];
+        for (const target of n.targets) {
+          const info = n.scope === "self" || this.env.document === "general"
+            ? this.self.get(target.nodeId)
+            : this.general.get(target.nodeId);
+          if (!info) {
+            const at: Coordinate = { ...n.at, refPath: target.nodeId };
+            const issue: Issue = n.scope === "general" && !this.env.general
+              ? { kind: "brokenRef", message: "보통약관 템플릿이 없어 보통약관 참조를 해소할 수 없습니다", at }
+              : { kind: "articleGone", message: `참조 대상 ${target.nodeId} 이(가) 분기·생략으로 사라졌거나 없습니다`, at };
+            this.issues.push(issue);
+            continue;
           }
-          return this.error(n.id, { kind: "articleGone", message: `조 참조 대상 ${n.articleId} 이(가) 분기·생략으로 사라졌거나 없습니다`, at });
+          targets.push({ nodeId: target.nodeId, label: articleRefLabel(info.n, info.title) });
         }
-        return { kind: "articleRef", id: n.id, articleId: n.articleId, label: articleRefLabel(info.n, info.title) };
+        if (targets.length !== n.targets.length) return { kind: "error", id: n.id, issue: this.issues.at(-1)! };
+        const labels = targets.map((target) => target.label);
+        const label = labels.length <= 1 ? (labels[0] ?? "") : `${labels.slice(0, -1).join(", ")} ${n.connector} ${labels.at(-1)}`;
+        return { kind: "articleRef", id: n.id, targets, connector: n.connector, label: `${n.scope === "general" ? "보통약관 " : ""}${label}` };
       }
       case "appendixRef": {
         const a = this.appendices.get(n.appendixCode);

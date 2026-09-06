@@ -99,7 +99,7 @@ describe("★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망
 
   it("조립 문맥 조회(D-P6-7) — 실행이 읽은 값 자리가 상품담보별로 남는다 (보통약관이 읽은 갱신여부는 기본계약에)", () => {
     const basic = booklet.trace.find((t) => t.productCoverageId === "pc-basic")!;
-    expect(basic.reads.map((r) => `${r.owner.kind}:${r.path}`).sort()).toEqual(["product:D0002", "productBenefit:D0003.F01", "productCoverage:D0001", "productCoverage:D0006"]);
+    expect(basic.reads.map((r) => `${r.owner.kind}:${r.path}`).sort()).toEqual(["product:D0002", "productBenefit:D0003.F01", "productCoverage:D0001", "productCoverage:D0007"]);
     expect(basic.reads.find((r) => r.path === "D0003.F01")?.masterId).toBe("ben-death");
   });
 

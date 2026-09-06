@@ -28,6 +28,22 @@ const 옵션: OptionDef[] = [
 ];
 
 describe("공용조항 S1 — 본문 노드 규칙 (inline)", () => {
+  it("공용조항 값 슬롯도 string·enum 외 타입은 거부한다", () => {
+    const resolveType = (ref: { kind: string; code?: string }) =>
+      ref.kind === "discriminator" && ref.code === "D_TEXT"
+        ? ({ kind: "string" } as const)
+        : ref.kind === "discriminator" && ref.code === "D_NUMBER"
+          ? ({ kind: "number" } as const)
+          : undefined;
+    const body: Inline[] = [
+      { id: "s1", kind: "slot", ref: "D_TEXT" },
+      { id: "s2", kind: "slot", ref: "D_NUMBER" },
+    ];
+
+    const issues = issuesOf(analyzeBody("inline", body, [], { resolveType }));
+    expect(issues.map((issue) => issue.kind)).toEqual(["typeMismatch"]);
+  });
+
   it("텍스트·슬롯·인라인 조건·조 참조·별표 참조·옵션 자리로 된 inline 본문은 통과한다", () => {
     const body: Inline[] = [
       { id: "t1", kind: "text", text: "이 특별약관은 " },
@@ -36,7 +52,7 @@ describe("공용조항 S1 — 본문 노드 규칙 (inline)", () => {
         { id: "b2", children: [{ id: "t3", kind: "text", text: "계약일" }] },
       ] },
       { id: "s1", kind: "slot", ref: "D0001" },
-      { id: "a1", kind: "articleRef", articleId: "art-1" },
+      { id: "a1", kind: "articleRef", targets: [{ nodeId: "art-1" }], connector: "및" },
       { id: "x1", kind: "appendixRef", appendixCode: "X0001" },
       { id: "o1", kind: "optionSlot", optionCode: "O01" },
     ];

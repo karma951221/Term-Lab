@@ -18,7 +18,7 @@ function inline(n: SInline): string {
     case "text":
       return `t(${n.text})`;
     case "articleRef":
-      return `a(${n.articleId})`;
+      return `a(${n.scope}:${n.targets.map((target) => target.nodeId).join(",")}:${n.connector})`;
     case "appendixRef":
       return `x(${n.appendixCode})`;
     case "error":
