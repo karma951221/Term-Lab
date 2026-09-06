@@ -8,8 +8,8 @@ import type { ClauseMode } from "@/domain/clause/types";
 import type { CoverageNodeLevel } from "@/domain/coverage/types";
 
 export const KIND_LABEL = {
-  scalar: "스칼라",
-  struct: "구조체",
+  scalar: "단일값",
+  struct: "폼",
   const: "상수",
   derived: "파생",
 } as const satisfies Record<DiscriminatorKind, string>;

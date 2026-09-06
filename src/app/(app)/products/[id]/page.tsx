@@ -321,7 +321,7 @@ export default async function ProductDetailPage({
               <label className="ts-field">
                 <span>세목유형</span>
                 <select name="planTypeCode" required defaultValue={planTypeDefs[0]?.code ?? ""}>
-                  {planTypeDefs.length === 0 && <option value="">— plan 레벨 구조체 구분자가 없다 —</option>}
+                  {planTypeDefs.length === 0 && <option value="">— 세목 레벨 폼 구분자가 없다 —</option>}
                   {planTypeDefs.map((d) => (
                     <option key={d.code} value={d.code}>
                       {d.label} ({d.code})

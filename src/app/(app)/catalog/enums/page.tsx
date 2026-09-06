@@ -42,12 +42,12 @@ export default async function EnumsPage({ searchParams }: { searchParams: Promis
   return (
     <div>
       <h1 className="ts-h1">
-        enum <span className="ts-count">{enums.length}</span>
+        선택지 <span className="ts-count">{enums.length}</span>
       </h1>
       <ErrorBanner message={sp.error} />
 
       <form action={createEnumAction} className="ts-form">
-        <h2 className="ts-form-title">새 enum</h2>
+        <h2 className="ts-form-title">새 선택지</h2>
         <div className="ts-form-row">
           <label htmlFor="new-enum-label">표시명</label>
           <div className="ts-form-control">
@@ -93,7 +93,7 @@ export default async function EnumsPage({ searchParams }: { searchParams: Promis
 
             {values.length === 0 ? (
               <div className="ts-empty">
-                <p className="ts-empty-what">선택지가 없으면 이 enum 을 쓰는 필드는 아무것도 고를 수 없다.</p>
+                <p className="ts-empty-what">값이 없으면 이 선택지를 쓰는 필드는 아무것도 고를 수 없다.</p>
                 <p className="ts-empty-example">예: 일반심사 · 간편심사 · 무심사</p>
               </div>
             ) : (
@@ -155,8 +155,8 @@ export default async function EnumsPage({ searchParams }: { searchParams: Promis
             ) : (
               <div className="ts-form-actions">
                 <Link href={`?delEnum=${e.code}`} tabIndex={-1}>
-                  <button type="button" className="danger" title={`enum ${e.label}(${e.code}) 삭제 — 값 ${values.length}개가 함께 사라진다`}>
-                    {e.label} enum 삭제…
+                  <button type="button" className="danger" title={`선택지 ${e.label}(${e.code}) 삭제 — 값 ${values.length}개가 함께 사라진다`}>
+                    {e.label} 선택지 삭제…
                   </button>
                 </Link>
               </div>
@@ -167,9 +167,9 @@ export default async function EnumsPage({ searchParams }: { searchParams: Promis
 
       {enums.length === 0 && (
         <div className="ts-empty">
-          <p className="ts-empty-what">enum 은 선택형 구분자가 고르는 선택지 사전이다.</p>
+          <p className="ts-empty-what">선택지는 선택형 구분자가 고르는 값 목록이다.</p>
           <p className="ts-empty-example">예: 고지유형(일반심사 · 간편심사) · 갱신주기(1년 · 3년 · 5년)</p>
-          <p className="ts-empty-action">위 「새 enum」 폼에서 첫 enum 을 만든다.</p>
+          <p className="ts-empty-action">위 「새 선택지」 폼에서 첫 선택지를 만든다.</p>
         </div>
       )}
     </div>
@@ -193,7 +193,7 @@ async function EnumValueConfirm({
       <Confirm
         impact={outcome.impact}
         action={removeEnumValueAction.bind(null, enumCode, valueCode)}
-        targetLabel={`enum 값 ${valueLabel}(${valueCode})`}
+        targetLabel={`선택지 값 ${valueLabel}(${valueCode})`}
         actionLabel={`${valueLabel} 삭제`}
         cancelHref={BASE}
       />
@@ -209,7 +209,7 @@ async function EnumConfirm({ enumCode, enumLabel, actor }: { enumCode: string; e
       <Confirm
         impact={outcome.impact}
         action={removeEnumAction.bind(null, enumCode)}
-        targetLabel={`enum ${enumLabel}(${enumCode})`}
+        targetLabel={`선택지 ${enumLabel}(${enumCode})`}
         actionLabel={`${enumLabel} 삭제`}
         cancelHref={BASE}
       />

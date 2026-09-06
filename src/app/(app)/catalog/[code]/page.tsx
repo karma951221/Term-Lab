@@ -317,7 +317,7 @@ export default async function CatalogDetailPage({
           </h2>
           {sortedFields.length === 0 ? (
             <div className="ts-empty">
-              <p className="ts-empty-what">구조체에는 필드가 있어야 값 자리가 생긴다.</p>
+              <p className="ts-empty-what">폼에는 필드가 있어야 값 자리가 생긴다.</p>
               <p className="ts-empty-example">예: 면책여부(예/아니오) · 지급률(숫자)</p>
             </div>
           ) : (

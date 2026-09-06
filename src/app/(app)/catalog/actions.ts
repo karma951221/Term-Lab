@@ -24,7 +24,7 @@ export async function createScalarAction(formData: FormData): Promise<void> {
   const actor = await currentActor();
   const level = str(formData, "level") as AttachLevel;
   const type = fieldTypeFrom(str(formData, "typeKind"), str(formData, "enumCode"));
-  if (!type) redirect(errorRedirectPath(`${BASE}/new`, "타입을 확인하세요 (enum 은 대상 enum 을 골라야 합니다)."));
+  if (!type) redirect(errorRedirectPath(`${BASE}/new`, "타입을 확인하세요 (선택형은 대상 선택지를 골라야 합니다)."));
   const defaultValue = valueFromInput(type, str(formData, "defaultValue"));
   const r = await getServices().catalog.create(actor, {
     kind: "scalar",
@@ -143,7 +143,7 @@ export async function saveFieldAction(code: Code, fieldCode: Code, formData: For
   const actor = await currentActor();
   const services = getServices();
   const def = await services.catalog.get(code);
-  if (!def || def.kind !== "struct") redirect(errorRedirectPath(detailPath(code), "struct 구분자가 아닙니다."));
+  if (!def || def.kind !== "struct") redirect(errorRedirectPath(detailPath(code), "폼 구분자가 아닙니다."));
   const field = def.fields.find((f) => f.code === fieldCode);
   if (!field) redirect(errorRedirectPath(detailPath(code), "필드를 찾을 수 없습니다."));
 

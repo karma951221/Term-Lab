@@ -65,7 +65,7 @@ export default async function NewCatalogPage({ searchParams }: { searchParams: P
       </div>
       <div className="ts-form-row">
         <label className="ts-form-label" htmlFor="scalar-enum">
-          enum 대상 (타입이 선택형일 때만)
+          선택지 (타입이 선택형일 때만)
         </label>
         <div className="ts-form-control">
           <select id="scalar-enum" name="enumCode" defaultValue="">
@@ -96,7 +96,7 @@ export default async function NewCatalogPage({ searchParams }: { searchParams: P
       </div>
       <div className="ts-form-actions">
         <button type="submit" className="primary">
-          스칼라 구분자 생성
+          단일값 구분자 생성
         </button>
       </div>
     </form>
@@ -132,7 +132,7 @@ export default async function NewCatalogPage({ searchParams }: { searchParams: P
       <p className="ts-muted">생성하면 상세 화면으로 이동한다 — 다음 단계는 거기서 첫 필드를 추가하는 것이다 (리뷰 #21).</p>
       <div className="ts-form-actions">
         <button type="submit" className="primary">
-          구조체 구분자 생성
+          폼 구분자 생성
         </button>
       </div>
     </form>

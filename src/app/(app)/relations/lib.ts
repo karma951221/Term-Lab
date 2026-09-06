@@ -54,7 +54,7 @@ export function parseRefTarget(q: RelationQuery): RefNodeKey | undefined {
 export const KIND_OPTIONS: readonly { value: string; label: string }[] = [
   { value: "discriminator", label: "구분자" },
   { value: "field", label: "구분자 필드" },
-  { value: "enum", label: "선택형 종류(enum)" },
+  { value: "enum", label: "선택지" },
   { value: "enumValue", label: "선택형 값" },
   { value: "clause", label: "공용조항" },
   { value: "appendix", label: "별표" },
