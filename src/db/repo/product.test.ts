@@ -29,8 +29,8 @@ describe("product repo (PGlite) — 스키마 · 채번 · 매핑", () => {
         label: "갱신유형",
         order: 0,
         values: [
-          { code: "V02", label: "갱신형", order: 0, naming: { prefix: "갱신형" } },
-          { code: "V01", label: "비갱신형", order: 1, naming: {} },
+          { code: "V02", label: "갱신형", order: 0, fragment: "갱신형" },
+          { code: "V01", label: "비갱신형", order: 1, fragment: "" },
         ],
       },
       who,
@@ -42,14 +42,20 @@ describe("product repo (PGlite) — 스키마 · 채번 · 매핑", () => {
         label: "갱신유형",
         order: 0,
         values: [
-          { code: "V02", label: "갱신형", order: 0, naming: { prefix: "갱신형" } },
-          { code: "V01", label: "비갱신형", order: 1, naming: {} },
+          { code: "V02", label: "갱신형", order: 0, fragment: "갱신형" },
+          { code: "V01", label: "비갱신형", order: 1, fragment: "" },
         ],
       },
     ]);
     // 값 삭제 반영
     await repo.saveAttributeKind(t.db, { ...kinds[0], values: [kinds[0].values[0]] }, who);
     expect((await repo.loadAttributeKind(t.db, "A0001"))?.values.map((v) => v.code)).toEqual(["V02"]);
+  });
+
+  it("전역 명명 템플릿은 행이 없으면 [담보명]이고 수정값을 왕복한다", async () => {
+    expect(await repo.loadNamingTemplate(t.db)).toBe("[담보명]");
+    await repo.saveNamingTemplate(t.db, "[A0001] [담보명]", who);
+    expect(await repo.loadNamingTemplate(t.db)).toBe("[A0001] [담보명]");
   });
 
   it("상품 · 상품담보(조합 · 스냅샷 노드) 저장과 조회", async () => {

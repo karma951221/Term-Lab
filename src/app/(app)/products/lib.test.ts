@@ -5,8 +5,8 @@ import type { AttributeKind } from "@/domain/product";
 import { parseOptionSelection, parseSelections, str } from "./lib";
 
 const kinds: AttributeKind[] = [
-  { code: "A0001", label: "갱신유형", order: 0, values: [{ code: "V01", label: "갱신형", order: 0, naming: {} }] },
-  { code: "A0002", label: "부가유형", order: 1, values: [{ code: "V01", label: "기본", order: 0, naming: {} }] },
+  { code: "A0001", label: "갱신유형", order: 0, values: [{ code: "V01", label: "갱신형", order: 0, fragment: "" }] },
+  { code: "A0002", label: "부가유형", order: 1, values: [{ code: "V01", label: "기본", order: 0, fragment: "" }] },
 ];
 
 describe("products lib — 순수 파싱", () => {

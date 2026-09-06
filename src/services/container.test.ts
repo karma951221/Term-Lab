@@ -128,8 +128,9 @@ describe("container — createServices 관통 (PGlite)", () => {
 
   it("담보속성탑재·세목구성 — 담보속성 「갱신유형」 · 상품 · 탑재(마스터 트리 = coverage 서비스) · 기본계약 부착 검사(보통약관 요구 참조 = document 서비스) · 옵션 오버라이드(유효 집합 = clause 서비스)", async () => {
     const kind = unwrap(await s.product.createAttributeKind(editor, { label: "갱신유형" }));
-    unwrap(await s.product.addAttributeValue(editor, kind.code, { label: "갱신형", naming: { prefix: "갱신형 " } }));
+    unwrap(await s.product.addAttributeValue(editor, kind.code, { label: "갱신형", fragment: "갱신형 " }));
     unwrap(await s.product.addAttributeValue(editor, kind.code, { label: "비갱신형" }));
+    unwrap(await s.product.setNamingTemplate(editor, "[A0001] [담보명]"));
     // 이제 attr.A0001 = 'V01' 은 통과, 유효값 밖 'V99' 는 거부 — TypeResolver 가 담보속성 카탈로그를 본다
     const okAttr = b.article("갱신 문구", [b.paragraph([b.inlineCond([b.inlineBranch("attr.A0001 = 'V01'", [b.text("갱신형")])])])]);
     special = unwrap(await s.document.apply(editor, special.id, [{ type: "insert", node: okAttr, at: { parentId: special.tree.id } }]));

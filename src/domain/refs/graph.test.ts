@@ -49,7 +49,7 @@ const 준용: Clause = {
   required: { discriminators: ["D0001"], attributes: ["A0001"] },
 };
 
-const 갱신유형: AttributeKind = { code: "A0001", label: "갱신유형", order: 0, values: [{ code: "V01", label: "갱신형", order: 0, naming: {} }, { code: "V02", label: "비갱신형", order: 1, naming: {} }] };
+const 갱신유형: AttributeKind = { code: "A0001", label: "갱신유형", order: 0, values: [{ code: "V01", label: "갱신형", order: 0, fragment: "" }, { code: "V02", label: "비갱신형", order: 1, fragment: "" }] };
 
 const fx = surgeryFixture();
 const 수술비: Coverage = { id: fx.coverageId, name: "수술비", description: "", documentId: "doc-s", subCoverages: [{ id: "sub-1", name: "1종수술", order: 0, benefits: [{ id: "ben-1", name: "수술보험금", order: 0 }] }] };

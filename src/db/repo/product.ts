@@ -29,6 +29,7 @@ import {
   attributeValues,
   clauseOptionOverrides,
   codeSequences,
+  namingTemplates,
   planOptions,
   productBaseContracts,
   productCoverageAttributes,
@@ -65,7 +66,7 @@ type KindRow = typeof attributeKinds.$inferSelect;
 type ValueRow = typeof attributeValues.$inferSelect;
 
 function toValue(r: ValueRow): AttributeValue {
-  return { code: r.code, label: r.label, order: r.order, naming: { ...(r.prefix ? { prefix: r.prefix } : {}), ...(r.suffix ? { suffix: r.suffix } : {}) } };
+  return { code: r.code, label: r.label, order: r.order, fragment: r.fragment };
 }
 
 function toKind(r: KindRow, values: ValueRow[]): AttributeKind {
@@ -98,12 +99,24 @@ async function upsertValues(db: Db, kindId: Id, values: AttributeValue[], who: I
   if (keep.length === 0) await db.delete(attributeValues).where(eq(attributeValues.kindId, kindId));
   else await db.delete(attributeValues).where(and(eq(attributeValues.kindId, kindId), sql`${attributeValues.code} not in ${keep}`));
   for (const v of values) {
-    const data = { label: v.label, order: v.order, prefix: v.naming.prefix ?? "", suffix: v.naming.suffix ?? "" };
+    const data = { label: v.label, order: v.order, fragment: v.fragment };
     await db
       .insert(attributeValues)
       .values({ kindId, code: v.code, ...data, createdBy: who, updatedBy: who })
       .onConflictDoUpdate({ target: [attributeValues.kindId, attributeValues.code], set: { ...data, updatedAt: now, updatedBy: who } });
   }
+}
+
+export async function loadNamingTemplate(db: Db): Promise<string> {
+  const [row] = await db.select({ template: namingTemplates.template }).from(namingTemplates).where(eq(namingTemplates.key, "global")).limit(1);
+  return row?.template ?? "[담보명]";
+}
+
+export async function saveNamingTemplate(db: Db, template: string, who: Id): Promise<void> {
+  await db
+    .insert(namingTemplates)
+    .values({ key: "global", template, createdBy: who, updatedBy: who })
+    .onConflictDoUpdate({ target: namingTemplates.key, set: { template, updatedAt: new Date(), updatedBy: who } });
 }
 
 /** 기존 종류 덮어쓰기 (행 갱신 + 유효값 upsert/삭제). 코드는 바뀌지 않는다. */

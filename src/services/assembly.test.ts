@@ -172,10 +172,11 @@ describe("assembly 서비스 (PGlite) — 관통 1 통합", () => {
     // 상품 — 담보속성 · 상품 · 값 · 탑재 ×2 · 기본계약 · 그룹
     unwrap(await product.createAttributeKind(editor, { label: "갱신유형" })); // A0001
     unwrap(await product.addAttributeValue(editor, "A0001", { label: "비갱신형" }));
-    unwrap(await product.addAttributeValue(editor, "A0001", { label: "갱신형", naming: { prefix: "갱신형" } }));
+    unwrap(await product.addAttributeValue(editor, "A0001", { label: "갱신형", fragment: "갱신형" }));
     unwrap(await product.createAttributeKind(editor, { label: "부가유형" })); // A0002
     unwrap(await product.addAttributeValue(editor, "A0002", { label: "기본" }));
-    unwrap(await product.addAttributeValue(editor, "A0002", { label: "추가", naming: { suffix: "추가" } }));
+    unwrap(await product.addAttributeValue(editor, "A0002", { label: "추가", fragment: "추가" }));
+    unwrap(await product.setNamingTemplate(editor, "[A0001] [담보명] [A0002]"));
     productId = unwrap(await product.createProduct(editor, { name: "알파Plus(축약)", generalDocumentId: g.id })).id;
     unwrap(await product.setProductValue(editor, productId, "D0002", undefined, "V02"));
     pcBasic = unwrap(await product.mount(editor, productId, covDeath, [{ kindCode: "A0002", valueCode: "V01" }])).id;

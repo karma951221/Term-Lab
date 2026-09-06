@@ -184,10 +184,11 @@ export async function seedAlphaPlus(services: Services, actor: Actor): Promise<S
   //    픽스처의 순서가 아니라 서비스 통합 순서를 따른다).
   unwrap(await product.createAttributeKind(actor, { label: "갱신유형" })); // A0001
   unwrap(await product.addAttributeValue(actor, "A0001", { label: "비갱신형" }));
-  unwrap(await product.addAttributeValue(actor, "A0001", { label: "갱신형", naming: { prefix: "갱신형" } }));
+  unwrap(await product.addAttributeValue(actor, "A0001", { label: "갱신형", fragment: "갱신형" }));
   unwrap(await product.createAttributeKind(actor, { label: "부가유형" })); // A0002
   unwrap(await product.addAttributeValue(actor, "A0002", { label: "기본" }));
-  unwrap(await product.addAttributeValue(actor, "A0002", { label: "추가", naming: { suffix: "추가" } }));
+  unwrap(await product.addAttributeValue(actor, "A0002", { label: "추가", fragment: "추가" }));
+  unwrap(await product.setNamingTemplate(actor, "[A0001] [담보명] [A0002]"));
 
   // ── 담보약관 — 일반상해사망 (대응 보통약관 지정 → 조연결 · 보통약관 조 참조 가능)
   const s = unwrap(await document.createSpecial(actor, covDeath, "일반상해사망 특별약관"));

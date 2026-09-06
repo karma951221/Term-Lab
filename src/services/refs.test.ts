@@ -98,7 +98,7 @@ describe("refs 서비스 · 주입 소스 (PGlite)", () => {
     special = await insertDocument(db, { kind: "special", ownerId: surgery.id, title: "수술비 특별약관", generalDocumentId: general.id, tree: b.document("수술비 특별약관", [artPay, exemptBlock, artLapse, artApply]) }, editor.userId);
     unwrap(await coverage.setDocument(editor, surgery.id, special.id));
 
-    await insertAttributeKind(db, { code: "A0001", label: "갱신유형", order: 0, values: [{ code: "V01", label: "갱신형", order: 0, naming: {} }, { code: "V02", label: "비갱신형", order: 1, naming: {} }] }, editor.userId);
+    await insertAttributeKind(db, { code: "A0001", label: "갱신유형", order: 0, values: [{ code: "V01", label: "갱신형", order: 0, fragment: "" }, { code: "V02", label: "비갱신형", order: 1, fragment: "" }] }, editor.userId);
     const product = await insertProduct(db, { name: "알파Plus", generalDocumentId: general.id }, editor.userId);
     productId = product.id;
     const pc = await insertProductCoverage(db, { productId, coverageId: surgery.id, coverageName: "수술비", name: "갱신형 수술비", attributes: [{ kindCode: "A0001", valueCode: "V01" }], combinationKey: "k" }, editor.userId);

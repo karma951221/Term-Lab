@@ -8,7 +8,7 @@
  * - 삭제(종류·유효값)는 파괴적 — 서비스가 `destructive()` 로 처리한다. 여기엔 없음.
  */
 import { type Code, type Issue, ok, reject, type Result } from "../types";
-import type { AttributeKind, AttributeValue, NamingRule, NewAttributeKind, NewAttributeValue } from "./types";
+import type { AttributeKind, AttributeValue, NewAttributeKind, NewAttributeValue } from "./types";
 
 // ───────────────────────────── 코드 ─────────────────────────────
 
@@ -43,14 +43,9 @@ function cleanLabel(label: unknown): string | undefined {
   return t.length > 0 ? t : undefined;
 }
 
-/** 작명 규칙 정리 — 앞뒤 공백 제거, 빈 문자열은 규칙 없음 (공백 1칸 규칙은 naming.ts 가 적용). */
-export function normalizeNamingRule(rule: NamingRule | undefined): NamingRule {
-  const out: NamingRule = {};
-  const p = rule?.prefix?.trim();
-  const s = rule?.suffix?.trim();
-  if (p) out.prefix = p;
-  if (s) out.suffix = s;
-  return out;
+/** 명명 조각 정리 — 저장 시 앞뒤 공백을 제거한다. */
+export function normalizeNamingFragment(fragment: string | undefined): string {
+  return fragment?.trim() ?? "";
 }
 
 function sortedValues(values: readonly AttributeValue[]): AttributeValue[] {
@@ -107,7 +102,7 @@ export async function addAttributeValue(
   if (kind.values.some((v) => v.label === label)) return reject({ reason: "duplicate", what: `담보속성 유효값 표시명 ${label}` });
   const code = formatAttributeValueCode(await nextSeq("attributeValue", kind.code));
   const order = kind.values.reduce((m, v) => Math.max(m, v.order + 1), 0);
-  const value: AttributeValue = { code, label, order, naming: normalizeNamingRule(input.naming) };
+  const value: AttributeValue = { code, label, order, fragment: normalizeNamingFragment(input.fragment) };
   return ok({ ...kind, values: [...kind.values, value] });
 }
 
@@ -128,9 +123,9 @@ export function renameAttributeValue(kind: AttributeKind, valueCode: Code, label
   return withValue(kind, valueCode, (v) => ok({ ...v, label: clean }));
 }
 
-/** 담보명 규칙 등록·수정 — prefix · suffix 둘 다 선택. */
-export function setNamingRule(kind: AttributeKind, valueCode: Code, rule: NamingRule): Result<AttributeKind> {
-  return withValue(kind, valueCode, (v) => ok({ ...v, naming: normalizeNamingRule(rule) }));
+/** 담보명 조각 등록·수정. */
+export function setNamingFragment(kind: AttributeKind, valueCode: Code, fragment: string): Result<AttributeKind> {
+  return withValue(kind, valueCode, (v) => ok({ ...v, fragment: normalizeNamingFragment(fragment) }));
 }
 
 export function reorderAttributeValues(kind: AttributeKind, order: readonly Code[]): Result<AttributeKind> {

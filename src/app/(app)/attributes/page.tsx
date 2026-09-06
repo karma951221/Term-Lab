@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Confirm } from "@/app/_components/Confirm";
 import { ErrorBanner } from "@/app/_components/ErrorBanner";
 import { previewOutcome } from "@/app/_lib/rejection";
+import { displayNamingTemplate, missingTemplateKinds } from "@/domain/product";
 import { currentActor, getServices } from "@/lib/services";
 
 import {
@@ -12,7 +13,8 @@ import {
   removeAttributeValueAction,
   renameAttributeKindAction,
   renameAttributeValueAction,
-  setNamingRuleAction,
+  setNamingFragmentAction,
+  setNamingTemplateAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +28,7 @@ interface SearchParams {
 export default async function AttributesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
   const services = getServices();
-  const kinds = await services.product.listAttributeKinds();
+  const [kinds, namingTemplate] = await Promise.all([services.product.listAttributeKinds(), services.product.getNamingTemplate()]);
   const actor = await currentActor();
   const [delKindCode, delValueCode] = (sp.delValue ?? "").split(":");
 
@@ -34,6 +36,20 @@ export default async function AttributesPage({ searchParams }: { searchParams: P
     <div>
       <h1 className="ts-h1">담보속성</h1>
       <ErrorBanner message={sp.error} />
+
+      <form action={setNamingTemplateAction} className="ts-form">
+        <h2 className="ts-form-title">상품담보명 템플릿</h2>
+        <label className="ts-field">
+          <span>템플릿</span>
+          <input type="text" name="template" defaultValue={namingTemplate} />
+        </label>
+        <p className="ts-muted">표시: {displayNamingTemplate(namingTemplate, kinds)}</p>
+        {missingTemplateKinds(kinds, namingTemplate).length > 0 && (
+          <p className="ts-muted">템플릿에 없는 종류: {missingTemplateKinds(kinds, namingTemplate).map((kind) => kind.label).join(", ")}</p>
+        )}
+        <p className="ts-muted">사용 가능한 칩: [담보명]{kinds.map((kind) => ` [${kind.code}](${kind.label})`).join("")}</p>
+        <div className="ts-form-actions"><button type="submit">템플릿 저장</button></div>
+      </form>
 
       <form action={createAttributeKindAction} className="ts-form">
         <h2 className="ts-form-title">새 담보속성 종류</h2>
@@ -61,7 +77,7 @@ export default async function AttributesPage({ searchParams }: { searchParams: P
               <tr>
                 <th>코드</th>
                 <th>표시명</th>
-                <th>작명 규칙 (prefix / suffix)</th>
+                <th>명명 조각</th>
                 <th>조작</th>
               </tr>
             </thead>
@@ -80,9 +96,8 @@ export default async function AttributesPage({ searchParams }: { searchParams: P
                       </form>
                     </td>
                     <td>
-                      <form action={setNamingRuleAction.bind(null, k.code, v.code)} style={{ display: "flex", gap: 4 }}>
-                        <input type="text" name="prefix" placeholder="prefix" defaultValue={v.naming.prefix ?? ""} />
-                        <input type="text" name="suffix" placeholder="suffix" defaultValue={v.naming.suffix ?? ""} />
+                      <form action={setNamingFragmentAction.bind(null, k.code, v.code)} style={{ display: "flex", gap: 4 }}>
+                        <input type="text" name="fragment" placeholder="명명 조각" defaultValue={v.fragment} />
                         <button type="submit">저장</button>
                       </form>
                     </td>
@@ -99,8 +114,7 @@ export default async function AttributesPage({ searchParams }: { searchParams: P
           </table>
           <form action={addAttributeValueAction.bind(null, k.code)} style={{ display: "flex", gap: 4, marginTop: 8 }}>
             <input type="text" name="label" placeholder="새 값 표시명" required />
-            <input type="text" name="prefix" placeholder="prefix" />
-            <input type="text" name="suffix" placeholder="suffix" />
+            <input type="text" name="fragment" placeholder="명명 조각" />
             <button type="submit">값 추가</button>
           </form>
 

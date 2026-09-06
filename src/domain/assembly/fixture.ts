@@ -60,8 +60,8 @@ export const alphaAttributeKinds: AttributeKind[] = [
     label: "갱신유형",
     order: 0,
     values: [
-      { code: "V01", label: "비갱신형", order: 0, naming: {} },
-      { code: "V02", label: "갱신형", order: 1, naming: { prefix: "갱신형" } },
+      { code: "V01", label: "비갱신형", order: 0, fragment: "" },
+      { code: "V02", label: "갱신형", order: 1, fragment: "갱신형" },
     ],
   },
   {
@@ -69,8 +69,8 @@ export const alphaAttributeKinds: AttributeKind[] = [
     label: "부가유형",
     order: 1,
     values: [
-      { code: "V01", label: "기본", order: 0, naming: {} },
-      { code: "V02", label: "추가", order: 1, naming: { suffix: "추가" } },
+      { code: "V01", label: "기본", order: 0, fragment: "" },
+      { code: "V02", label: "추가", order: 1, fragment: "추가" },
     ],
   },
 ];

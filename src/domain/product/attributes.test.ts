@@ -9,7 +9,7 @@ import {
   renameAttributeValue,
   reorderAttributeKinds,
   reorderAttributeValues,
-  setNamingRule,
+  setNamingFragment,
 } from "./attributes";
 import type { AttributeKind } from "./types";
 
@@ -56,13 +56,13 @@ describe("담보속성탑재 S1 — 담보속성 카탈로그 편집 (ADR-0015)"
     if (!empty.ok) expect(empty.rejection.reason).toBe("invalid");
   });
 
-  it("유효값 「갱신형」 추가 → V01, 작명 규칙 prefix 「갱신형」 — 앞뒤 공백은 저장 시 정리한다", async () => {
+  it("유효값 「갱신형」 추가 → V01, 명명 조각 「갱신형」 — 앞뒤 공백은 저장 시 정리한다", async () => {
     const seq = seqSource();
     const kind = unwrap(await createAttributeKind({ label: "갱신유형" }, [], seq));
-    const k2 = unwrap(await addAttributeValue(kind, { label: "갱신형", naming: { prefix: "갱신형 " } }, seq));
-    expect(k2.values).toEqual([{ code: "V01", label: "갱신형", order: 0, naming: { prefix: "갱신형" } }]);
+    const k2 = unwrap(await addAttributeValue(kind, { label: "갱신형", fragment: "갱신형 " }, seq));
+    expect(k2.values).toEqual([{ code: "V01", label: "갱신형", order: 0, fragment: "갱신형" }]);
     const k3 = unwrap(await addAttributeValue(k2, { label: "비갱신형" }, seq));
-    expect(k3.values[1]).toEqual({ code: "V02", label: "비갱신형", order: 1, naming: {} });
+    expect(k3.values[1]).toEqual({ code: "V02", label: "비갱신형", order: 1, fragment: "" });
   });
 
   it("같은 종류 안 유효값 표시명 중복은 거부", async () => {
@@ -73,15 +73,15 @@ describe("담보속성탑재 S1 — 담보속성 카탈로그 편집 (ADR-0015)"
     expect(dup).toEqual({ ok: false, rejection: { reason: "duplicate", what: "담보속성 유효값 표시명 추가" } });
   });
 
-  it("담보명 규칙 등록·수정 — suffix 「 추가」 → 「추가」. 빈 문자열은 규칙 없음", async () => {
+  it("담보명 조각 등록·수정 — 「 추가」 → 「추가」. 빈 문자열은 조각 없음", async () => {
     const seq = seqSource();
     const kind = unwrap(await createAttributeKind({ label: "부가유형" }, [], seq));
     const k2 = unwrap(await addAttributeValue(kind, { label: "추가" }, seq));
-    const k3 = unwrap(setNamingRule(k2, "V01", { suffix: " 추가" }));
-    expect(k3.values[0].naming).toEqual({ suffix: "추가" });
-    const k4 = unwrap(setNamingRule(k3, "V01", { prefix: "", suffix: "  " }));
-    expect(k4.values[0].naming).toEqual({});
-    expect(setNamingRule(k4, "V99", { prefix: "x" })).toEqual({ ok: false, rejection: { reason: "notFound", what: "담보속성 유효값 V99" } });
+    const k3 = unwrap(setNamingFragment(k2, "V01", " 추가"));
+    expect(k3.values[0].fragment).toBe("추가");
+    const k4 = unwrap(setNamingFragment(k3, "V01", "  "));
+    expect(k4.values[0].fragment).toBe("");
+    expect(setNamingFragment(k4, "V99", "x")).toEqual({ ok: false, rejection: { reason: "notFound", what: "담보속성 유효값 V99" } });
   });
 
   it("표시명 변경은 자유 — 코드 불변 (종류·유효값)", async () => {

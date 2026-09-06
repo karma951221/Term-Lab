@@ -29,11 +29,9 @@ export async function renameAttributeKindAction(code: Code, formData: FormData):
 
 export async function addAttributeValueAction(code: Code, formData: FormData): Promise<void> {
   const actor = await currentActor();
-  const prefix = str(formData, "prefix");
-  const suffix = str(formData, "suffix");
   const r = await getServices().product.addAttributeValue(actor, code, {
     label: str(formData, "label"),
-    naming: { ...(prefix ? { prefix } : {}), ...(suffix ? { suffix } : {}) },
+    fragment: str(formData, "fragment"),
   });
   if (!r.ok) redirect(errorRedirectPath(BASE, msg(r.rejection)));
   redirect(BASE);
@@ -46,14 +44,16 @@ export async function renameAttributeValueAction(code: Code, valueCode: Code, fo
   redirect(BASE);
 }
 
-export async function setNamingRuleAction(code: Code, valueCode: Code, formData: FormData): Promise<void> {
+export async function setNamingFragmentAction(code: Code, valueCode: Code, formData: FormData): Promise<void> {
   const actor = await currentActor();
-  const prefix = str(formData, "prefix");
-  const suffix = str(formData, "suffix");
-  const r = await getServices().product.setNamingRule(actor, code, valueCode, {
-    ...(prefix ? { prefix } : {}),
-    ...(suffix ? { suffix } : {}),
-  });
+  const r = await getServices().product.setNamingFragment(actor, code, valueCode, str(formData, "fragment"));
+  if (!r.ok) redirect(errorRedirectPath(BASE, msg(r.rejection)));
+  redirect(BASE);
+}
+
+export async function setNamingTemplateAction(formData: FormData): Promise<void> {
+  const actor = await currentActor();
+  const r = await getServices().product.setNamingTemplate(actor, str(formData, "template"));
   if (!r.ok) redirect(errorRedirectPath(BASE, msg(r.rejection)));
   redirect(BASE);
 }

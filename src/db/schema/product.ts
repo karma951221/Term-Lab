@@ -37,7 +37,7 @@ export const attributeKinds = pgTable("attribute_kinds", {
   ...audit,
 });
 
-/** 담보속성 유효값. 코드 `V01` 은 종류 안에서 유일. 작명 규칙(prefix/suffix)은 빈 문자열 = 규칙 없음. */
+/** 담보속성 유효값. 코드 `V01` 은 종류 안에서 유일. 명명 조각은 빈 문자열 = 문구 없음. */
 export const attributeValues = pgTable(
   "attribute_values",
   {
@@ -48,12 +48,18 @@ export const attributeValues = pgTable(
     code: text("code").notNull(),
     label: text("label").notNull(),
     order: integer("order").notNull(),
-    prefix: text("prefix").notNull().default(""),
-    suffix: text("suffix").notNull().default(""),
+    fragment: text("fragment").notNull().default(""),
     ...audit,
   },
   (t) => [uniqueIndex("attribute_values_owner_code").on(t.kindId, t.code)],
 );
+
+/** 전역 명명 템플릿 — `global` 단일 행. 행이 없으면 도메인 기본값 `[담보명]`. */
+export const namingTemplates = pgTable("naming_templates", {
+  key: text("key").primaryKey(),
+  template: text("template").notNull(),
+  ...audit,
+});
 
 // ───────────────────────────── 상품 ─────────────────────────────
 

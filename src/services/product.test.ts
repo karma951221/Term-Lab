@@ -93,18 +93,21 @@ describe("product 서비스 (PGlite)", () => {
   });
 
   describe("담보속성탑재 S1 — 담보속성 카탈로그", () => {
-    it("종류 「갱신유형」 A0001 · 「부가유형」 A0002 채번, 유효값·작명 규칙·순서 저장", async () => {
+    it("종류 「갱신유형」 A0001 · 「부가유형」 A0002 채번, 유효값·명명 조각·순서 저장", async () => {
       const renewal = unwrap(await svc.createAttributeKind(editor, { label: "갱신유형" }));
       expect(renewal.code).toBe("A0001");
-      const r2 = unwrap(await svc.addAttributeValue(editor, "A0001", { label: "갱신형", naming: { prefix: "갱신형 " } }));
-      expect(r2.values[0]).toMatchObject({ code: "V01", naming: { prefix: "갱신형" } });
+      const r2 = unwrap(await svc.addAttributeValue(editor, "A0001", { label: "갱신형", fragment: "갱신형 " }));
+      expect(r2.values[0]).toMatchObject({ code: "V01", fragment: "갱신형" });
       const addon = unwrap(await svc.createAttributeKind(editor, { label: "부가유형" }));
       expect(addon).toMatchObject({ code: "A0002", order: 1 });
       unwrap(await svc.addAttributeValue(editor, "A0002", { label: "기본" }));
       unwrap(await svc.addAttributeValue(editor, "A0002", { label: "추가" }));
-      unwrap(await svc.setNamingRule(editor, "A0002", "V02", { suffix: " 추가" }));
-      expect((await svc.getAttributeKind("A0002"))?.values[1].naming).toEqual({ suffix: "추가" });
-      // 적용 순서: 부가유형 먼저, 갱신유형 다음 → 작명은 order 순이라 prefix/suffix 라 무관
+      unwrap(await svc.setNamingFragment(editor, "A0002", "V02", " 추가"));
+      expect((await svc.getAttributeKind("A0002"))?.values[1].fragment).toBe("추가");
+      expect(await svc.getNamingTemplate()).toBe("[담보명]");
+      unwrap(await svc.setNamingTemplate(editor, "[A0001] [담보명] [A0002]"));
+      expect(await svc.getNamingTemplate()).toBe("[A0001] [담보명] [A0002]");
+      // 적용 순서와 명명 템플릿의 칩 순서는 독립이다.
       unwrap(await svc.reorderAttributeKinds(editor, ["A0002", "A0001"]));
       expect((await svc.listAttributeKinds()).map((k) => k.code)).toEqual(["A0002", "A0001"]);
       unwrap(await svc.reorderAttributeKinds(editor, ["A0001", "A0002"]));

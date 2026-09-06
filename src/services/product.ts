@@ -31,7 +31,7 @@ import {
   renameAttributeValue,
   reorderAttributeKinds,
   reorderAttributeValues,
-  setNamingRule,
+  setNamingFragment,
   sortInGroup,
   validateGroupTemplate,
   validateNewPlanOption,
@@ -48,7 +48,6 @@ import {
   type GeneralAttachmentCheck,
   type GeneralDocumentGate,
   type MissingSlot,
-  type NamingRule,
   type NewAttributeKind,
   type NewAttributeValue,
   type NewPlanOption,
@@ -103,12 +102,14 @@ export interface ProductService {
   // ── 담보속성 카탈로그
   listAttributeKinds(): Promise<AttributeKind[]>;
   getAttributeKind(code: Code): Promise<AttributeKind | undefined>;
+  getNamingTemplate(): Promise<string>;
+  setNamingTemplate(actor: Actor, template: string): Promise<Result<string>>;
   createAttributeKind(actor: Actor, input: NewAttributeKind): Promise<Result<AttributeKind>>;
   renameAttributeKind(actor: Actor, code: Code, label: string): Promise<Result<AttributeKind>>;
   reorderAttributeKinds(actor: Actor, order: Code[]): Promise<Result<AttributeKind[]>>;
   addAttributeValue(actor: Actor, code: Code, input: NewAttributeValue): Promise<Result<AttributeKind>>;
   renameAttributeValue(actor: Actor, code: Code, valueCode: Code, label: string): Promise<Result<AttributeKind>>;
-  setNamingRule(actor: Actor, code: Code, valueCode: Code, rule: NamingRule): Promise<Result<AttributeKind>>;
+  setNamingFragment(actor: Actor, code: Code, valueCode: Code, fragment: string): Promise<Result<AttributeKind>>;
   reorderAttributeValues(actor: Actor, code: Code, order: Code[]): Promise<Result<AttributeKind>>;
   removeAttributeValue(actor: Actor, code: Code, valueCode: Code, opts?: Confirmable): Promise<Result<AttributeKind>>;
   removeAttributeKind(actor: Actor, code: Code, opts?: Confirmable): Promise<Result<void>>;
@@ -424,6 +425,12 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
     // 담보속성
     listAttributeKinds: () => repo.listAttributeKinds(db),
     getAttributeKind: (code) => repo.loadAttributeKind(db, code),
+    getNamingTemplate: () => repo.loadNamingTemplate(db),
+    setNamingTemplate: (actor, template) =>
+      db.transaction(async (tx) => {
+        await repo.saveNamingTemplate(tx, template, actor.userId);
+        return ok(template);
+      }),
     createAttributeKind: (actor, input) =>
       db.transaction(async (tx) => {
         const r = await createAttributeKind(input, await repo.listAttributeKinds(tx), repo.attributeSeqSource(tx));
@@ -439,7 +446,7 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
       }),
     addAttributeValue: (actor, code, input) => editKind(actor, code, (k, _all, tx) => addAttributeValue(k, input, repo.attributeSeqSource(tx))),
     renameAttributeValue: (actor, code, valueCode, label) => editKind(actor, code, (k) => renameAttributeValue(k, valueCode, label)),
-    setNamingRule: (actor, code, valueCode, rule) => editKind(actor, code, (k) => setNamingRule(k, valueCode, rule)),
+    setNamingFragment: (actor, code, valueCode, fragment) => editKind(actor, code, (k) => setNamingFragment(k, valueCode, fragment)),
     reorderAttributeValues: (actor, code, order) => editKind(actor, code, (k) => reorderAttributeValues(k, order)),
     removeAttributeValue: (actor, code, valueCode, opts = {}) =>
       attributeDestructive(actor, "attribute.deleteValue", opts, code, valueCode, async (tx, kind) => {
@@ -630,7 +637,7 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
           const attributes = normalizeSelections(selections, kinds);
           const key = combinationKey(coverageId, attributes);
           if (await repo.findByCombination(tx, productId, key)) return reject({ reason: "duplicate", what: `상품담보 조합 ${tree.name} × ${attributes.map((a) => `${a.kindCode}=${a.valueCode}`).join(",") || "(속성 없음)"}` });
-          const pc = await repo.insertProductCoverage(tx, { productId, coverageId, coverageName: tree.name, name: defaultCoverageName(tree.name, attributes, kinds), attributes, combinationKey: key }, actor.userId);
+          const pc = await repo.insertProductCoverage(tx, { productId, coverageId, coverageName: tree.name, name: defaultCoverageName(tree.name, attributes, kinds, await repo.loadNamingTemplate(tx)), attributes, combinationKey: key }, actor.userId);
           // 값 스냅샷 (ADR-0002): 담보 → 세부보장 → 급부
           await snapshotFrom(tx, { kind: "coverage", id: coverageId }, { kind: "productCoverage", id: pc.id }, actor.userId);
           for (const sub of tree.subCoverages) {
@@ -672,7 +679,7 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
     regenerateName: (actor, id) =>
       db.transaction((tx) =>
         withCoverage(tx, id, async (pc) => {
-          const name = defaultCoverageName((await repo.coverageNameOf(tx, id)) ?? "", pc.attributes, await repo.listAttributeKinds(tx));
+          const name = defaultCoverageName((await repo.coverageNameOf(tx, id)) ?? "", pc.attributes, await repo.listAttributeKinds(tx), await repo.loadNamingTemplate(tx));
           await repo.updateProductCoverage(tx, id, { name }, actor.userId);
           return ok({ ...pc, name });
         }),
@@ -687,7 +694,7 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
           const key = combinationKey(pc.coverageId, attributes);
           const dup = await repo.findByCombination(tx, pc.productId, key);
           if (dup && dup !== id) return reject({ reason: "duplicate", what: `상품담보 조합 ${key}` });
-          const name = opts.regenerateName ? defaultCoverageName((await repo.coverageNameOf(tx, id)) ?? "", attributes, kinds) : pc.name;
+          const name = opts.regenerateName ? defaultCoverageName((await repo.coverageNameOf(tx, id)) ?? "", attributes, kinds, await repo.loadNamingTemplate(tx)) : pc.name;
           await repo.updateProductCoverage(tx, id, { attributes, combinationKey: key, name }, actor.userId);
           return ok({ ...pc, attributes, name });
         }),

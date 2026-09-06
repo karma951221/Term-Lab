@@ -7,15 +7,15 @@ const renewal: AttributeKind = {
   code: "A0001",
   label: "갱신유형",
   order: 1,
-  values: [{ code: "V01", label: "갱신형", order: 0, naming: { prefix: "갱신형" } }],
+  values: [{ code: "V01", label: "갱신형", order: 0, fragment: "갱신형" }],
 };
 const addon: AttributeKind = {
   code: "A0002",
   label: "부가유형",
   order: 0,
   values: [
-    { code: "V01", label: "기본", order: 0, naming: {} },
-    { code: "V02", label: "추가", order: 1, naming: { suffix: "추가" } },
+    { code: "V01", label: "기본", order: 0, fragment: "" },
+    { code: "V02", label: "추가", order: 1, fragment: "추가" },
   ],
 };
 const kinds = [renewal, addon];

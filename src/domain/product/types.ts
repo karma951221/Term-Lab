@@ -13,22 +13,14 @@ import type { AttachLevel, Code, Coordinate, Id, Issue, ValueSlot } from "../typ
 
 // ───────────────────────────── 담보속성 카탈로그 (ADR-0015) ─────────────────────────────
 
-/**
- * 담보명 규칙 — 유효값마다 prefix / suffix (둘 다 선택, 둘 다 가능).
- * 2차기획_목록 「작명 규칙 문법」이 미확정이라 최소형으로 확정한 것 (naming.ts 주석 참조).
- */
-export interface NamingRule {
-  prefix?: string;
-  suffix?: string;
-}
-
 /** 담보속성 유효값. 코드 `V01` 은 종류 안에서 유일 · 불변. 표시명은 자유 변경. */
 export interface AttributeValue {
   code: Code;
   label: string;
   /** 종류 안 순서 (0부터) — 그룹 안 자동 정렬의 3차 키 (조립_기획). */
   order: number;
-  naming: NamingRule;
+  /** 전역 명명 템플릿의 이 종류 칩을 치환하는 문구. */
+  fragment: string;
 }
 
 /** 담보속성 종류. 코드 `A0001` (전역 채번). */
@@ -46,7 +38,7 @@ export interface NewAttributeKind {
 
 export interface NewAttributeValue {
   label: string;
-  naming?: NamingRule;
+  fragment?: string;
 }
 
 /** 상품담보의 담보속성 값 선택 — sparse (사용한 종류만). */
