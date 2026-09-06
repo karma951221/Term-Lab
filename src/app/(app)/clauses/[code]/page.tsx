@@ -330,7 +330,7 @@ export default async function ClauseDetailPage({
             <thead>
               <tr>
                 <th className="col-flex">문면</th>
-                <th className="col-fixed-md">소유 실체</th>
+                <th className="col-fixed-md">소유 모델링</th>
                 <th className="col-fixed-md">선택</th>
               </tr>
             </thead>
