@@ -18,5 +18,5 @@ export default async function FormDetailPage({ params }: { params: Promise<{ cod
   const preview = previewOutcome(await services.catalog.remove(actor, code));
   const valueRows = preview.kind === "confirm" ? preview.impact.valueRowsLost : 0;
   const signature = loaded.fields.map((field) => field.code).join(":");
-  return <div><FormEditor key={`${code}:${signature}`} def={loaded} initialEnums={enums} usageCount={usageCount} fieldUsage={fieldUsage} valueRows={valueRows} /><p className="ts-back"><Link href="/types/forms">← 폼 목록</Link></p></div>;
+  return <div><FormEditor key={`${code}:${signature}`} def={loaded} initialEnums={enums} usageCount={usageCount} fieldUsage={fieldUsage} valueRows={valueRows} /></div>;
 }

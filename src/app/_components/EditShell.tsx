@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useTransition, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import type { EditOutcome } from "@/app/_lib/edit";
@@ -38,6 +39,8 @@ export function EditShell<T extends EditData>({
   title,
   code,
   headerMeta,
+  backHref,
+  backLabel,
   saveAction,
   deleteAction,
   deleteLabel,
@@ -49,6 +52,9 @@ export function EditShell<T extends EditData>({
   title: string;
   code: string;
   headerMeta?: ReactNode;
+  /** 목록으로 돌아가는 링크 — 헤더 위 좌상단에 둔다 (화면 하단에 조작을 두지 않는다). */
+  backHref?: string;
+  backLabel?: string;
   saveAction: (input: T, confirm?: boolean) => Promise<EditOutcome>;
   deleteAction?: (confirm?: boolean) => Promise<EditOutcome>;
   deleteLabel?: string;
@@ -92,6 +98,7 @@ export function EditShell<T extends EditData>({
   };
 
   return <EditContext.Provider value={{ mode, pending, data, setValue: (name, value) => setData((current) => ({ ...current, [name]: value })) }}>
+    {backHref ? <p className="ts-back"><Link href={backHref}>← {backLabel ?? "목록"}</Link></p> : null}
     <div className="ts-edit-head">
       <h2 className="ts-h1">{shownTitle}</h2><code className="ts-mono ts-muted">{code}</code>{headerMeta}
       <span className="ts-edit-actions">

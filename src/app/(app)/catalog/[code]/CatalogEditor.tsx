@@ -59,6 +59,8 @@ export function CatalogEditor({ def, enums, valueRows, usage, usageCount }: { de
     title={def.label}
     code={def.code}
     headerMeta={<span className="ts-count">사용처 <b>{usageCount}</b></span>}
+    backHref="/catalog"
+    backLabel="구분자 목록"
     saveAction={saveDiscriminatorEditAction.bind(null, def.code)}
     deleteAction={removeDiscriminatorEditAction.bind(null, def.code)}
     deleteLabel={`${def.label} 삭제`}

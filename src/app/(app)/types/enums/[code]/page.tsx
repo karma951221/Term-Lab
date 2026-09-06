@@ -15,5 +15,5 @@ export default async function EnumDetailPage({ params }: { params: Promise<{ cod
   const usageCount = usagesOf(graph, { kind: "enum", enumCode: code }, { via: ["type"] }).length;
   const valueUsage = Object.fromEntries(item.values.map((value) => [value.code, usagesOf(graph, { kind: "enumValue", enumCode: code, valueCode: value.code }).length]));
   const signature = item.values.map((value) => value.code).join(":");
-  return <div><EnumEditor key={`${code}:${signature}`} item={item} usageCount={usageCount} valueUsage={valueUsage} /><p className="ts-back"><Link href="/types/enums">← 선택지 목록</Link></p></div>;
+  return <div><EnumEditor key={`${code}:${signature}`} item={item} usageCount={usageCount} valueUsage={valueUsage} /></div>;
 }

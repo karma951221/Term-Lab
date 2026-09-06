@@ -34,7 +34,7 @@ function ValuesEditor({ code, usage }: { code: string; usage: Record<string, num
 export function EnumEditor({ item, usageCount, valueUsage }: { item: EnumDef; usageCount: number; valueUsage: Record<string, number> }) {
   const values = [...item.values].sort((a, b) => a.order - b.order).map(({ code, label }) => ({ code, label }));
   const initial: EnumEditData = { label: item.label, values };
-  return <EditShell initial={initial} title={item.label} code={item.code} headerMeta={<span className="ts-count">사용처 <b>{usageCount}</b></span>} saveAction={saveEnumEditAction.bind(null, item.code)} deleteAction={removeEnumEditAction.bind(null, item.code)} deleteLabel={`${item.label} 삭제`} deleteTooltip={`선택지 ${item.label}(${item.code}) 삭제`} deleteSuccessHref="/types/enums">
+  return <EditShell initial={initial} title={item.label} code={item.code} headerMeta={<span className="ts-count">사용처 <b>{usageCount}</b></span>} backHref="/types/enums" backLabel="선택지 목록" saveAction={saveEnumEditAction.bind(null, item.code)} deleteAction={removeEnumEditAction.bind(null, item.code)} deleteLabel={`${item.label} 삭제`} deleteTooltip={`선택지 ${item.label}(${item.code}) 삭제`} deleteSuccessHref="/types/enums">
     <Field name="label" label="표시명" />
     <ValuesEditor code={item.code} usage={valueUsage} />
   </EditShell>;

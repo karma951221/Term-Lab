@@ -7,6 +7,7 @@ export default async function NewEnumPage({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   const suggested = (sp.q ?? "").trim();
   return <div>
+    <p className="ts-back"><Link href="/types/enums">← 선택지 목록</Link></p>
     <h2 className="ts-h1">새 선택지</h2>
     <ErrorBanner message={sp.error} />
     <form action={createTypeEnumAction} className="ts-form">
@@ -16,6 +17,5 @@ export default async function NewEnumPage({ searchParams }: { searchParams: Prom
       <p className="ts-muted">값은 한 줄에 하나씩 입력한다.</p>
       <div className="ts-form-actions"><button type="submit" className="primary">생성</button></div>
     </form>
-    <p className="ts-back"><Link href="/types/enums">← 선택지 목록</Link></p>
   </div>;
 }

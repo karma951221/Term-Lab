@@ -649,7 +649,7 @@ button.danger:focus-visible {
 }
 
 .ts-back {
-  margin-top: 24px;
+  margin: 0 0 6px;
 }
 
 .ts-subtabs {

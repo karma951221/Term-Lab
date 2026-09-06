@@ -30,5 +30,5 @@ export default async function CatalogDetailPage({ params }: { params: Promise<{ 
     <p className="ts-l2-side-title">사용처 <span className="ts-count"><b>{usages.length}</b> / 전체 참조 {totalRefs}</span></p>
     {usages.length === 0 ? <div className="ts-empty"><p className="ts-empty-what">아무 문면 · 식도 이 구분자를 읽지 않는다.</p><p className="ts-empty-action"><Link href="/documents">문면에서 쓰러 가기 →</Link></p></div> : <table className="ts-table"><thead><tr><th className="col-fixed-md">형태</th><th className="col-flex">좌표</th></tr></thead><tbody>{usages.map((usage, index) => { const href = coordinateHref(usage.at); return <tr key={index}><td>{VIA_LABEL[usage.via]}</td><td>{href ? <Link href={href}>{formatCoordinate(usage.at, { source: true })}</Link> : formatCoordinate(usage.at, { source: true })}</td></tr>; })}</tbody></table>}
   </div>;
-  return <div><CatalogEditor def={def} enums={enums} valueRows={valueRows} usage={usage} usageCount={usages.length} /><p className="ts-back"><Link href="/catalog">← 구분자 목록</Link></p></div>;
+  return <div><CatalogEditor def={def} enums={enums} valueRows={valueRows} usage={usage} usageCount={usages.length} /></div>;
 }

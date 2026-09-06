@@ -10,9 +10,9 @@ export default async function NewFormPage({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   const level = ATTACH_LEVELS.includes(sp.level as AttachLevel) ? sp.level as AttachLevel : "coverage";
   return <div>
+    <p className="ts-back"><Link href="/types/forms">← 폼 목록</Link></p>
     <h2 className="ts-h1">새 폼</h2>
     <ErrorBanner message={sp.error} />
     <StructCreateForm action={createTypeFormAction} initialLabel={(sp.q ?? "").trim()} initialLevel={level} />
-    <p className="ts-back"><Link href="/types/forms">← 폼 목록</Link></p>
   </div>;
 }
