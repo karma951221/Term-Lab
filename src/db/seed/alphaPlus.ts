@@ -6,9 +6,10 @@
  * 정확한 구성은 `src/services/assembly.test.ts` 의 관통 1 통합 테스트 `beforeAll` 을 그대로 따른다.
  *
  * 만드는 것:
- * - 구분자 6개: D0001 갱신여부(담보 boolean 무조건노출) · D0002 고지유형(상품 enum E0001) ·
+ * - 구분자: D0001 갱신여부(담보 boolean 무조건노출) · D0002 고지유형(상품 enum E0001) ·
  *   D0003 보험금지급(급부 구조체 F01 면책여부·F02 지급률) · D0004 평균공시이율(const '2.5%') ·
- *   D0005 면책여부합(담보 파생 any(D0003.F01)) · D0006 감액기간(담보 number 선택 노출)
+ *   D0005 면책여부합(담보 파생 any(D0003.F01)) · D0006 감액기간(담보 number 선택 노출) ·
+ *   D0007 감액기간문구(string) · D0008~D0011 세목유형 4종(plan 구조체)
  * - enum E0001 고지유형 {일반심사, 간편심사}
  * - 담보 마스터 「일반상해사망」(세부보장 1 · 급부 「사망보험금」 1) + 값(D0001·D0006·D0003.F01·F02)
  * - 별표 마스터 2건(장해분류표 · 화상 분류표 — 문면이 참조하는 것은 장해분류표뿐)
@@ -87,6 +88,29 @@ export async function seedAlphaPlus(services: Services, actor: Actor): Promise<S
   unwrap(await catalog.create(actor, { kind: "derived", label: "면책여부합", level: "coverage", expression: "any(D0003.F01)" }));
   unwrap(await catalog.create(actor, { kind: "scalar", label: "감액기간", level: "coverage", type: { kind: "number" } }));
   unwrap(await catalog.create(actor, { kind: "scalar", label: "감액기간문구", level: "coverage", type: { kind: "string" } }));
+
+  // ── 세목유형 4종 — 선택지의 planTypeCode가 가리키는 plan 레벨 구조체
+  unwrap(await catalog.createEnum(actor, { label: "납입면제사유", values: [{ label: "질병" }, { label: "상해" }] }));
+  unwrap(
+    await catalog.create(actor, {
+      kind: "struct",
+      label: "납입면제",
+      level: "plan",
+      fields: [
+        { label: "적용여부", type: { kind: "boolean" } },
+        { label: "납입면제사유", type: { kind: "list<enum>", enumCode: "E0002" } },
+      ],
+    }),
+  );
+  unwrap(
+    await catalog.createEnum(actor, {
+      label: "해약환급금유형",
+      values: [{ label: "해약환급금지급형" }, { label: "해약환급금미지급형" }, { label: "해약환급금미지급형(납입후50%)" }],
+    }),
+  );
+  unwrap(await catalog.create(actor, { kind: "struct", label: "무저해지", level: "plan", fields: [{ label: "유형", type: { kind: "enum", enumCode: "E0003" } }] }));
+  unwrap(await catalog.create(actor, { kind: "struct", label: "계약전환", level: "plan", fields: [{ label: "전환여부", type: { kind: "boolean" } }] }));
+  unwrap(await catalog.create(actor, { kind: "struct", label: "영위업종적용", level: "plan", fields: [{ label: "적용여부", type: { kind: "boolean" } }] }));
 
   // ── 담보 마스터 — 일반상해사망 (세부보장 1 · 급부 1) + 값 + 감액기간 부착
   const tree = unwrap(await coverage.create(actor, { name: "일반상해사망", benefitName: "사망보험금" }));
