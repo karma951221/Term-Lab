@@ -5,7 +5,7 @@ import { IssueList } from "@/app/_components/IssueList";
 import { RenderedDoc } from "@/app/_components/RenderedDoc";
 import { ValueForm } from "@/app/_components/ValueForm";
 import { isValued } from "@/domain/catalog";
-import { buildForm } from "@/forms";
+import { buildForm, type SnapshotContext } from "@/forms";
 import { currentActor, getServices } from "@/lib/services";
 
 import { writeSnapshotValuesAction } from "../../../actions";
@@ -27,16 +27,22 @@ export default async function ProductCoverageDetailPage({ params }: { params: Pr
     );
   }
   const pc = snap.value;
-  const [values, defs, enumsList, preview, completeness, revertable] = await Promise.all([
+  const [values, defs, enumsList, preview, completeness, revertable, masterValues] = await Promise.all([
     services.product.getSnapshotValues(pcId),
     services.catalog.list(),
     services.catalog.listEnums(),
     services.assembly.previewSpecial(id, pcId),
     services.product.coverageCompleteness(pcId),
     services.product.snapshotDrift(pcId),
+    services.product.getSnapshotMasterValues(pcId),
   ]);
   const enumLookup = (code: string) => enumsList.find((e) => e.code === code);
   const alwaysExposed = defs.filter(isValued).filter((d) => d.alwaysExposed);
+  /** owner 하나의 스냅샷 문맥 — 마스터 값을 못 얻으면(빈 맵) undefined 로 빠져 direct 로 보인다. */
+  const snapshotContextOf = (ownerId: string, masterLabel: string): SnapshotContext | undefined => {
+    const own = masterValues.get(ownerId);
+    return own && own.size > 0 ? { masterLabel, masterValues: own } : undefined;
+  };
 
   // 헤더 한 줄이 이 화면에 남은 일을 말한다 (디자인원칙 §9.2 · §1.2).
   const entered = completeness.total - completeness.missing.length;
@@ -87,7 +93,10 @@ export default async function ProductCoverageDetailPage({ params }: { params: Pr
           .filter((d) => d.level === "coverage")
           .map((d) => (
             <div key={d.code} id={`own-${pc.id}-def-${d.code}`}>
-              <ValueForm model={buildForm(d, enumLookup, values.get(pc.id) ?? new Map())} action={writeSnapshotValuesAction.bind(null, pcId, { kind: "productCoverage", id: pc.id })} />
+              <ValueForm
+                model={buildForm(d, enumLookup, values.get(pc.id) ?? new Map(), snapshotContextOf(pc.id, `${pc.coverageName} (마스터)`))}
+                action={writeSnapshotValuesAction.bind(null, pcId, { kind: "productCoverage", id: pc.id })}
+              />
             </div>
           ))}
       </section>
@@ -99,7 +108,10 @@ export default async function ProductCoverageDetailPage({ params }: { params: Pr
             .filter((d) => d.level === "subCoverage")
             .map((d) => (
               <div key={d.code} id={`own-${s.id}-def-${d.code}`}>
-                <ValueForm model={buildForm(d, enumLookup, values.get(s.id) ?? new Map())} action={writeSnapshotValuesAction.bind(null, pcId, { kind: "productSubCoverage", id: s.id })} />
+                <ValueForm
+                  model={buildForm(d, enumLookup, values.get(s.id) ?? new Map(), snapshotContextOf(s.id, `${s.name} (마스터)`))}
+                  action={writeSnapshotValuesAction.bind(null, pcId, { kind: "productSubCoverage", id: s.id })}
+                />
               </div>
             ))}
           {s.benefits.map((b) => (
@@ -109,7 +121,10 @@ export default async function ProductCoverageDetailPage({ params }: { params: Pr
                 .filter((d) => d.level === "benefit")
                 .map((d) => (
                   <div key={d.code} id={`own-${b.id}-def-${d.code}`}>
-                    <ValueForm model={buildForm(d, enumLookup, values.get(b.id) ?? new Map())} action={writeSnapshotValuesAction.bind(null, pcId, { kind: "productBenefit", id: b.id })} />
+                    <ValueForm
+                      model={buildForm(d, enumLookup, values.get(b.id) ?? new Map(), snapshotContextOf(b.id, `${b.name} (마스터)`))}
+                      action={writeSnapshotValuesAction.bind(null, pcId, { kind: "productBenefit", id: b.id })}
+                    />
                   </div>
                 ))}
             </div>

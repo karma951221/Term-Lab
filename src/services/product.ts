@@ -175,6 +175,11 @@ export interface ProductService {
    * 스냅샷에 입력돼 있고 마스터의 같은 자리가 없거나 값이 다른 자리를 센다.
    */
   snapshotDrift(id: Id): Promise<number>;
+  /**
+   * owner id(상품담보 id · 노드 id) → 마스터의 값 자리 — 폼의 스냅샷 문법(§1.2 되돌리기)이 손댄 자리를
+   * 가려내는 근거. 마스터를 못 찾으면(주입 없음 등) 빈 맵 — 이 경우 폼은 모두 direct 로 보인다.
+   */
+  getSnapshotMasterValues(id: Id): Promise<Map<Id, Map<SlotPath, ValueSlot>>>;
   attachPlan(actor: Actor, id: Id, planId: Id): Promise<Result<void>>;
   detachPlan(actor: Actor, id: Id, planId: Id, opts?: Confirmable): Promise<Result<void>>;
   listAttachedPlans(id: Id): Promise<ProductPlan[]>;
@@ -818,6 +823,23 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
         }
       }
       return changed;
+    },
+    getSnapshotMasterValues: async (id) => {
+      const pc = await repo.loadProductCoverage(db, id);
+      const out = new Map<Id, Map<SlotPath, ValueSlot>>();
+      if (!pc) return out;
+      const nodes = await repo.listNodes(db, id);
+      const pairs: { snapshotId: Id; from: { kind: "coverage" | "subCoverage" | "benefit"; id: Id } }[] = [
+        { snapshotId: id, from: { kind: "coverage", id: pc.coverageId } },
+        ...nodes.map((n) => ({
+          snapshotId: n.id,
+          from: { kind: n.kind === "sub" ? "subCoverage" : "benefit", id: n.masterNodeId } as { kind: "subCoverage" | "benefit"; id: Id },
+        })),
+      ];
+      for (const { snapshotId, from } of pairs) {
+        out.set(snapshotId, master.masterSlots ? await master.masterSlots(from) : await readSlots(db, from));
+      }
+      return out;
     },
     attachPlan: (actor, id, planId) =>
       db.transaction((tx) =>

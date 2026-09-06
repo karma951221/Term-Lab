@@ -283,6 +283,15 @@ describe("product 서비스 (PGlite)", () => {
       unwrap(await svc.setSnapshotValue(editor, pcBasic, { kind: "productCoverage", id: pcBasic }, "D0001", undefined, false)); // 마스터와 같아지면 다시 준다
       expect(await svc.snapshotDrift(pcBasic)).toBe(before);
     });
+
+    it("getSnapshotMasterValues — owner id(상품담보 자신 · 노드) → 마스터 값 자리, 없는 상품담보는 빈 맵", async () => {
+      const masterValues = await svc.getSnapshotMasterValues(pcSurgery);
+      expect(masterValues.get(pcSurgery)?.get("D0001")).toEqual({ entered: true, value: false }); // 담보 마스터
+      const snap = unwrap(await svc.getSnapshot(pcSurgery));
+      const ben = snap.subCoverages[0].benefits[0];
+      expect(masterValues.get(ben.id)?.get("D0003.F02")).toEqual({ entered: true, value: 60 }); // 급부 마스터 (앞선 테스트에서 50 → 60 으로 바뀜)
+      expect((await svc.getSnapshotMasterValues("cccccccc-0000-4000-8000-000000000099")).size).toBe(0);
+    });
   });
 
   describe("담보속성탑재 S5 — 상품담보별 세목 부착 · 기본계약 지정 (ADR-0011)", () => {

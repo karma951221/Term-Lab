@@ -58,7 +58,8 @@ export function Confirm({
     <section className="ts-confirm">
       <p className="ts-confirm-title">{resolvedTitle}</p>
       <ul className="ts-confirm-loss">
-        <li>사람이 입력한 값 {impact.valueRowsLost}건이 사라진다</li>
+        {impact.valueRowsLost > 0 && <li>사람이 입력한 값 {impact.valueRowsLost}건이 사라진다</li>}
+        {impact.valueRowsLost === 0 && impact.cascade.length === 0 && impact.brokenRefs.length === 0 && <li>사라지는 저장 값은 없다</li>}
         {impact.cascade.length > 0 && (
           <li>
             함께 삭제된다:

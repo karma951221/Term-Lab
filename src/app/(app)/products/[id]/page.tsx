@@ -220,19 +220,7 @@ export default async function ProductDetailPage({
         <span className="ts-count">
           완결성 — 값 자리 <b>{completeness.total}</b> 중 <b>{entered}</b> 입력
         </span>
-        <Link
-          href={`/products/${id}/preview`}
-          className="primary"
-          style={{
-            marginLeft: "auto",
-            border: "1px solid var(--ts-mark)",
-            borderRadius: 3,
-            color: "var(--ts-mark)",
-            fontWeight: 700,
-            padding: "3px 10px",
-            textDecoration: "none",
-          }}
-        >
+        <Link href={`/products/${id}/preview`} className="primary" style={{ marginLeft: "auto" }}>
           조립 미리보기 →
         </Link>
       </div>

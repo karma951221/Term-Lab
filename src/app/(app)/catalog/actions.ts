@@ -97,38 +97,6 @@ export async function createEnumAction(formData: FormData): Promise<void> {
 
 // ───────────────────────────── 상세 · 비파괴 편집 ─────────────────────────────
 
-export async function renameAction(code: Code, formData: FormData): Promise<void> {
-  const actor = await currentActor();
-  const r = await getServices().catalog.rename(actor, code, str(formData, "label"));
-  if (!r.ok) redirect(errorRedirectPath(detailPath(code), msg(r.rejection)));
-  redirect(detailPath(code));
-}
-
-export async function setDescriptionAction(code: Code, formData: FormData): Promise<void> {
-  const actor = await currentActor();
-  const r = await getServices().catalog.setDescription(actor, code, str(formData, "description"));
-  if (!r.ok) redirect(errorRedirectPath(detailPath(code), msg(r.rejection)));
-  redirect(detailPath(code));
-}
-
-export async function setAlwaysExposedAction(code: Code, formData: FormData): Promise<void> {
-  const actor = await currentActor();
-  const r = await getServices().catalog.setAlwaysExposed(actor, code, bool(formData, "alwaysExposed"));
-  if (!r.ok) redirect(errorRedirectPath(detailPath(code), msg(r.rejection)));
-  redirect(detailPath(code));
-}
-
-export async function setDefaultValueAction(code: Code, formData: FormData): Promise<void> {
-  const actor = await currentActor();
-  const services = getServices();
-  const def = await services.catalog.get(code);
-  if (!def || def.kind !== "scalar") redirect(errorRedirectPath(detailPath(code), "scalar 구분자가 아닙니다."));
-  const value = valueFromInput(def.type, str(formData, "defaultValue"));
-  const r = await services.catalog.setDefaultValue(actor, code, value);
-  if (!r.ok) redirect(errorRedirectPath(detailPath(code), msg(r.rejection)));
-  redirect(detailPath(code));
-}
-
 /**
  * 「기본 정보」 한 폼 = 저장 하나 (디자인원칙 §2 L2 · 리뷰 #53).
  * 기존 단일 액션들을 순서대로 부르고, 첫 거부에서 멈춰 그 문장을 돌려준다 —
@@ -192,44 +160,6 @@ export async function addFieldAction(code: Code, formData: FormData): Promise<vo
   const type = fieldTypeFrom(str(formData, "typeKind"), str(formData, "enumCode"));
   if (!type) redirect(errorRedirectPath(detailPath(code), "필드 타입을 확인하세요."));
   const r = await getServices().catalog.addField(actor, code, { label: str(formData, "label"), type });
-  if (!r.ok) redirect(errorRedirectPath(detailPath(code), msg(r.rejection)));
-  redirect(detailPath(code));
-}
-
-export async function renameFieldAction(code: Code, fieldCode: Code, formData: FormData): Promise<void> {
-  const actor = await currentActor();
-  const r = await getServices().catalog.renameField(actor, code, fieldCode, str(formData, "label"));
-  if (!r.ok) redirect(errorRedirectPath(detailPath(code), msg(r.rejection)));
-  redirect(detailPath(code));
-}
-
-export async function setFieldDefaultValueAction(code: Code, fieldCode: Code, formData: FormData): Promise<void> {
-  const actor = await currentActor();
-  const services = getServices();
-  const def = await services.catalog.get(code);
-  if (!def || def.kind !== "struct") redirect(errorRedirectPath(detailPath(code), "struct 구분자가 아닙니다."));
-  const field = def.fields.find((f) => f.code === fieldCode);
-  if (!field) redirect(errorRedirectPath(detailPath(code), "필드를 찾을 수 없습니다."));
-  const value = valueFromInput(field.type, str(formData, "defaultValue"));
-  const r = await services.catalog.setFieldDefaultValue(actor, code, fieldCode, value);
-  if (!r.ok) redirect(errorRedirectPath(detailPath(code), msg(r.rejection)));
-  redirect(detailPath(code));
-}
-
-export async function setConstValueAction(code: Code, formData: FormData): Promise<void> {
-  const actor = await currentActor();
-  const r = await getServices().catalog.setConstValue(actor, code, str(formData, "value"));
-  if (!r.ok) redirect(errorRedirectPath(detailPath(code), msg(r.rejection)));
-  redirect(detailPath(code));
-}
-
-export async function setExpressionAction(code: Code, formData: FormData): Promise<void> {
-  const actor = await currentActor();
-  const expression = str(formData, "expression");
-  const services = getServices();
-  const checked = await checkDerivedExpression(services.db, expression);
-  if (!checked.ok) redirect(errorRedirectPath(detailPath(code), msg(checked.rejection)));
-  const r = await services.catalog.setExpression(actor, code, expression);
   if (!r.ok) redirect(errorRedirectPath(detailPath(code), msg(r.rejection)));
   redirect(detailPath(code));
 }
