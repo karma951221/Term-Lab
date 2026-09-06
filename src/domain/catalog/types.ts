@@ -76,6 +76,7 @@ export interface FieldDef {
 export interface EnumDef {
   code: Code;
   label: string;
+  description?: string;
   /** 선택지 표시 순서대로. */
   values: EnumValueDef[];
 }
@@ -136,6 +137,7 @@ export interface NewEnumValue {
 
 export interface NewEnum {
   label: string;
+  description?: string;
   values?: NewEnumValue[];
 }
 

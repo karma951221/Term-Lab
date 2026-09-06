@@ -112,6 +112,7 @@ function toEnum(row: EnumRow, values: EnumValueRow[]): EnumDef {
   return {
     code: row.code,
     label: row.label,
+    description: row.description,
     values: values.map<EnumValueDef>((v) => ({ code: v.code, label: v.label, order: v.order })),
   };
 }
@@ -254,7 +255,7 @@ export async function listEnums(db: Db): Promise<EnumDef[]> {
 export async function insertEnum(db: Db, def: EnumDef, who: Id): Promise<void> {
   const [row] = await db
     .insert(enums)
-    .values({ code: def.code, label: def.label, createdBy: who, updatedBy: who })
+    .values({ code: def.code, label: def.label, description: def.description ?? "", createdBy: who, updatedBy: who })
     .returning({ id: enums.id });
   if (def.values.length > 0) {
     await db.insert(enumValues).values(
@@ -267,7 +268,7 @@ export async function saveEnum(db: Db, def: EnumDef, who: Id): Promise<void> {
   const now = new Date();
   const [row] = await db
     .update(enums)
-    .set({ label: def.label, updatedAt: now, updatedBy: who })
+    .set({ label: def.label, description: def.description ?? "", updatedAt: now, updatedBy: who })
     .where(eq(enums.code, def.code))
     .returning({ id: enums.id });
   if (!row) throw new Error(`저장 대상 enum 이 없습니다: ${def.code}`);

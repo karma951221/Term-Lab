@@ -460,7 +460,7 @@ export async function createEnum(
   const code = await allocateCode("enum", "", ctx.nextSeq);
   const values = await buildEnumValues(code, input.values ?? [], 0, ctx.nextSeq, []);
   if (!values.ok) return values as Result<EnumDef>;
-  return ok({ code, label: input.label, values: values.value });
+  return ok({ code, label: input.label, description: input.description ?? "", values: values.value });
 }
 
 export function renameEnum(def: EnumDef, label: string, existingEnumLabels: readonly string[]): Result<EnumDef> {

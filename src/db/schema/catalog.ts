@@ -95,6 +95,7 @@ export const enums = pgTable("enums", {
   id: uuid("id").primaryKey().defaultRandom(),
   code: text("code").notNull().unique(),
   label: text("label").notNull(),
+  description: text("description").notNull().default(""),
   ...audit,
 });
 

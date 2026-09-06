@@ -15,6 +15,13 @@
       "when": 1788689831697,
       "tag": "0001_curly_salo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788699627240,
+      "tag": "0002_noisy_stingray",
+      "breakpoints": true
     }
   ]
 }

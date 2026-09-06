@@ -1,0 +1,1 @@
+ALTER TABLE "enums" ADD COLUMN "description" text DEFAULT '' NOT NULL;
