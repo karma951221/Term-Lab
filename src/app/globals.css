@@ -534,6 +534,32 @@ button.danger:focus-visible {
   color: var(--ts-ink-3);
 }
 
+.ts-field-add-row {
+  grid-template-columns: 104px minmax(160px, 1fr) auto auto auto auto;
+}
+
+.ts-type-change {
+  display: flex;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.ts-type-change select {
+  max-width: 110px;
+}
+
+.ts-dialog {
+  width: min(560px, calc(100vw - 32px));
+  border: 1px solid var(--ts-rule-strong);
+  border-radius: 3px;
+  background: var(--ts-surface);
+  color: var(--ts-ink);
+}
+
+.ts-dialog::backdrop {
+  background: rgb(0 0 0 / 28%);
+}
+
 .ts-back {
   margin-top: 24px;
 }

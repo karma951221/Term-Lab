@@ -78,6 +78,26 @@ export async function createTypeFormAction(formData: FormData): Promise<void> {
   redirect(formPath(result.value.code));
 }
 
+export async function saveTypeFormBasicAction(code: Code, formData: FormData): Promise<void> {
+  const actor = await currentActor();
+  const services = getServices();
+  const renamed = await services.catalog.rename(actor, code, str(formData, "label"));
+  if (!renamed.ok) redirect(errorRedirectPath(formPath(code), message(renamed.rejection)));
+  const described = await services.catalog.setDescription(actor, code, str(formData, "description"));
+  if (!described.ok) redirect(errorRedirectPath(formPath(code), message(described.rejection)));
+  const exposed = await services.catalog.setAlwaysExposed(actor, code, bool(formData, "alwaysExposed"));
+  if (!exposed.ok) redirect(errorRedirectPath(formPath(code), message(exposed.rejection)));
+  redirect(formPath(code));
+}
+
+export async function createInlineEnumAction(input: { label: string; values: string[] }): Promise<{ ok: true; item: { code: string; label: string } } | { ok: false; message: string }> {
+  const result = await getServices().catalog.createEnum(await currentActor(), {
+    label: input.label.trim(),
+    values: input.values.map((label) => ({ label: label.trim() })).filter((value) => value.label),
+  });
+  return result.ok ? { ok: true, item: { code: result.value.code, label: result.value.label } } : { ok: false, message: message(result.rejection) };
+}
+
 export async function addTypeFieldAction(code: Code, formData: FormData): Promise<void> {
   const type = fieldTypeFrom(str(formData, "typeKind"), str(formData, "enumCode"));
   if (!type) redirect(errorRedirectPath(formPath(code), "필드 타입을 확인하세요."));

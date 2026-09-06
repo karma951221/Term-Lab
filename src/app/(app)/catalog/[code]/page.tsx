@@ -13,7 +13,6 @@ import type { ReactNode } from "react";
 
 import { Confirm } from "@/app/_components/Confirm";
 import { ErrorBanner } from "@/app/_components/ErrorBanner";
-import { IconTrash } from "@/app/_components/icons";
 import { KIND_LABEL, LEVEL_LABEL, TYPE_LABEL } from "@/app/_lib/labels";
 import { previewOutcome } from "@/app/_lib/rejection";
 import type { Discriminator } from "@/domain/catalog/types";
@@ -23,13 +22,9 @@ import type { FieldType } from "@/domain/types";
 import { currentActor, getServices } from "@/lib/services";
 
 import {
-  addFieldAction,
-  changeFieldTypeAction,
   changeScalarTypeAction,
   removeAction,
-  removeFieldAction,
   saveBasicInfoAction,
-  saveFieldAction,
 } from "../actions";
 import { fieldTypeFrom } from "../lib";
 
@@ -38,10 +33,8 @@ export const dynamic = "force-dynamic";
 interface SearchParams {
   error?: string;
   del?: string;
-  delField?: string;
   newType?: string;
   newEnum?: string;
-  field?: string;
 }
 
 /** 참조 형태 — 영문 간선 이름을 화면에 내지 않는다 (리뷰 #64). 관계정보 화면과 문구를 맞춰야 하면 labels.ts 로 올린다. */
@@ -155,7 +148,7 @@ export default async function CatalogDetailPage({
 
   let scalarTypeChangeNode: ReactNode = null;
   if (def.kind === "scalar") {
-    if (sp.newType && !sp.field) {
+    if (sp.newType) {
       const type = fieldTypeFrom(sp.newType, sp.newEnum ?? "");
       if (!type) {
         scalarTypeChangeNode = <p className="ts-error-banner">타입을 확인하세요.</p>;
@@ -195,56 +188,6 @@ export default async function CatalogDetailPage({
           </div>
         </form>
       );
-    }
-  }
-
-  // ── struct 필드마다: 타입 변경 · 삭제 (둘 다 파괴적 — 위험 구역에서만)
-  const fieldDanger = new Map<string, ReactNode>();
-  const fieldValueRows = new Map<string, number>();
-  if (def.kind === "struct") {
-    for (const f of def.fields) {
-      const preview = previewOutcome(await services.catalog.removeField(actor, code, f.code));
-      if (preview.kind === "confirm") fieldValueRows.set(f.code, preview.impact.valueRowsLost);
-
-      if (sp.delField === f.code) {
-        fieldDanger.set(
-          f.code,
-          preview.kind === "confirm" ? (
-            <Confirm
-              impact={preview.impact}
-              action={removeFieldAction.bind(null, code, f.code)}
-              targetLabel={`필드 ${f.label}(${f.code})`}
-              actionLabel={`${f.code} 삭제`}
-              cancelHref={`/catalog/${code}`}
-            />
-          ) : preview.kind === "error" ? (
-            <p className="ts-error-banner">{preview.message}</p>
-          ) : null,
-        );
-        continue;
-      }
-      if (sp.field === f.code && sp.newType) {
-        const type = fieldTypeFrom(sp.newType, sp.newEnum ?? "");
-        if (!type) {
-          fieldDanger.set(f.code, <p className="ts-error-banner">타입을 확인하세요.</p>);
-          continue;
-        }
-        const outcome = previewOutcome(await services.catalog.changeFieldType(actor, code, f.code, type));
-        fieldDanger.set(
-          f.code,
-          outcome.kind === "confirm" ? (
-            <Confirm
-              impact={outcome.impact}
-              action={changeFieldTypeAction.bind(null, code, f.code, type)}
-              title={`필드 ${f.label}(${f.code}) 의 타입을 ${typeText(type, enumLabels)} 로 바꾼다`}
-              actionLabel={`타입 바꾸고 값 ${outcome.impact.valueRowsLost}건 삭제`}
-              cancelHref={`/catalog/${code}`}
-            />
-          ) : outcome.kind === "error" ? (
-            <p className="ts-error-banner">{outcome.message}</p>
-          ) : null,
-        );
-      }
     }
   }
 
@@ -321,69 +264,12 @@ export default async function CatalogDetailPage({
               <p className="ts-empty-example">예: 면책여부(예/아니오) · 지급률(숫자)</p>
             </div>
           ) : (
-            <>
-              <table className="ts-table">
-                <thead>
-                  <tr>
-                    <th className="col-code">코드</th>
-                    <th className="col-flex">표시명</th>
-                    <th className="col-fixed-md">타입</th>
-                    <th>기본값 (제안)</th>
-                    <th className="col-fixed-sm">저장</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedFields.map((f) => (
-                    <tr key={f.code}>
-                      <td className="col-code">{f.code}</td>
-                      <td className="col-flex">
-                        <input type="text" name="label" defaultValue={f.label} form={`fld-${f.code}`} className="ts-field-direct" required />
-                      </td>
-                      <td>{typeText(f.type, enumLabels)}</td>
-                      <td>
-                        <input
-                          type="text"
-                          name="defaultValue"
-                          defaultValue={f.defaultValue === undefined ? "" : String(f.defaultValue)}
-                          form={`fld-${f.code}`}
-                          className="ts-field-direct"
-                        />
-                      </td>
-                      <td>
-                        <button type="submit" form={`fld-${f.code}`}>
-                          저장
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {/* 행 하나 = 폼 하나 = 저장 하나. 표의 칸을 가로지르므로 form 은 밖에 두고 input 이 id 로 붙는다 */}
-              {sortedFields.map((f) => (
-                <form key={f.code} id={`fld-${f.code}`} action={saveFieldAction.bind(null, code, f.code)} hidden />
-              ))}
-            </>
+            <table className="ts-table">
+              <thead><tr><th className="col-code">코드</th><th className="col-flex">표시명</th><th className="col-fixed-md">타입</th><th>기본값 (제안)</th></tr></thead>
+              <tbody>{sortedFields.map((f) => <tr key={f.code}><td className="col-code">{f.code}</td><td className="col-flex">{f.label}</td><td>{typeText(f.type, enumLabels)}</td><td>{f.defaultValue === undefined ? "없음" : String(f.defaultValue)}</td></tr>)}</tbody>
+            </table>
           )}
-          <form action={addFieldAction.bind(null, code)} className="ts-form">
-            <h2 className="ts-form-title">필드 추가</h2>
-            <Row label="표시명" htmlFor="new-field-label">
-              <input id="new-field-label" type="text" name="label" className="ts-field-direct" required />
-            </Row>
-            <Row label="타입" htmlFor="new-field-type">
-              <TypeKindSelect />
-              <select name="enumCode" defaultValue="">
-                <option value="">— 선택형일 때만 —</option>
-                {enums.map((e) => (
-                  <option key={e.code} value={e.code}>
-                    {e.label} ({e.code})
-                  </option>
-                ))}
-              </select>
-            </Row>
-            <div className="ts-form-actions">
-              <button type="submit">추가</button>
-            </div>
-          </form>
+          <p className="ts-form-actions"><Link href={`/types/forms/${code}`}>폼 탭에서 편집 →</Link></p>
         </section>
       )}
 
@@ -439,63 +325,6 @@ export default async function CatalogDetailPage({
               {valueRows === undefined ? "타입을 바꾸면 저장된 값이 삭제된다." : `타입을 바꾸면 지금 저장된 값 ${valueRows}건이 삭제된다.`}
             </p>
             {scalarTypeChangeNode}
-          </>
-        )}
-
-        {def.kind === "struct" && sortedFields.length > 0 && (
-          <>
-            <h3 className="ts-section-title">필드 타입 변경 · 필드 삭제</h3>
-            <table className="ts-table">
-              <thead>
-                <tr>
-                  <th className="col-code">코드</th>
-                  <th className="col-flex">필드</th>
-                  <th className="col-fixed-sm col-num">저장된 값</th>
-                  <th>새 타입</th>
-                  <th className="col-fixed-sm">삭제</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedFields.map((f) => (
-                  <tr key={f.code}>
-                    <td className="col-code">{f.code}</td>
-                    <td className="col-flex">{f.label}</td>
-                    <td className="col-num">{fieldValueRows.get(f.code) ?? "—"}</td>
-                    <td style={{ whiteSpace: "nowrap" }}>
-                      <form method="get" style={{ display: "inline-flex", gap: 4 }}>
-                        <input type="hidden" name="field" value={f.code} />
-                        <TypeKindSelect name="newType" defaultValue={f.type.kind} />
-                        <select name="newEnum" defaultValue={f.type.kind === "enum" || f.type.kind === "list<enum>" ? f.type.enumCode : ""}>
-                          <option value="">— 선택형일 때만 —</option>
-                          {enums.map((e) => (
-                            <option key={e.code} value={e.code}>
-                              {e.label} ({e.code})
-                            </option>
-                          ))}
-                        </select>
-                        <button type="submit" className="danger">
-                          타입 변경…
-                        </button>
-                      </form>
-                    </td>
-                    <td>
-                      <Link
-                        href={`?delField=${f.code}`}
-                        className="ts-iconbtn danger"
-                        title={`필드 ${f.label}(${f.code}) 삭제 — 저장된 값 ${fieldValueRows.get(f.code) ?? 0}건이 사라진다`}
-                        aria-label={`필드 ${f.label}(${f.code}) 삭제`}
-                      >
-                        <IconTrash />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {sortedFields.map((f) => {
-              const node = fieldDanger.get(f.code);
-              return node ? <div key={f.code}>{node}</div> : null;
-            })}
           </>
         )}
 
