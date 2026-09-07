@@ -38,7 +38,7 @@ function edgeTitle(edge: PlotEdge): string {
 function edgePath(edge: PlotEdge, byId: ReadonlyMap<string, PlotNode>): string {
   const from = byId.get(edge.from)!;
   const to = byId.get(edge.to)!;
-  if (edge.from === edge.to) return `M ${from.x - 12} ${from.y - 16} C ${from.x - 42} ${from.y - 68}, ${from.x + 42} ${from.y - 68}, ${from.x + 12} ${from.y - 16}`;
+  if (edge.from === edge.to) return `M ${from.x - 12} ${from.y - 16} C ${from.x - 38} ${from.y - 52}, ${from.x + 38} ${from.y - 52}, ${from.x + 12} ${from.y - 16}`;
   return `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
 }
 

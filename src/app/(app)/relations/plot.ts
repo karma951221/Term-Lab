@@ -118,7 +118,6 @@ export const NODE_COLOR = {
 } as const satisfies Record<RefNodeKind, string>;
 
 const SHAPE_ORDER = { circle: 0, rect: 1, diamond: 2 } as const satisfies Record<NodeShape, number>;
-const NODE_HALF_SIZE = 20;
 const VIEWBOX_MARGIN = 40;
 
 interface FoundNode {
@@ -150,6 +149,12 @@ function shortLabel(fullLabel: string): string {
 function roundOne(value: number): string {
   const rounded = Math.abs(value) < 0.05 ? 0 : value;
   return rounded.toFixed(1);
+}
+
+function nodeHalfSize(shape: NodeShape): { x: number; y: number } {
+  if (shape === "circle") return { x: 18, y: 18 };
+  if (shape === "rect") return { x: 21, y: 16 };
+  return { x: 22, y: 20 };
 }
 
 function groupEdges(graph: RefGraph, found: readonly FoundEdge[]): PlotEdge[] {
@@ -283,10 +288,10 @@ export function plotNeighborhood(graph: RefGraph, target: RefNodeKey, opts: Plot
   }
 
   plotted.sort((a, b) => a.hop - b.hop || compareNodes(a, b));
-  const minX = Math.min(...plotted.map((node) => node.x - NODE_HALF_SIZE)) - VIEWBOX_MARGIN;
-  const minY = Math.min(...plotted.map((node) => node.y - NODE_HALF_SIZE)) - VIEWBOX_MARGIN;
-  const maxX = Math.max(...plotted.map((node) => node.x + NODE_HALF_SIZE)) + VIEWBOX_MARGIN;
-  const maxY = Math.max(...plotted.map((node) => node.y + NODE_HALF_SIZE)) + VIEWBOX_MARGIN;
+  const minX = Math.min(...plotted.map((node) => node.x - nodeHalfSize(node.shape).x)) - VIEWBOX_MARGIN;
+  const minY = Math.min(...plotted.map((node) => node.y - nodeHalfSize(node.shape).y)) - VIEWBOX_MARGIN;
+  const maxX = Math.max(...plotted.map((node) => node.x + nodeHalfSize(node.shape).x)) + VIEWBOX_MARGIN;
+  const maxY = Math.max(...plotted.map((node) => node.y + nodeHalfSize(node.shape).y)) + VIEWBOX_MARGIN;
 
   return {
     status: "ok",

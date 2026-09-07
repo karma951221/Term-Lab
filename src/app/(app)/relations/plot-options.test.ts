@@ -32,4 +32,11 @@ describe("관계정보 그래프 URL 옵션", () => {
     const empty = { depth: 1, direction: "out" as const, kinds: new Set<RefNodeKind>(), vias: new Set<EdgeVia>(), containment: true };
     expect(parsePlotOptions(Object.fromEntries(serializePlotOptions(empty)))).toEqual(empty);
   });
+
+  it("GET 체크박스의 반복 파라미터와 hidden 빈 값을 한 집합으로 읽는다", () => {
+    const parsed = parsePlotOptions({ kinds: ["", "article", "clause"], vias: ["", "when,slot"], containment: ["false", "true"] });
+    expect(parsed.kinds).toEqual(new Set(["article", "clause"]));
+    expect(parsed.vias).toEqual(new Set(["when", "slot"]));
+    expect(parsed.containment).toBe(true);
+  });
 });

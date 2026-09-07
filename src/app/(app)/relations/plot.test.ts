@@ -86,6 +86,15 @@ describe("plotNeighborhood — 탐색", () => {
     const kinds = new Set<RefNodeKind>(["discriminator", "enum"]);
     expect(ids(plotNeighborhood(chain, A, options({ depth: 3, direction: "out", kinds })))).toEqual([nodeKey(A)]);
   });
+
+  it("선택하지 않은 참조 형태는 탐색과 간선에서 함께 제외한다", () => {
+    const g = graph([info(A), info(B), info(C)], [edge(A, B, "when"), edge(A, C, "attach")]);
+    const result = plotNeighborhood(g, A, options({ direction: "out", vias: new Set(["when"]) }));
+    expect(ids(result)).toEqual([nodeKey(A), nodeKey(B)]);
+    if (result.status !== "ok") return;
+    expect(result.edges).toHaveLength(1);
+    expect(result.edges[0]?.vias).toEqual(["when"]);
+  });
 });
 
 describe("plotNeighborhood — 간선과 예외", () => {
@@ -164,6 +173,6 @@ describe("plotNeighborhood — 결정적 배치", () => {
         },
       ]
     `);
-    expect(result.viewBox).toBe("-163.9 -180.0 327.8 300.0");
+    expect(result.viewBox).toBe("-165.9 -178.0 330.8 298.0");
   });
 });
