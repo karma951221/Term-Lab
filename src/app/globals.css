@@ -29,6 +29,15 @@
   --ts-error-bg: #fbf0ec;
   --ts-warn: #8a6410;
   --ts-ok: #3f6b3a;
+  /* 관계정보 그래프 전용 — 종류는 모양+이 흙빛 테두리로 이중 부호화한다 (ADR-0028). */
+  --ts-graph-1: #6f5b45;
+  --ts-graph-2: #596b49;
+  --ts-graph-3: #3f6b65;
+  --ts-graph-4: #75556a;
+  --ts-graph-5: #4f6475;
+  --ts-graph-6: #7a6038;
+  --ts-graph-7: #6a5f78;
+  --ts-graph-8: #476b55;
 
   /* 글꼴 — 디자인원칙 §3. 맑은 고딕은 시스템 설치본만 부른다(웹폰트 배포 불가) */
   --sans: "Malgun Gothic", "맑은 고딕", AppleSDGothicNeo-Regular, "Apple SD Gothic Neo",
@@ -56,8 +65,248 @@
     --ts-error-bg: #3a201c;
     --ts-warn: #c79a3a;
     --ts-ok: #7fae77;
+    --ts-graph-1: #bca487;
+    --ts-graph-2: #9eae82;
+    --ts-graph-3: #80aaa2;
+    --ts-graph-4: #b997ac;
+    --ts-graph-5: #8fa7b8;
+    --ts-graph-6: #c0a06a;
+    --ts-graph-7: #aaa0bd;
+    --ts-graph-8: #88ad93;
 
     color-scheme: dark;
+  }
+}
+
+/* ── 관계정보 이웃 그래프 (ADR-0028) ───────────────────────────────────── */
+
+.ts-graph-section > .ts-section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ts-graph-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px 20px;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid var(--ts-rule);
+}
+
+.ts-graph-controls fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.ts-graph-controls fieldset.is-wide {
+  flex-basis: 100%;
+}
+
+.ts-graph-controls legend {
+  float: left;
+  margin-right: 10px;
+  color: var(--ts-ink-3);
+  font-weight: 700;
+}
+
+.ts-graph-controls label {
+  white-space: nowrap;
+}
+
+.ts-graph-panel {
+  position: relative;
+}
+
+.ts-graph-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+}
+
+.ts-graph-canvas {
+  display: block;
+  width: 100%;
+  height: min(62vh, 620px);
+  min-height: 380px;
+  border: 1px solid var(--ts-rule-strong);
+  background: var(--ts-surface);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.ts-graph-canvas:active {
+  cursor: grabbing;
+}
+
+.ts-graph-edge,
+.ts-graph-nodes > a {
+  transition: opacity 120ms ease-out;
+}
+
+.ts-graph-edge path {
+  fill: none;
+  stroke: var(--ts-ink-2);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.ts-graph-edge.is-dashed path {
+  stroke-dasharray: 7 5;
+}
+
+.ts-graph-edge.is-dotted path {
+  stroke-dasharray: 2 5;
+  stroke-linecap: round;
+}
+
+.ts-graph-edge.is-containment path {
+  stroke: var(--ts-rule-strong);
+  stroke-width: 1;
+}
+
+.ts-graph-edge.is-broken path {
+  stroke: var(--ts-error);
+}
+
+.ts-graph-edge text {
+  fill: var(--ts-ink-2);
+  stroke: var(--ts-surface);
+  stroke-width: 3px;
+  paint-order: stroke fill;
+  font-family: var(--sans);
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.ts-graph-node > circle,
+.ts-graph-node > rect,
+.ts-graph-node > path {
+  fill: var(--ts-surface);
+  stroke: var(--ts-node-color);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.ts-graph-node.is-current > circle,
+.ts-graph-node.is-current > rect,
+.ts-graph-node.is-current > path {
+  fill: var(--ts-mark);
+}
+
+.ts-graph-node.is-missing > circle,
+.ts-graph-node.is-missing > rect,
+.ts-graph-node.is-missing > path {
+  fill: var(--ts-error-bg);
+  stroke: var(--ts-error);
+  stroke-dasharray: 2 3;
+}
+
+.ts-graph-node text {
+  fill: var(--ts-ink);
+  stroke: var(--ts-surface);
+  stroke-width: 3px;
+  paint-order: stroke fill;
+  font-family: var(--sans);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.ts-graph-nodes > a:focus-visible {
+  outline: none;
+}
+
+.ts-graph-nodes > a:focus-visible .ts-graph-node > circle,
+.ts-graph-nodes > a:focus-visible .ts-graph-node > rect,
+.ts-graph-nodes > a:focus-visible .ts-graph-node > path {
+  stroke: var(--ts-mark);
+  stroke-width: 4;
+}
+
+.ts-graph-empty {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  margin: 44px 0 0;
+  transform: translateX(-50%);
+}
+
+.ts-graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 12px;
+  padding: 8px 0 0;
+  color: var(--ts-ink-2);
+}
+
+.ts-graph-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ts-graph-legend-shape {
+  width: 20px;
+  height: 20px;
+  fill: var(--ts-surface);
+  stroke: var(--ts-graph-1);
+  stroke-width: 1.5;
+}
+
+.ts-graph-legend-line {
+  width: 34px;
+  height: 12px;
+  stroke: var(--ts-ink-2);
+  stroke-width: 1.5;
+}
+
+.ts-graph-legend-line .is-dashed {
+  stroke-dasharray: 7 5;
+}
+
+.ts-graph-legend-line .is-dotted {
+  stroke-dasharray: 2 4;
+  stroke-linecap: round;
+}
+
+.ts-graph-legend-line .is-containment {
+  stroke: var(--ts-rule-strong);
+  stroke-width: 1;
+}
+
+.ts-graph-legend-separator {
+  align-self: stretch;
+  width: 1px;
+  background: var(--ts-rule);
+}
+
+.ts-graph-too-large {
+  padding: 24px 0;
+}
+
+.ts-graph-too-large p {
+  margin-top: 0;
+}
+
+@media (max-width: 720px) {
+  .ts-graph-section > .ts-section-title {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .ts-graph-canvas {
+    height: 460px;
+    min-height: 0;
   }
 }
 
