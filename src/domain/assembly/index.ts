@@ -13,6 +13,7 @@
  * DB·React import 금지.
  */
 export * from "./booklet";
+export * from "./compare";
 export * from "./application";
 export * from "./base";
 export * from "./context";
