@@ -9,8 +9,12 @@ import { test, type Page } from "@playwright/test";
 
 import type { EvidenceDump, EvidenceEntry, FailedAction } from "../../../scripts/e2e/evidence-types";
 
-/** 에러 메시지에서 기다리던 대상을 뽑는다 — 진단서 첫 화면에 보여줄 한 줄. */
-const LOCATOR = /((?:getBy\w+|locator|frameLocator)\([^\n]*?\))/;
+/**
+ * 에러 메시지에서 기다리던 대상을 뽑는다 — 진단서 첫 화면에 보여줄 한 줄.
+ * Playwright 는 `Locator: …` 줄에 전체 체인을 준다. 그게 없을 때만 본문에서 긁는다.
+ */
+const LOCATOR_LINE = /^\s*Locator:\s*(.+)$/m;
+const LOCATOR_ANY = /((?:getBy\w+|locator|frameLocator)\([^\n]*)/;
 
 export class Evidence {
   private readonly entries: EvidenceEntry[] = [];
@@ -82,7 +86,8 @@ export class Evidence {
       const endedAt = new Date().toISOString();
       this.push("action-end", name, { coordinate, ok: false, durationMs: Date.now() - started });
       this.failed = { coordinate, name, startedAt, endedAt };
-      this.locator = LOCATOR.exec(error instanceof Error ? error.message : String(error))?.[1] ?? null;
+      const message = error instanceof Error ? error.message : String(error);
+      this.locator = (LOCATOR_LINE.exec(message)?.[1] ?? LOCATOR_ANY.exec(message)?.[1] ?? null)?.trim() ?? null;
       throw error;
     }
   }

@@ -8,6 +8,7 @@
  */
 import type { EvidenceDump } from "./evidence-types";
 import type { Scenario } from "./scenarios";
+import { stripAnsi } from "./serverlog";
 
 export interface FailureInput {
   coordinate: string | null;
@@ -81,7 +82,14 @@ function 타임라인절(input: FailureInput): string[] {
 
   if (lines.length === 0) lines.push("  (액션 경계가 없다 — ev.action 으로 감싸면 어느 조작에서 죽었는지 보인다)");
 
-  return ["## 무슨 일이 있었나", "", "```", ...lines, "", `  ✗ ${input.errorText.split("\n")[0]}`, "```"];
+  // Playwright 에러는 색을 입고 오고, 쓸모 있는 부분(Locator / Expected / Received)은 앞 몇 줄에 있다.
+  const error = stripAnsi(input.errorText)
+    .split("\n")
+    .filter((line) => line.trim() !== "")
+    .slice(0, 6)
+    .map((line) => `  ✗ ${line.trim()}`);
+
+  return ["## 무슨 일이 있었나", "", "```", ...lines, "", ...error, "```"];
 }
 
 function 증거절(input: FailureInput): string[] {
