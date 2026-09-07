@@ -4,6 +4,9 @@
     "name": "알파Plus(축약)",
     "general": "alpha-general",
     "namingTemplate": "[A0001] [담보명] [A0002]",
+    "appendices": [
+      "APX_DISABILITY"
+    ],
     "values": [
       {
         "code": "D0002",

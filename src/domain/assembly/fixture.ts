@@ -539,6 +539,7 @@ export function alphaPlusFixture(): AssemblyInput {
       general: alphaGeneralDocument(),
       generalDocumentId: "g-doc",
       overrides: [],
+      appendixOrder: ["APX_DISABILITY"],
     },
     coverages: [
       baseDeathCoverage(),

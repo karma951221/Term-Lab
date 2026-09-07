@@ -2,8 +2,7 @@
  * 6·7·8단계 — 번호 계산 · 별표 수집 · 참조 슬롯 해소.
  *
  * - `numberDocument`  : 남은 노드에 조·항·호·목 번호 (표기는 document/numbering 의 임시 규칙 재사용). 오류 마커는 번호를 먹지 않는다.
- * - `collectAppendices`: 책자 순(보통약관 → 그룹 순 → 그룹 안 정렬 순)으로 읽어 **참조된 별표만** 처음 등장 순 번호.
- *   마스터에 없는 코드는 수집하지 않는다 (참조 해소가 brokenRef 마커를 낸다).
+ * - `collectAppendices`: 상품 별표 목록의 순서가 곧 번호 (ADR-0030). 목록에 없는 별표 참조는 brokenRef 마커.
  * - `renderDocument`  : articleRef → 「제N조(조 명)」 — 같은 문서에서 먼저 찾고, 없으면 보통약관에서. 어디에도 없으면
  *   `articleGone`(분기·생략으로 사라짐) 마커. appendixRef → 「【별표N(이름)】」.
  */
@@ -70,37 +69,15 @@ export function numberDocument(doc: SubstitutedDoc): NumberedDoc {
   return { doc, numbers };
 }
 
-// ───────────────────────────── 8. 별표 수집 ─────────────────────────────
+// ───────────────────────────── 8. 별표 번호 (ADR-0030) ─────────────────────────────
 
-function* inlinesOf(doc: SubstitutedDoc): Generator<SInline> {
-  for (const a of articlesOf(doc)) {
-    for (const p of a.children) {
-      if (p.kind !== "paragraph") continue;
-      yield* p.children;
-      for (const it of p.items ?? []) {
-        if (it.kind !== "item") continue;
-        yield* it.children;
-        for (const s of it.subitems ?? []) if (s.kind !== "error") yield* s.children;
-      }
-    }
-  }
-}
-
-/** 책자 순으로 읽어 처음 등장 순 번호. `docs` 는 책자 순서대로. */
-export function collectAppendices(docs: readonly SubstitutedDoc[], master: readonly Appendix[]): BookletAppendix[] {
+/**
+ * 상품 별표 목록 순서대로 번호 1..n. 참조되지 않은 별표도 번호를 차지한다.
+ * 마스터에 없는 코드는 「(없는 별표)」로 번호만 남긴다 — 렌더가 참조 자리에서 오류를 낸다.
+ */
+export function collectAppendices(order: readonly Code[], master: readonly Appendix[]): BookletAppendix[] {
   const byCode = new Map(master.map((a) => [a.code, a]));
-  const out: BookletAppendix[] = [];
-  const seen = new Set<Code>();
-  for (const doc of docs) {
-    for (const n of inlinesOf(doc)) {
-      if (n.kind !== "appendixRef" || seen.has(n.appendixCode)) continue;
-      const def = byCode.get(n.appendixCode);
-      if (!def) continue;
-      seen.add(n.appendixCode);
-      out.push({ code: def.code, name: def.name, number: out.length + 1, firstAt: n.at });
-    }
-  }
-  return out;
+  return order.map((code, index) => ({ code, name: byCode.get(code)?.name ?? "(없는 별표)", number: index + 1 }));
 }
 
 // ───────────────────────────── 7. 참조 해소 + 렌더 ─────────────────────────────
@@ -256,7 +233,10 @@ class Renderer {
       }
       case "appendixRef": {
         const a = this.appendices.get(n.appendixCode);
-        if (!a) return this.error(n.id, { kind: "brokenRef", message: `별표 ${n.appendixCode} 이(가) 별표 마스터에 없습니다`, at: { ...n.at, refPath: n.appendixCode } });
+        if (!a || a.name === "(없는 별표)") {
+          const message = a ? `별표 ${n.appendixCode} 이(가) 별표 마스터에 없습니다` : `별표 ${n.appendixCode} 이(가) 상품 별표 목록에 없습니다`;
+          return this.error(n.id, { kind: "brokenRef", message, at: { ...n.at, refPath: n.appendixCode } });
+        }
         return { kind: "appendixRef", id: n.id, appendixCode: a.code, number: a.number, label: appendixRefLabel(a.number, a.name) };
       }
     }

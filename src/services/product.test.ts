@@ -433,6 +433,15 @@ describe("product 서비스 (PGlite)", () => {
       expect((await svc.getProductCoverage(pcAddon))?.attributes).toEqual([{ kindCode: "A0002", valueCode: "V02" }]); // 깨진 참조로 남는다
     });
 
+    it("별표 목록을 순서대로 저장·조회하고 중복 코드는 거부한다 (ADR-0030)", async () => {
+      expect(await svc.listAppendixOrder(productId)).toEqual([]);
+      unwrap(await svc.setAppendixOrder(editor, productId, ["APX_B", "APX_A"]));
+      expect(await svc.listAppendixOrder(productId)).toEqual(["APX_B", "APX_A"]);
+      expect(reason(await svc.setAppendixOrder(editor, productId, ["APX_A", "APX_A"]))).toBe("invalid");
+      unwrap(await svc.setAppendixOrder(editor, productId, []));
+      expect(await svc.listAppendixOrder(productId)).toEqual([]);
+    });
+
     it("세목 선택지 삭제(파괴적): 조합·값 연쇄 · 상품 삭제: 상품담보·스냅샷 값·세목·그룹·오버라이드 전부 연쇄", async () => {
       const opts = await svc.listPlanOptions(productId);
       const t1 = opts.find((o) => o.axis === "type" && o.number === 1)!;

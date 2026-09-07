@@ -90,7 +90,7 @@ function withSurgery(coverages: AssemblyCoverage[], patch: Partial<AssemblyInput
   const base = alphaPlusFixture();
   return {
     ...base,
-    product: { ...base.product, general: surgeryFixture().general, generalDocumentId: "g-doc-surgery" },
+    product: { ...base.product, general: surgeryFixture().general, generalDocumentId: "g-doc-surgery", appendixOrder: ["APX_DISABILITY", "APX_BURN"] },
     coverages: [baseDeathCoverage(), ...coverages],
     specialDocuments: new Map([["cov-surgery", special]]),
     clauses: surgeryClauses,
@@ -217,7 +217,7 @@ describe("조립오류 S4 — 분기로 사라진 조를 가리키는 조 참조
     expect(booklet.issues[0].at).toMatchObject({ ownerId: "pc-surgery", ownerName: "수술비", articleId: "s-art-pay", refPath: "s-art-term" });
   });
 
-  it("별표 — 보통약관의 장해분류표가 1, 특약의 화상 분류표가 2 (책자 등장 순)", () => {
+  it("별표 — 상품 별표 목록 순서대로 장해분류표 1 · 화상 분류표 2 (ADR-0030)", () => {
     expect(booklet.appendices.map((a) => [a.code, a.number])).toEqual([
       ["APX_DISABILITY", 1],
       ["APX_BURN", 2],
@@ -336,17 +336,17 @@ describe("그룹핑별표 S1·S2 — 그룹 타이틀 · 그룹 순서 · 그룹
   });
 });
 
-describe("그룹핑별표 S3·S4 — 참조된 별표만 · 번호는 책자 등장 순 (상품마다 다를 수 있다)", () => {
+describe("그룹핑별표 S3·S4 — 별표 번호는 상품 별표 목록의 순서다 (ADR-0030 · 등장 순 아님)", () => {
   const groups: SpecialGroup[] = [
     { id: "grp-a", productId: "prod-alpha", title: "A", order: 0 },
     { id: "grp-b", productId: "prod-alpha", title: "B", order: 1 },
   ];
   const general = tinyDoc("g-plain", "보통약관", "별표를 참조하지 않습니다.");
-  const make = (groupOfBurn: Id, groupOfDisability: Id): AssemblyInput => {
+  const make = (order: string[]): AssemblyInput => {
     const base = alphaPlusFixture();
     return {
       ...base,
-      product: { ...base.product, general, generalDocumentId: "g-plain" },
+      product: { ...base.product, general, generalDocumentId: "g-plain", appendixOrder: order },
       groups,
       specialDocuments: new Map([
         ["cov-burn", tinyDoc("t-burn", "화상", "화상의 분류는 ", "APX_BURN")],
@@ -354,36 +354,47 @@ describe("그룹핑별표 S3·S4 — 참조된 별표만 · 번호는 책자 등
       ]),
       coverages: [
         baseDeathCoverage(),
-        coverageEntry({ id: "pc-burn", name: "화상", coverageId: "cov-burn", coverageName: "화상", attributes: [], subCoverages: [], values: {}, groupId: groupOfBurn }),
-        coverageEntry({ id: "pc-dis", name: "장해", coverageId: "cov-dis", coverageName: "장해", attributes: [], subCoverages: [], values: {}, groupId: groupOfDisability }),
+        coverageEntry({ id: "pc-burn", name: "화상", coverageId: "cov-burn", coverageName: "화상", attributes: [], subCoverages: [], values: {}, groupId: "grp-a" }),
+        coverageEntry({ id: "pc-dis", name: "장해", coverageId: "cov-dis", coverageName: "장해", attributes: [], subCoverages: [], values: {}, groupId: "grp-b" }),
       ],
       appendices: [...base.appendices, { code: "APX_UNUSED", name: "쓰이지 않는 표", description: "" }],
     };
   };
 
-  it("상품 A — 화상 특약이 앞 그룹: 화상 분류표 1 · 장해분류표 2. 참조되지 않은 별표는 0회", () => {
-    const b = assemble(make("grp-a", "grp-b"));
+  it("상품 A — 목록 [화상, 장해]: 화상 분류표 1 · 장해분류표 2. 본문 슬롯도 그 번호를 찍는다", () => {
+    const b = assemble(make(["APX_BURN", "APX_DISABILITY"]));
+    expect(b.issues).toEqual([]);
     expect(b.appendices.map((a) => [a.code, a.number])).toEqual([
       ["APX_BURN", 1],
       ["APX_DISABILITY", 2],
     ]);
-    expect(b.appendices[0].firstAt).toMatchObject({ document: "special", ownerId: "pc-burn" });
     expect(lines(b.specials[0].docs[0])[1]).toBe("   화상의 분류는 【별표1(화상 분류표)】");
   });
 
-  it("상품 B — 배치가 뒤바뀌면 같은 별표의 번호가 달라진다 · 본문 슬롯도 그 번호를 찍는다", () => {
-    const b = assemble(make("grp-b", "grp-a"));
+  it("상품 B — 목록 순서를 바꾸면 같은 별표의 번호가 달라진다 · 참조되지 않은 별표도 번호를 차지한다", () => {
+    const b = assemble(make(["APX_UNUSED", "APX_DISABILITY", "APX_BURN"]));
     expect(b.appendices.map((a) => [a.code, a.number])).toEqual([
-      ["APX_DISABILITY", 1],
-      ["APX_BURN", 2],
+      ["APX_UNUSED", 1],
+      ["APX_DISABILITY", 2],
+      ["APX_BURN", 3],
     ]);
-    expect(lines(b.specials[1].docs[0])[1]).toBe("   화상의 분류는 【별표2(화상 분류표)】");
+    expect(lines(b.specials[0].docs[0])[1]).toBe("   화상의 분류는 【별표3(화상 분류표)】");
   });
 
-  it("별표 마스터에 없는 코드는 brokenRef 마커 (참조 무결성)", () => {
-    const b = assemble({ ...make("grp-a", "grp-b"), appendices: [] });
+  it("목록에 없는 별표를 참조하면 brokenRef 마커 (참조 무결성)", () => {
+    const b = assemble(make([]));
     expect(kinds(b.issues)).toEqual(["brokenRef", "brokenRef"]);
+    expect(b.issues[0].message).toMatch(/상품 별표 목록에 없습니다/);
     expect(b.appendices).toEqual([]);
+  });
+
+  it("목록에는 있으나 마스터에 없는 코드는 번호만 차지하고 참조 자리는 brokenRef", () => {
+    const b = assemble({ ...make(["APX_BURN", "APX_DISABILITY"]), appendices: [] });
+    expect(b.appendices.map((a) => [a.number, a.name])).toEqual([
+      [1, "(없는 별표)"],
+      [2, "(없는 별표)"],
+    ]);
+    expect(kinds(b.issues)).toEqual(["brokenRef", "brokenRef"]);
   });
 });
 

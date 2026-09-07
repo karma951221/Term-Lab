@@ -213,6 +213,7 @@ describe("assembly 서비스 (PGlite) — 관통 1 통합", () => {
     unwrap(await product.addAttributeValue(editor, "A0002", { label: "추가", fragment: "추가" }));
     unwrap(await product.setNamingTemplate(editor, "[A0001] [담보명] [A0002]"));
     productId = unwrap(await product.createProduct(editor, { name: "알파Plus(축약)", generalDocumentId: g.id })).id;
+    unwrap(await product.setAppendixOrder(editor, productId, ["APX_DISABILITY"]));
     unwrap(await product.setProductValue(editor, productId, "D0002", undefined, "V02"));
     pcBase = unwrap(await product.mount(editor, productId, covBase, [], "base")).id;
     pcBasic = unwrap(await product.mount(editor, productId, covDeath, [{ kindCode: "A0002", valueCode: "V01" }])).id;

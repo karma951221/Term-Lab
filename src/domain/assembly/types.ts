@@ -15,12 +15,12 @@
  *     │ 6. 항 단위 준용 판정     judgeOmission        → SubstitutedDoc + OmissionRecord[]
  *     │ 7. 번호 계산            numberDocument       → NumberedDoc      (조·항·호·목 번호)
  *     │ 8. 특약 배치            placeSpecials        → 그룹별 정렬된 문서 목록 (+ unplaced 오류)
- *     │ 9. 별표 수집            collectAppendices    → BookletAppendix[] (책자 등장 순 번호)
+ *     │ 9. 별표 번호            collectAppendices    → BookletAppendix[] (상품 별표 목록 순서 = 번호, ADR-0030)
  *     │ 10. 참조 슬롯 해소      renderDocument       → RenderedDoc      (조·별표 참조가 표기 문자열로)
  *     ▼
  *   Booklet
  *
- * 순서 메모: 별표 번호는 책자 전역 등장 순이라 배치가 끝나야 수집할 수 있고, 참조 해소는 그 뒤에 온다.
+ * 순서 메모: 별표 번호는 상품 별표 목록의 순서다(등장 순 아님 — ADR-0030). 참조 해소가 그 번호를 찍는다.
  * 모든 중간 표현은 순수 데이터다 — 오류는 그 자리에 `ErrorNode` 로 심고 계속 간다.
  */
 
@@ -48,6 +48,8 @@ export interface AssemblyProduct {
   generalDocumentId?: Id;
   /** 보통약관 공용조항의 상품별 옵션 오버라이드 (scope product). */
   overrides: readonly ClauseOptionOverride[];
+  /** 상품 별표 목록 — 순서가 곧 별표 번호 (ADR-0030). */
+  appendixOrder: readonly Code[];
 }
 
 /** 상품담보(탑재분) — 스냅샷 구조·값·부착 · 세목 부착 · 오버라이드 · 그룹 소속. */
@@ -287,10 +289,8 @@ export interface RenderedGroup {
 export interface BookletAppendix {
   code: Code;
   name: string;
-  /** 책자 등장 순 번호 (1부터). */
+  /** 상품 별표 목록의 위치 (1부터) — ADR-0030. */
   number: number;
-  /** 번호를 정한 최초 등장 좌표 (D-P6-14). */
-  firstAt: Coordinate;
 }
 
 /** 생략 판정 기록 — 조연결된 조가 (조 명 제외) 보통약관 조와 리터럴 동일해 생략됐다 (ADR-0014 · D-P6-8). */

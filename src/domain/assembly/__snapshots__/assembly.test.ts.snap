@@ -5,19 +5,6 @@ exports[`★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망�
   "appendices": [
     {
       "code": "APX_DISABILITY",
-      "firstAt": {
-        "articleId": "g-art-disability",
-        "articleTitle": "장해의 분류",
-        "document": "general",
-        "nodePath": [
-          "g-doc",
-          "g-art-disability",
-          "g-par-dis",
-          "g-apx-disability",
-        ],
-        "ownerId": "g-doc",
-        "ownerName": "알파Plus 보통약관",
-      },
       "name": "장해분류표",
       "number": 1,
     },

@@ -101,7 +101,7 @@ export function createAssemblyService(db: Db, services: AssemblyServices): Assem
       if (doc) specialDocuments.set(coverageId, doc.tree);
     }
 
-    const [productValues, productAttached, clauses, appendices, defs, enums, attributeKinds, productOverrides] = await Promise.all([
+    const [productValues, productAttached, clauses, appendices, defs, enums, attributeKinds, productOverrides, appendixOrder] = await Promise.all([
       product.getProductValues(productId),
       listAttached(db, { kind: "product", id: productId }),
       clause.list(),
@@ -110,6 +110,7 @@ export function createAssemblyService(db: Db, services: AssemblyServices): Assem
       catalog.listEnums(),
       product.listAttributeKinds(),
       product.listOptionOverrides({ kind: "product", id: productId }),
+      product.listAppendixOrder(productId),
     ]);
 
     return ok({
@@ -121,6 +122,7 @@ export function createAssemblyService(db: Db, services: AssemblyServices): Assem
         baseContractIds,
         ...(general ? { general: general.tree, generalDocumentId: general.id } : {}),
         overrides: productOverrides,
+        appendixOrder,
       },
       coverages,
       specialDocuments,

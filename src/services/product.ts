@@ -141,6 +141,10 @@ export interface ProductService {
   productMissing(id: Id): Promise<MissingSlot[]>;
   /** 상품 레벨 완결성 — 미입력 목록 + 분모(노출된 값 자리 수). */
   productCompleteness(id: Id): Promise<CompletenessSummary>;
+  /** 상품 별표 목록 (순서 = 별표 번호, ADR-0030). */
+  listAppendixOrder(productId: Id): Promise<Code[]>;
+  /** 상품 별표 목록을 통째로 바꾼다. 중복 코드 거부. 편집자 가능. */
+  setAppendixOrder(actor: Actor, productId: Id, codes: readonly Code[]): Promise<Result<Code[]>>;
 
   // ── 세목
   listPlanOptions(productId: Id): Promise<PlanOption[]>;
@@ -494,6 +498,18 @@ export function createProductService(db: Db, deps: ProductServiceDeps = {}): Pro
     // 상품
     listProducts: () => repo.listProducts(db),
     getProduct: (id) => repo.loadProduct(db, id),
+    listAppendixOrder: (productId) => repo.listProductAppendices(db, productId),
+    setAppendixOrder: (actor, productId, codes) =>
+      db.transaction(async (tx) =>
+        withProduct(tx, productId, async () => {
+          const clean = codes.map((c) => c.trim()).filter((c) => c !== "");
+          if (new Set(clean).size !== clean.length) {
+            return invalid([{ kind: "structure", message: "별표 목록에 같은 코드가 두 번 있습니다", at: { document: "product", ownerId: productId } }]);
+          }
+          await repo.replaceProductAppendices(tx, productId, clean, actor.userId);
+          return ok(clean);
+        }),
+      ),
     productAudit: (id) => repo.productAudit(db, id),
     createProduct: (actor, input) =>
       db.transaction(async (tx) => {

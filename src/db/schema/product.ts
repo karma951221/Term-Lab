@@ -71,6 +71,21 @@ export const products = pgTable("products", {
   ...audit,
 });
 
+/** 상품 별표 목록 — 번호 = 순서 (ADR-0030). 별표 코드 참조 · FK 없음. */
+export const productAppendices = pgTable(
+  "product_appendices",
+  {
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    appendixCode: text("appendix_code").notNull(),
+    order: integer("order").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdBy: uuid("created_by"),
+  },
+  (t) => [primaryKey({ columns: [t.productId, t.appendixCode] })],
+);
+
 // ───────────────────────────── 세목 (ADR-0006) ─────────────────────────────
 
 /** 세목 선택지 `(축, 번호, 이름, 세목유형 참조)`. 유형 구조체 값은 entity_values owner plan. */

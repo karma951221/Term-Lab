@@ -127,6 +127,8 @@ export async function loadAlphaPlus(services: Services, actor: Actor): Promise<S
     unwrap(await services.product.setNamingTemplate(actor, specification.namingTemplate));
     const productId = unwrap(await services.product.createProduct(actor, { name: specification.name, generalDocumentId: generalId })).id;
     seededProductId ??= productId;
+    // 별표 번호 = 상품 별표 목록 순서 (ADR-0030)
+    unwrap(await services.product.setAppendixOrder(actor, productId, specification.appendices ?? []));
     for (const entry of specification.values) unwrap(await services.product.setProductValue(actor, productId, entry.code, undefined, entry.value as Value));
 
     const optionIds = new Map<string, Id>();

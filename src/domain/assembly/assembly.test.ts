@@ -102,9 +102,8 @@ describe("★ 관통 1 — 알파Plus(축약): 보통약관 + 일반상해사망
     ]);
   });
 
-  it("별표 — 참조된 장해분류표 1건만, 번호 1, 최초 등장 좌표는 보통약관 제3조 (화상 분류표는 0회)", () => {
-    expect(booklet.appendices).toHaveLength(1);
-    expect(booklet.appendices[0]).toMatchObject({ code: "APX_DISABILITY", name: "장해분류표", number: 1, firstAt: { document: "general", articleId: "g-art-disability" } });
+  it("별표 — 상품 별표 목록 [장해분류표] 그대로 번호 1 (ADR-0030 · 화상 분류표는 목록에 없어 번호 없음)", () => {
+    expect(booklet.appendices).toEqual([{ code: "APX_DISABILITY", name: "장해분류표", number: 1 }]);
   });
 
   it("조립 문맥 조회(D-P6-7) — 특약이 실제로 읽은 값 자리만 상품담보별로 남는다", () => {

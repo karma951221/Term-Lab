@@ -215,9 +215,8 @@ export function assemble(input: AssemblyInput): Booklet {
     }),
   }));
 
-  // 8. 별표 — 책자 순
-  const inOrder = [...(general ? [general.numbered.doc] : []), ...builtGroups.flatMap((g) => g.docs.map((d) => d.b.numbered.doc))];
-  const appendices = collectAppendices(inOrder, input.appendices);
+  // 8. 별표 — 상품 별표 목록 순서 (ADR-0030)
+  const appendices = collectAppendices(input.product.appendixOrder, input.appendices);
 
   // 7. 참조 해소 + 렌더 (책자 순으로 issues 를 모은다)
   let renderedGeneral: RenderedDoc | undefined;
@@ -260,7 +259,7 @@ export function assembleSpecial(input: AssemblyInput, productCoverageId: Id): Re
   const contexts = buildContexts(input);
   const general = buildGeneral(input, contexts, s);
   const b = buildSpecial(input, contexts, s, c, general)!;
-  const appendices = collectAppendices([...(general ? [general.numbered.doc] : []), b.numbered.doc], input.appendices);
+  const appendices = collectAppendices(input.product.appendixOrder, input.appendices);
   const issues: Issue[] = [];
   let renderedGeneral: RenderedDoc | undefined;
   if (general) {
