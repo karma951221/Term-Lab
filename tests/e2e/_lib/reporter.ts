@@ -15,7 +15,7 @@ import type { FullResult, Reporter, TestCase, TestResult } from "@playwright/tes
 
 import type { EvidenceDump } from "../../../scripts/e2e/evidence-types";
 import { renderFailure, renderIndex, type IndexItem } from "../../../scripts/e2e/failure";
-import { FAILURES_DIR, FAST_MARKER, GOLDEN_KEY_FILE, SERVER_LOG } from "../../../scripts/e2e/paths";
+import { FAILURES_DIR, FAST_MARKER, GOLDEN_KEY_FILE, RUN_DIR, SERVER_LOG } from "../../../scripts/e2e/paths";
 import { findScenario, loadScenarios, type ScenarioIndex } from "../../../scripts/e2e/scenarios";
 import { sliceServerLog } from "../../../scripts/e2e/serverlog";
 
@@ -41,6 +41,7 @@ export default class FailureReporter implements Reporter {
   private failures: IndexItem[] = [];
   private untagged: string[] = [];
   private unknownCoordinates: string[] = [];
+  private dumped: string[] = [];
 
   onBegin(): void {
     this.index = loadScenarios();
@@ -67,6 +68,11 @@ export default class FailureReporter implements Reporter {
       ? sliceServerLog(read(SERVER_LOG).split("\n"), window.startedAt, window.endedAt)
       : sliceServerLog(read(SERVER_LOG).split("\n"), new Date(result.startTime).toISOString(), new Date(result.startTime.getTime() + result.duration).toISOString());
 
+    if (process.env.E2E_DUMP_DB === "1") {
+      this.dumpDb(dir);
+      if (fs.existsSync(path.join(dir, "pgdata"))) artifacts.push("pgdata/ (실행 DB 통째 — E2E_DUMP_DB=1)");
+    }
+
     fs.writeFileSync(path.join(dir, "timeline.json"), JSON.stringify(dump, null, 2));
     if (serverLines.length > 0) fs.writeFileSync(path.join(dir, "server.log"), `${serverLines.join("\n")}\n`);
 
@@ -86,6 +92,21 @@ export default class FailureReporter implements Reporter {
     );
 
     this.failures.push({ coordinate, title: test.title, dir: path.basename(dir) });
+  }
+
+  /**
+   * `E2E_DUMP_DB=1` 일 때만 실행 DB 를 통째로 남긴다 (설계 §3.1 의 C).
+   * golden 으로 결정론이 서 있으면 대개 잉여라 기본은 끈다 — 「결정론적인데도 재현이 안 되는」 드문 때만 켠다.
+   * 수백 MB 씩 쌓이므로 최근 3건만 남긴다.
+   */
+  private dumpDb(dir: string): void {
+    try {
+      fs.cpSync(RUN_DIR, path.join(dir, "pgdata"), { recursive: true });
+      this.dumped.push(path.join(dir, "pgdata"));
+      while (this.dumped.length > 3) fs.rmSync(this.dumped.shift() as string, { recursive: true, force: true });
+    } catch {
+      // 덤프를 못 떠도 진단서는 나와야 한다.
+    }
   }
 
   private dumpOf(result: TestResult): EvidenceDump {
