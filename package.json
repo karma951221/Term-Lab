@@ -14,7 +14,8 @@
     "db:seed": "tsx src/db/seed/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "terms:convert": "tsx scripts/terms/convert.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",

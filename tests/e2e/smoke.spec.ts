@@ -26,29 +26,29 @@ test("관통 1: 로그인 → 상품 → 조립 미리보기가 완성본으로 
   await page.waitForURL((url) => !url.pathname.startsWith("/login"));
 
   await page.goto("/products");
-  const product = page.getByRole("link", { name: /알파Plus\(축약\)/ });
+  const product = page.getByRole("link", { name: /^알파Plus보장보험$/ });
   await expect(product).toBeVisible();
   await product.click();
 
   await page.getByRole("link", { name: /조립 미리보기/ }).first().click();
   await expect(page).toHaveURL(/\/products\/.+\/preview/);
-  // 대치된 보통약관 + 특약 2벌(기본·추가) + 별표 1건, 오류 없음
-  await expect(page.getByRole("heading", { name: /알파Plus 보통약관/ })).toBeVisible();
-  await expect(page.getByText("피보험자가 보험기간 중 상해로 사망한 경우 보험금을 지급합니다.")).toBeVisible();
-  await expect(page.getByRole("heading", { name: /^일반상해사망 특별약관/ })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /일반상해사망 추가 특별약관/ })).toBeVisible();
+  // 실물 보통약관(기본계약 대치된 제3조) + 특약 4벌 + 별표 21건, 오류 없음
+  await expect(page.getByRole("heading", { name: /무배당 알파Plus보장보험2604 보통약관/ })).toBeVisible();
+  await expect(page.getByText(/장해지급률이 80% 이상에 해당하는 장해상태가 되었을 때에는 보험수익자에게 최초1회에 한하여/).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^일반상해사망보장 특별약관/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /일반상해사망보장 추가 특별약관/ })).toBeVisible();
   // 오류 패널 제목은 분모를 함께 갖는다 — 「오류 0 / 조 N」 (디자인원칙 §9.6)
   await expect(page.getByRole("heading", { name: /^오류 0 \/ 조 \d+$/ })).toBeVisible();
   await expect(page.getByText("오류 없음.")).toBeVisible();
   await expect(page.getByText(/완성본 아님/)).toHaveCount(0);
 });
 
-test("관계정보: 공용조항 이웃을 그리고 노드 링크로 조회 대상을 바꾼다", async ({ page }) => {
+test("관계정보: 구분자(담보명) 이웃을 그리고 노드 링크로 조회 대상을 바꾼다", async ({ page }) => {
   await page.goto("/login");
   await page.getByRole("button", { name: /admin/ }).click();
   await page.waitForURL((url) => !url.pathname.startsWith("/login"));
 
-  await page.goto("/relations?kind=clause&code=C0001");
+  await page.goto("/relations?kind=discriminator&code=D0001");
   const graph = page.getByRole("img", { name: "조회 대상의 이웃 그래프" });
   await expect(graph).toBeVisible();
 

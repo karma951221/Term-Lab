@@ -1,12 +1,107 @@
 [
   {
-    "code": "APX_DISABILITY",
+    "code": "APX01_INTEREST",
+    "name": "보험금을 지급할 때의 적립이율 계산",
+    "description": ""
+  },
+  {
+    "code": "APX02_DISABILITY",
     "name": "장해분류표",
     "description": ""
   },
   {
-    "code": "APX_BURN",
+    "code": "APX03_SURGERY_1_7",
+    "name": "1-7종 수술분류표",
+    "description": ""
+  },
+  {
+    "code": "APX04_CANCER",
+    "name": "악성신생물(암) 분류표",
+    "description": ""
+  },
+  {
+    "code": "APX05",
+    "name": "(미확인 별표 5)",
+    "description": ""
+  },
+  {
+    "code": "APX06",
+    "name": "(미확인 별표 6)",
+    "description": ""
+  },
+  {
+    "code": "APX07_STROKE",
+    "name": "뇌졸중대상질병 분류표",
+    "description": ""
+  },
+  {
+    "code": "APX08_AMI",
+    "name": "급성심근경색증대상질병 분류표",
+    "description": ""
+  },
+  {
+    "code": "APX09",
+    "name": "(미확인 별표 9)",
+    "description": ""
+  },
+  {
+    "code": "APX10_LUNG",
+    "name": "말기폐질환",
+    "description": ""
+  },
+  {
+    "code": "APX11_LIVER",
+    "name": "말기간경화",
+    "description": ""
+  },
+  {
+    "code": "APX12_DIABETES",
+    "name": "만성당뇨합병증 분류표",
+    "description": ""
+  },
+  {
+    "code": "APX13_BURN",
     "name": "화상 분류표",
+    "description": ""
+  },
+  {
+    "code": "APX14_FRACTURE_2",
+    "name": "골절(치아파절 제외)분류표 Ⅱ",
+    "description": ""
+  },
+  {
+    "code": "APX15_MAJOR_INJURY",
+    "name": "중대한 특정상해 분류표",
+    "description": ""
+  },
+  {
+    "code": "APX16",
+    "name": "(미확인 별표 16)",
+    "description": ""
+  },
+  {
+    "code": "APX17",
+    "name": "(미확인 별표 17)",
+    "description": ""
+  },
+  {
+    "code": "APX18",
+    "name": "(미확인 별표 18)",
+    "description": ""
+  },
+  {
+    "code": "APX19",
+    "name": "(미확인 별표 19)",
+    "description": ""
+  },
+  {
+    "code": "APX20_BENIGN_BRAIN",
+    "name": "양성 뇌종양(경계성종양제외) 대상질병 분류표",
+    "description": ""
+  },
+  {
+    "code": "APX21_FRACTURE_TABLE_2",
+    "name": "골절분류표 Ⅱ",
     "description": ""
   }
 ]

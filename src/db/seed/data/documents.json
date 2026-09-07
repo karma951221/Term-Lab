@@ -1,50 +1,247 @@
 [
   {
-    "code": "base-death-doc",
-    "ownerCoverage": "base-death",
+    "code": "base-disability80-doc",
+    "ownerCoverage": "base-disability80",
     "general": "alpha-general",
     "tree": {
-      "id": "b-doc-death",
+      "id": "b-doc",
       "kind": "document",
-      "title": "상해사망 기본계약 문면",
+      "title": "일반상해80%이상후유장해 기본계약 문면",
       "children": [
         {
-          "id": "b-art-pay",
+          "id": "b-a3",
           "kind": "article",
           "title": "보험금의 지급사유",
-          "linkedArticleId": "g-art-pay",
           "children": [
             {
-              "id": "b-par-pay",
+              "id": "b-a3-p1",
               "kind": "paragraph",
               "children": [
                 {
-                  "id": "b-txt-pay",
+                  "id": "b-a3-p1-x2",
                   "kind": "text",
-                  "text": "피보험자가 보험기간 중 상해로 사망한 경우 보험금을 지급합니다."
+                  "text": "회사는 피보험자가 보험기간 중에 상해로"
+                },
+                {
+                  "id": "b-a3-p1-x1",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX02_DISABILITY"
+                },
+                {
+                  "id": "b-a3-p1-x3",
+                  "kind": "text",
+                  "text": "에서 정한 장해지급률이 80% 이상에 해당하는 장해상태가 되었을 때에는 보험수익자에게 최초1회에 한하여 보험가입금액을 일반상해80%이상후유장해보험금으로 지급합니다."
                 }
               ]
             }
-          ]
+          ],
+          "linkedArticleId": "g-a3"
         },
         {
-          "id": "b-art-detail",
+          "id": "b-a4",
           "kind": "article",
           "title": "보험금 지급에 관한 세부규정",
-          "linkedArticleId": "g-art-detail",
           "children": [
             {
-              "id": "b-par-detail",
+              "id": "b-a4-p1",
               "kind": "paragraph",
               "children": [
                 {
-                  "id": "b-txt-detail",
+                  "id": "b-a4-p1-x2",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "b-a3"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "b-a4-p1-x3",
                   "kind": "text",
-                  "text": "보험금 지급에 관한 세부사항은 산출방법서에 따릅니다."
+                  "text": "에서 장해지급률이 상해 발생일부터 180일 이내에 확정되지 않는 경우에는 상해 발생일부터 180일이 되는 날의 의사 진단에 기초하여 고정될 것으로 인정되는 상태를 장해지급률로 결정합니다. 다만, "
+                },
+                {
+                  "id": "b-a4-p1-x1",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX02_DISABILITY"
+                },
+                {
+                  "id": "b-a4-p1-x4",
+                  "kind": "text",
+                  "text": "에 장해판정시기를 별도로 정한 경우에는 그에 따릅니다."
+                }
+              ]
+            },
+            {
+              "id": "b-a4-p2",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "b-a4-p2-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "b-a4-p1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "b-a4-p2-x2",
+                  "kind": "text",
+                  "text": "에 따라 장해지급률이 결정되었으나 그 이후 보장을 받을 수 있는 기간(계약의 효력이 없어진 경우에는 보험기간이 10년 이상인 계약은 상해 발생일부터 2년 이내로 하고, 보험기간이 10년 미만인 계약은 상해 발생일부터 1년 이내)에 장해상태가 더 악화된 때에는 그 악화된 장해상태를 기준으로 장해지급률을 결정합니다."
+                }
+              ]
+            },
+            {
+              "id": "b-a4-p3",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "b-a4-p3-x1",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX02_DISABILITY"
+                },
+                {
+                  "id": "b-a4-p3-x4",
+                  "kind": "text",
+                  "text": "에 해당되지 않는 후유장해는 피보험자의 직업, 연령, 신분 또는 성별 등에 관계없이 신체의 장해정도에 따라"
+                },
+                {
+                  "id": "b-a4-p3-x2",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX02_DISABILITY"
+                },
+                {
+                  "id": "b-a4-p3-x5",
+                  "kind": "text",
+                  "text": "의 구분에 준하여 지급액을 결정합니다. 다만, "
+                },
+                {
+                  "id": "b-a4-p3-x3",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX02_DISABILITY"
+                },
+                {
+                  "id": "b-a4-p3-x6",
+                  "kind": "text",
+                  "text": "의 각 장해분류별 최저 지급률 장해정도에 이르지 않는 후유장해에 대하여는 후유장해보험금을 지급하지 않습니다."
+                }
+              ]
+            },
+            {
+              "id": "b-a4-p4",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "b-a4-p4-x2",
+                  "kind": "text",
+                  "text": "보험수익자와 회사가 "
+                },
+                {
+                  "id": "b-a4-p4-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "b-a3"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "b-a4-p4-x3",
+                  "kind": "text",
+                  "text": "의 보험금 지급사유에 대해 합의하지 못할 때는 보험수익자와 회사가 함께 제3자를 정하고 그 제3자의 의견에 따를 수 있습니다. 제3자는 의료법 제3조(의료기관)에 규정한 종합병원 소속 전문의 중에 정하며, 보험금 지급사유 판정에 드는 의료비용은 회사가 전액 부담합니다."
+                }
+              ]
+            },
+            {
+              "id": "b-a4-b1",
+              "kind": "box",
+              "title": "의료법 제3조(의료기관)",
+              "lines": [
+                "- 의료기관은 다음 각 호와 같이 구분한다.",
+                "- 의원급 의료기관: 의원, 치과의원, 한의원",
+                "- 조산원",
+                "- 병원급 의료기관: 병원, 치과병원, 한방병원,",
+                "요양병원, 정신병원, 종합병원"
+              ]
+            },
+            {
+              "id": "b-a4-p5",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "b-a4-p5-x2",
+                  "kind": "text",
+                  "text": "같은 상해로 두 가지 이상의 후유장해가 생긴 경우에는 후유장해 지급률을 합산하여 지급합니다. 다만, "
+                },
+                {
+                  "id": "b-a4-p5-x1",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX02_DISABILITY"
+                },
+                {
+                  "id": "b-a4-p5-x3",
+                  "kind": "text",
+                  "text": "의 각 신체부위별 판정기준에 별도로 정한 경우에는 그 기준에 따릅니다."
+                }
+              ]
+            },
+            {
+              "id": "b-a4-p6",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "b-a4-p6-x2",
+                  "kind": "text",
+                  "text": "다른 상해로 후유장해가 2회 이상 발생하였을 경우에는 그 때마다 이에 해당하는 후유장해지급률을 결정합니다. 그러나 그 후유장해가 이미 후유장해보험금을 지급받은 동일한 부위에 가중된 때에는 최종 장해상태에 해당하는 후유장해보험금에서 이미 지급받은 후유장해보험금을 차감하여 지급합니다. 다만, "
+                },
+                {
+                  "id": "b-a4-p6-x1",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX02_DISABILITY"
+                },
+                {
+                  "id": "b-a4-p6-x3",
+                  "kind": "text",
+                  "text": "의 각 신체부위별 판정기준에서 별도로 정한 경우에는 그 기준에 따릅니다."
+                }
+              ]
+            },
+            {
+              "id": "b-a4-p7",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "b-a4-p7-x2",
+                  "kind": "text",
+                  "text": "이미 이 계약에서 후유장해보험금 지급사유에 해당되지 않았거나(보장개시 이전의 원인에 의하거나 또는 그 이전에 발생한 후유장해를 포함합니다), 후유장해보험금이 지급되지 않았던 피보험자에게 그 신체의 동일 부위에 또다시 "
+                },
+                {
+                  "id": "b-a4-p7-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "b-a4-p6"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "b-a4-p7-x3",
+                  "kind": "text",
+                  "text": "에 규정하는 후유장해상태가 발생하였을 경우에는 직전까지의 후유장해에 대한 후유장해보험금이 지급된 것으로 보고 최종 후유장해 상태에 해당되는 후유장해보험금에서 이를 차감하여 지급합니다."
                 }
               ]
             }
-          ]
+          ],
+          "linkedArticleId": "g-a4"
         }
       ]
     }
@@ -54,184 +251,936 @@
     "ownerCoverage": "death",
     "general": "alpha-general",
     "tree": {
-      "id": "s-doc-death",
+      "id": "s1-doc",
       "kind": "document",
-      "title": "일반상해사망 특별약관",
+      "title": "일반상해사망보장 특별약관",
       "children": [
         {
-          "id": "s-art-pay",
+          "id": "s1-a1",
           "kind": "article",
           "title": "보험금의 지급사유",
-          "linkedArticleId": "g-art-pay",
           "children": [
             {
-              "id": "s-par-pay",
+              "id": "s1-a1-p1",
               "kind": "paragraph",
               "children": [
                 {
-                  "id": "s-txt-pay-1",
+                  "id": "s1-a1-p1-x1",
                   "kind": "text",
-                  "text": "회사는 피보험자가 "
-                },
-                {
-                  "id": "s-inl-renew",
-                  "kind": "inlineCond",
-                  "branches": [
-                    {
-                      "id": "s-inl-renew-if",
-                      "when": "exist(attr.A0001) and attr.A0001 = 'V02'",
-                      "children": [
-                        {
-                          "id": "s-txt-pay-2",
-                          "kind": "text",
-                          "text": "최초계약일"
-                        }
-                      ]
-                    },
-                    {
-                      "id": "s-inl-renew-else",
-                      "children": [
-                        {
-                          "id": "s-txt-pay-3",
-                          "kind": "text",
-                          "text": "계약일"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "id": "s-txt-pay-4",
-                  "kind": "text",
-                  "text": " 이후 상해로 사망한 경우 사망보험금을 지급합니다. 평균공시이율 "
-                },
-                {
-                  "id": "s-slot-rate",
-                  "kind": "slot",
-                  "ref": "D0004"
-                },
-                {
-                  "id": "s-txt-pay-5",
-                  "kind": "text",
-                  "text": "를 적용합니다."
+                  "text": "회사는 보험증권에 기재된 피보험자가 이 특별약관의 보험기간 중에 상해의 직접결과로써 사망한 경우(질병으로 인한 사망은 제외합니다)에는 보험수익자에게 이 특별약관의 보험가입금액 전액을 사망보험금으로 지급합니다."
                 }
               ]
             }
           ]
         },
         {
-          "id": "s-cond-exempt",
-          "kind": "condBlock",
-          "branches": [
-            {
-              "id": "s-cond-exempt-if",
-              "when": "D0005 = true",
-              "children": [
-                {
-                  "id": "s-art-exempt",
-                  "kind": "article",
-                  "title": "보험금을 지급하지 않는 사유",
-                  "linkedArticleId": "g-art-exempt",
-                  "children": [
-                    {
-                      "id": "s-par-exempt",
-                      "kind": "paragraph",
-                      "children": [
-                        {
-                          "id": "s-txt-exempt",
-                          "kind": "text",
-                          "text": "고의로 사고를 일으킨 경우에는 보험금을 지급하지 않습니다."
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "s-art-reduce",
+          "id": "s1-a2",
           "kind": "article",
-          "title": "보험금의 감액지급",
-          "linkedArticleId": "g-art-refund",
+          "title": "보험금 지급에 관한 세부규정",
           "children": [
             {
-              "id": "s-par-refund-1",
+              "id": "s1-a2-p1",
               "kind": "paragraph",
               "children": [
                 {
-                  "id": "s-txt-refund-1",
-                  "kind": "text",
-                  "text": "계약이 해지된 경우 해약환급금을 지급합니다."
-                }
-              ]
-            },
-            {
-              "id": "s-par-refund-2",
-              "kind": "paragraph",
-              "children": [
-                {
-                  "id": "s-txt-refund-2",
-                  "kind": "text",
-                  "text": "해약환급금은 산출방법서에 따라 계산합니다."
-                }
-              ]
-            },
-            {
-              "id": "s-par-reduce-extra",
-              "kind": "paragraph",
-              "children": [
-                {
-                  "id": "s-txt-reduce-1",
-                  "kind": "text",
-                  "text": "계약일부터 "
-                },
-                {
-                  "id": "s-slot-reduce",
-                  "kind": "slot",
-                  "ref": "D0007"
-                },
-                {
-                  "id": "s-txt-reduce-2",
-                  "kind": "text",
-                  "text": " 이내에는 감액 지급하며, "
-                },
-                {
-                  "id": "s-ref-refund",
+                  "id": "s1-a2-p1-x1",
                   "kind": "articleRef",
-                  "scope": "general",
                   "targets": [
                     {
-                      "nodeId": "g-par-refund-1"
-                    },
-                    {
-                      "nodeId": "g-par-refund-2"
+                      "nodeId": "s1-a1"
                     }
                   ],
-                  "connector": "및"
+                  "connector": "및",
+                  "scope": "self"
                 },
                 {
-                  "id": "s-txt-reduce-3",
+                  "id": "s1-a2-p1-x2",
                   "kind": "text",
-                  "text": "을 확인합니다."
+                  "text": "「사망」에는 보험기간에 다음 어느 하나의 사유가 발생한 경우를 포함합니다."
+                }
+              ],
+              "items": [
+                {
+                  "id": "s1-a2-p1-i1",
+                  "kind": "item",
+                  "children": [
+                    {
+                      "id": "s1-a2-p1-i1-x1",
+                      "kind": "text",
+                      "text": "실종선고를 받은 경우: 법원에서 인정한 실종기간이 끝나는 때에 사망한 것으로 봅니다."
+                    }
+                  ]
+                },
+                {
+                  "id": "s1-a2-p1-i2",
+                  "kind": "item",
+                  "children": [
+                    {
+                      "id": "s1-a2-p1-i2-x1",
+                      "kind": "text",
+                      "text": "관공서에서 수해, 화재나 그 밖의 재난을 조사하고 사망한 것으로 통보하는 경우: 가족관계등록부에 기재된 사망연월일을 기준으로 합니다."
+                    }
+                  ]
+                },
+                {
+                  "id": "s1-a2-b1",
+                  "kind": "box",
+                  "title": "민법 제27조(실종의 선고)",
+                  "lines": [
+                    "- 부재자의 생사가 5년간 분명하지 아니한 때에는",
+                    "법원은 이해관계인이나 검사의 청구에 의하여 실종선고를 하여야 한다.",
+                    "- 전지에 임한 자, 침몰한 선박 중에 있던 자, 추락",
+                    "한 항공기 중에 있던 자 기타 사망의 원인이 될위난을 당한 자의 생사가 전쟁종지후 또는 선박의 침몰, 항공기의 추락 기타 위난이 종료한 후 1년간 분명하지 아니한 때에도 제1항과 같다."
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "s1-a2-p2",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s1-a2-p2-x2",
+                  "kind": "text",
+                  "text": "「호스피스·완화의료 및 임종과정에 있는 환자의 연명의료 결정에 관한 법률」에 따른 연명의료중단 등 결정 및 그 이행으로 피보험자가 사망하는 경우 연명의료중단 등 결정 및 그 이행은 "
+                },
+                {
+                  "id": "s1-a2-p2-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s1-a1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s1-a2-p2-x3",
+                  "kind": "text",
+                  "text": "「사망」의 원인 및「사망보험금」지급에 영향을 미치지 않습니다."
+                }
+              ]
+            },
+            {
+              "id": "s1-a2-p3",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s1-a2-p3-x2",
+                  "kind": "text",
+                  "text": "보험수익자와 회사가 "
+                },
+                {
+                  "id": "s1-a2-p3-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s1-a1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s1-a2-p3-x3",
+                  "kind": "text",
+                  "text": "의 보험금 지급사유에 대해 합의하지 못할 때는 보험수익자와 회사가 함께 제3자를 정하고 그 제3자의 의견에 따를 수 있습니다. 제3자는 의료법 제3조(의료기관)에 규정한 종합병원 소속 전문의 중에 정하며, 보험금 지급사유 판정에 드는 의료비용은 회사가 전액 부담합니다."
                 }
               ]
             }
           ]
         },
         {
-          "id": "s-art-lapse",
+          "id": "s1-a3",
           "kind": "article",
           "title": "특별약관의 소멸",
           "children": [
             {
-              "id": "s-clause-lapse",
-              "kind": "clauseBlockRef",
-              "clauseCode": "C0001",
-              "options": {
-                "O01": "V02"
-              }
+              "id": "s1-a3-p1",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s1-a3-p1-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s1-a1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s1-a3-p1-x2",
+                  "kind": "text",
+                  "text": "에서 정한 사망보험금 지급사유가 발생한 경우에는 이 특별약관은 그 때부터 소멸됩니다."
+                }
+              ]
+            },
+            {
+              "id": "s1-a3-p2",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s1-a3-p2-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s1-a3-p1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s1-a3-p2-x2",
+                  "kind": "text",
+                  "text": "에 따라 이 특별약관이 소멸되는 경우에는 회사는 이 특별약관의 해약환급금을 지급하지 않습니다."
+                }
+              ]
+            },
+            {
+              "id": "s1-a3-p3",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s1-a3-p3-x2",
+                  "kind": "text",
+                  "text": "이 특별약관의 피보험자가 "
+                },
+                {
+                  "id": "s1-a3-p3-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s1-a3-p1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s1-a3-p3-x3",
+                  "kind": "text",
+                  "text": " 이외의 사유로 사망한 경우에는 이 특별약관은 그 때부터 소멸되며, 이 경우 회사는 그 때까지「보험료 및 해약환급금 산출방법서」에서 정한 이 특별약관의 사망 당시 계약자적립액 및 미경과보험료를 계약자에게 지급합니다."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s1-a4",
+          "kind": "article",
+          "title": "준용규정",
+          "children": [
+            {
+              "id": "s1-a4-p1",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s1-a4-p1-x3",
+                  "kind": "text",
+                  "text": "이 특별약관에서 정하지 않은 사항은 보통약관을 따릅니다. 다만, "
+                },
+                {
+                  "id": "s1-a4-p1-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "g-a9"
+                    },
+                    {
+                      "nodeId": "g-a10"
+                    },
+                    {
+                      "nodeId": "g-a38"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "general"
+                },
+                {
+                  "id": "s1-a4-p1-x4",
+                  "kind": "text",
+                  "text": "은 제외하며, 보통약관 1종(보험료 납입면제 미적용형)으로 가입한 경우 "
+                },
+                {
+                  "id": "s1-a4-p1-x2",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "g-a27_1"
+                    },
+                    {
+                      "nodeId": "g-a27_2"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "general"
+                },
+                {
+                  "id": "s1-a4-p1-x5",
+                  "kind": "text",
+                  "text": "도 제외합니다."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "code": "living80-doc",
+    "ownerCoverage": "living80",
+    "general": "alpha-general",
+    "tree": {
+      "id": "s2-doc",
+      "kind": "document",
+      "title": "일반상해80%이상후유장해 생활자금보장 특별약관",
+      "children": [
+        {
+          "id": "s2-a1",
+          "kind": "article",
+          "title": "보험금의 지급사유",
+          "children": [
+            {
+              "id": "s2-a1-p1",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s2-a1-p1-x2",
+                  "kind": "text",
+                  "text": "회사는 보험증권에 기재된 피보험자가 이 특별약관의 보험기간 중에 상해로"
+                },
+                {
+                  "id": "s2-a1-p1-x1",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX02_DISABILITY"
+                },
+                {
+                  "id": "s2-a1-p1-x3a",
+                  "kind": "text",
+                  "text": "에서 정한 장해지급률이 80% 이상에 해당하는 장해상태가 되었을 때에는 보험수익자에게 최초 1회에 한하여 아래의 금액을 "
+                },
+                {
+                  "id": "s2-a1-p1-x3s",
+                  "kind": "slot",
+                  "ref": "D0001"
+                },
+                {
+                  "id": "s2-a1-p1-x3b",
+                  "kind": "text",
+                  "text": "으로 매월 보험금 지급사유 발생해당일에 확정 지급합니다. 다만, 생활자금 지급을 위한 보험금 지급사유 발생해당일이 없는 때에는 해당 월의 마지막 날에 지급합니다."
+                }
+              ]
+            },
+            {
+              "id": "s2-a1-t1",
+              "kind": "table",
+              "columns": [
+                {},
+                {}
+              ],
+              "rows": [
+                {
+                  "header": true,
+                  "cells": [
+                    "구 분",
+                    "지급금액"
+                  ]
+                },
+                {
+                  "cells": [
+                    "일반상해로 80%이상 후유장해시",
+                    "보험가입금액을 매월 10년간 확정지급(단, 최초 1회에 한하여 지급)"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "s2-a1-b2",
+              "kind": "box",
+              "title": "보험금 지급일 예시",
+              "lines": [
+                "보험금 지급사유 발생해당일 : 2023년 1월 31일⇒ 보험금 지급일 : 2023년 2월 28일"
+              ]
+            },
+            {
+              "id": "s2-a1-p2",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s2-a1-p2-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s2-a1-p1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s2-a1-p2-x2",
+                  "kind": "text",
+                  "text": "의 금액은 보험수익자의 요청에 따라 일시지급이 가능하며, 이 경우에는 평균공시이율로 할인된 금액을 지급합니다."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s2-a2",
+          "kind": "article",
+          "title": "보험금 지급에 관한 세부규정",
+          "children": [
+            {
+              "id": "s2-a2-p1",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s2-a2-p1-x2",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s2-a1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s2-a2-p1-x3",
+                  "kind": "text",
+                  "text": "에서 장해지급률이 상해 발생일부터 180일 이내에 확정되지 않는 경우에는 상해 발생일부터 180일이 되는 날의 의사 진단에 기초하여 고정될 것으로 인정되는 상태를 장해지급률로 결정합니다. 다만, "
+                },
+                {
+                  "id": "s2-a2-p1-x1",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX02_DISABILITY"
+                },
+                {
+                  "id": "s2-a2-p1-x4",
+                  "kind": "text",
+                  "text": "에 장해판정시기를 별도로 정한 경우에는 그에 따릅니다."
+                }
+              ]
+            },
+            {
+              "id": "s2-a2-p2",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s2-a2-p2-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s2-a2-p1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s2-a2-p2-x2",
+                  "kind": "text",
+                  "text": "에 따라 장해지급률이 결정되었으나 그 이후 보장받을 수 있는 기간(특별약관의 효력이 없어진 경우에는 보험기간이 10년 이상인 특별약관은 상해 발생일부터 2년 이내로 하고, 보험기간이 10년 미만인 특별약관은 상해 발생일부터 1년 이내)에 장해상태가 더 악화된 때에는 그 악화된 장해상태를 기준으로 장해지급률을 결정합니다."
+                }
+              ]
+            },
+            {
+              "id": "s2-a2-p3",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s2-a2-p3-x1",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX02_DISABILITY"
+                },
+                {
+                  "id": "s2-a2-p3-x3",
+                  "kind": "text",
+                  "text": "에 해당되지 않는 후유장해는 피보험자의 직업, 연령, 신분 또는 성별 등에 관계없이 신체의 장해정도에 따라"
+                },
+                {
+                  "id": "s2-a2-p3-x2",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX02_DISABILITY"
+                },
+                {
+                  "id": "s2-a2-p3-x4",
+                  "kind": "text",
+                  "text": "의 구분에 준하여 지급액을 결정합니다."
+                }
+              ]
+            },
+            {
+              "id": "s2-a2-p4",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s2-a2-p4-x2",
+                  "kind": "text",
+                  "text": "보험수익자와 회사가 "
+                },
+                {
+                  "id": "s2-a2-p4-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s2-a1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s2-a2-p4-x3",
+                  "kind": "text",
+                  "text": "의 보험금 지급사유에 대해 합의하지 못할 때는 보험수익자와 회사가 함께 제3자를 정하고 그 제3자의 의견에 따를 수 있습니다. 제3자는 의료법 제3조(의료기관)에 규정한 종합병원 소속 전문의 중에 정하며, 보험금 지급사유 판정에 드는 의료비용은 회사가 전액 부담합니다."
+                }
+              ]
+            },
+            {
+              "id": "s2-a2-p5",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s2-a2-p5-x2",
+                  "kind": "text",
+                  "text": "같은 상해로 두 가지 이상의 후유장해가 생긴 경우에는 후유장해 지급률을 합산하여 지급합니다. 다만, "
+                },
+                {
+                  "id": "s2-a2-p5-x1",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX02_DISABILITY"
+                },
+                {
+                  "id": "s2-a2-p5-x3",
+                  "kind": "text",
+                  "text": "의 각 신체부위별 판정기준에 별도로 정한 경우에는 그 기준에 따릅니다."
+                }
+              ]
+            },
+            {
+              "id": "s2-a2-p6",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s2-a2-p6-x2",
+                  "kind": "text",
+                  "text": "다른 상해로 후유장해가 2회 이상 발생하였을 경우에는 그 때마다 이에 해당하는 후유장해지급률을 결정합니다. 그러나 그 후유장해가 이미 생활자금을 지급받은 동일한 부위에 가중된 때에는 최종 장해상태에 해당하는 생활자금에서 이미 지급받은 생활자금을 차감하여 지급합니다. 다만, "
+                },
+                {
+                  "id": "s2-a2-p6-x1",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX02_DISABILITY"
+                },
+                {
+                  "id": "s2-a2-p6-x3",
+                  "kind": "text",
+                  "text": "의 각 신체부위별 판정기준에서 별도로 정한 경우에는 그 기준에 따릅니다."
+                }
+              ]
+            },
+            {
+              "id": "s2-a2-p7",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s2-a2-p7-x2",
+                  "kind": "text",
+                  "text": "이미 이 특별약관에서 생활자금 지급사유에 해당되지 않았거나(보장개시 이전의 원인에 의하거나 또는 그 이전에 발생한 후유장해를 포함합니다), 생활자금이 지급되지 않았던 피보험자에게 그 신체의 동일 부위에 또다시 "
+                },
+                {
+                  "id": "s2-a2-p7-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s2-a2-p6"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s2-a2-p7-x3",
+                  "kind": "text",
+                  "text": "에 규정하는 후유장해상태가 발생하였을 경우에는 직전까지의 후유장해에 대한 생활자금이 지급된 것으로 보고 최종 후유장해 상태에 해당되는 생활자금에서 이를 차감하여 지급합니다."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s2-a3",
+          "kind": "article",
+          "title": "특별약관의 소멸",
+          "children": [
+            {
+              "id": "s2-a3-p1",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s2-a3-p1-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s2-a1-p1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s2-a3-p1-x2",
+                  "kind": "text",
+                  "text": "에서 정한 일반상해 80%이상후유장해 생활자금 지급사유가 발생한 경우에는 이 특별약관은 그 때부터 소멸됩니다."
+                }
+              ]
+            },
+            {
+              "id": "s2-a3-p2",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s2-a3-p2-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s2-a3-p1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s2-a3-p2-x2",
+                  "kind": "text",
+                  "text": "에 따라 이 특별약관이 소멸된 경우에는 회사는 이 특별약관의 해약환급금을 지급하지 않습니다."
+                }
+              ]
+            },
+            {
+              "id": "s2-a3-p3",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s2-a3-p3-x1",
+                  "kind": "text",
+                  "text": "이 특별약관의 피보험자가 사망한 경우에는 이 특별약관은 그 때부터 소멸되며, 이 경우 회사는 그 때까지「보험료 및 해약환급금 산출방법서」에서 정한 이 특별약관의 사망 당시 계약자적립액 및 미경과보험료를 계약자에게 지급합니다."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s2-a4",
+          "kind": "article",
+          "title": "준용규정",
+          "children": [
+            {
+              "id": "s2-a4-p1",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s2-a4-p1-x3",
+                  "kind": "text",
+                  "text": "이 특별약관에서 정하지 않은 사항은 보통약관을 따릅니다. 다만, "
+                },
+                {
+                  "id": "s2-a4-p1-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "g-a9"
+                    },
+                    {
+                      "nodeId": "g-a10"
+                    },
+                    {
+                      "nodeId": "g-a38"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "general"
+                },
+                {
+                  "id": "s2-a4-p1-x4",
+                  "kind": "text",
+                  "text": "은 제외하며, 보통약관 1종(보험료 납입면제 미적용형)으로 가입한 경우 "
+                },
+                {
+                  "id": "s2-a4-p1-x2",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "g-a27_1"
+                    },
+                    {
+                      "nodeId": "g-a27_2"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "general"
+                },
+                {
+                  "id": "s2-a4-p1-x5",
+                  "kind": "text",
+                  "text": "도 제외합니다."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "code": "fracture-doc",
+    "ownerCoverage": "fracture",
+    "general": "alpha-general",
+    "tree": {
+      "id": "s3-doc",
+      "kind": "document",
+      "title": "골절(치아파절 제외)진단비Ⅱ보장 특별약관",
+      "children": [
+        {
+          "id": "s3-a1",
+          "kind": "article",
+          "title": "보험금의 지급사유",
+          "children": [
+            {
+              "id": "s3-a1-p1",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s3-a1-p1-x2",
+                  "kind": "text",
+                  "text": "회사는 보험증권에 기재된 피보험자가 이 특별약관의 보험기간 중에 상해로"
+                },
+                {
+                  "id": "s3-a1-p1-x1",
+                  "kind": "appendixRef",
+                  "appendixCode": "APX14_FRACTURE_2"
+                },
+                {
+                  "id": "s3-a1-p1-x3a",
+                  "kind": "text",
+                  "text": "에서 정하는 골절로 진단확정시 보험수익자에게 1사고당 이 특별약관의 보험가입금액을 "
+                },
+                {
+                  "id": "s3-a1-p1-x3s",
+                  "kind": "slot",
+                  "ref": "D0001"
+                },
+                {
+                  "id": "s3-a1-p1-x3b",
+                  "kind": "text",
+                  "text": "로 지급합니다."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s3-a2",
+          "kind": "article",
+          "title": "보험금 지급에 관한 세부규정",
+          "children": [
+            {
+              "id": "s3-a2-p1",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s3-a2-p1-x1",
+                  "kind": "text",
+                  "text": "피보험자가 동일한 상해로 2가지 이상의 골절(치아파절 제외) 상태가 발생한 경우에는 1회에 한하여 지급합니다."
+                }
+              ]
+            },
+            {
+              "id": "s3-a2-p2",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s3-a2-p2-x2",
+                  "kind": "text",
+                  "text": "보험수익자와 회사가 "
+                },
+                {
+                  "id": "s3-a2-p2-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s3-a1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s3-a2-p2-x3",
+                  "kind": "text",
+                  "text": "의 보험금 지급사유에 대해 합의하지 못할 때는 보험수익자와 회사가 함께 제3자를 정하고 그 제3자의 의견에 따를 수 있습니다. 제3자는 의료법 제3조(의료기관)에 규정한 종합병원 소속 전문의 중에 정하며, 보험금 지급사유 판정에 드는 의료비용은 회사가 전액 부담합니다."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s3-a3",
+          "kind": "article",
+          "title": "보험금을 지급하지 않는 사유",
+          "children": [
+            {
+              "id": "s3-a3-p1",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s3-a3-p1-x2",
+                  "kind": "text",
+                  "text": "회사는 "
+                },
+                {
+                  "id": "s3-a3-p1-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "g-a5"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "general"
+                },
+                {
+                  "id": "s3-a3-p1-x3",
+                  "kind": "text",
+                  "text": "에서 정한 사유로 보험금 지급사유가 발생한 때에는 보험금을 지급하지 않습니다."
+                }
+              ]
+            },
+            {
+              "id": "s3-a3-p2",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s3-a3-p2-x3",
+                  "kind": "text",
+                  "text": "회사는 "
+                },
+                {
+                  "id": "s3-a3-p2-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s3-a1"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s3-a3-p2-x4",
+                  "kind": "text",
+                  "text": "에도 불구하고 그 원인의 직간접을 묻지 않고 치아파절손해 또는 치아파절이 원인이 되어 발생한 손해는 보험금을 지급하지 않습니다. 다만, 동일한 사고로 골절(치아파절 제외)이 치아파절과 동시에 발생한 경우는 "
+                },
+                {
+                  "id": "s3-a3-p2-x2",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "s3-a2"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "self"
+                },
+                {
+                  "id": "s3-a3-p2-x5",
+                  "kind": "text",
+                  "text": "를 따릅니다."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s3-a4",
+          "kind": "article",
+          "title": "특별약관의 소멸",
+          "children": [
+            {
+              "id": "s3-a4-p1",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s3-a4-p1-x1",
+                  "kind": "text",
+                  "text": "이 특별약관의 피보험자가 사망한 경우에는 이 특별약관은 그 때부터 소멸되며, 이 경우 회사는 그 때까지「보험료 및 해약환급금 산출방법서」에서 정한 이 특별약관의 사망 당시 계약자적립액 및 미경과보험료를 계약자에게 지급합니다."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s3-a5",
+          "kind": "article",
+          "title": "준용규정",
+          "children": [
+            {
+              "id": "s3-a5-p1",
+              "kind": "paragraph",
+              "children": [
+                {
+                  "id": "s3-a5-p1-x3",
+                  "kind": "text",
+                  "text": "이 특별약관에서 정하지 않은 사항은 보통약관을 따릅니다. 다만, "
+                },
+                {
+                  "id": "s3-a5-p1-x1",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "g-a9"
+                    },
+                    {
+                      "nodeId": "g-a10"
+                    },
+                    {
+                      "nodeId": "g-a38"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "general"
+                },
+                {
+                  "id": "s3-a5-p1-x4",
+                  "kind": "text",
+                  "text": "은 제외하며, 보통약관 1종(보험료 납입면제 미적용형)으로 가입한 경우 "
+                },
+                {
+                  "id": "s3-a5-p1-x2",
+                  "kind": "articleRef",
+                  "targets": [
+                    {
+                      "nodeId": "g-a27_1"
+                    },
+                    {
+                      "nodeId": "g-a27_2"
+                    }
+                  ],
+                  "connector": "및",
+                  "scope": "general"
+                },
+                {
+                  "id": "s3-a5-p1-x5",
+                  "kind": "text",
+                  "text": "도 제외합니다."
+                }
+              ]
             }
           ]
         }
