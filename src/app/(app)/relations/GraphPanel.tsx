@@ -5,7 +5,7 @@ import { useId, useRef, useState, type CSSProperties, type PointerEvent, type Wh
 import { formatCoordinate } from "@/domain/coordinate";
 import type { RefNodeKey } from "@/domain/refs";
 
-import { VIA_LABEL } from "./lib";
+import { VIA_LABEL, refTargetParams } from "./lib";
 import { NODE_COLOR, type Plot, type PlotEdge, type PlotNode } from "./plot";
 
 interface GraphPanelProps {
@@ -24,56 +24,7 @@ function parseViewBox(value: string): ViewBox {
 function targetHref(key: RefNodeKey, optionQuery: string): string {
   const params = new URLSearchParams(optionQuery);
   for (const name of ["kind", "code", "id", "level", "fieldCode", "valueCode"]) params.delete(name);
-  params.set("kind", key.kind);
-  switch (key.kind) {
-    case "discriminator":
-    case "clause":
-    case "appendix":
-    case "attribute":
-      params.set("code", key.code);
-      break;
-    case "field":
-      params.set("code", key.code);
-      params.set("fieldCode", key.fieldCode);
-      break;
-    case "enum":
-      params.set("code", key.enumCode);
-      break;
-    case "enumValue":
-      params.set("code", key.enumCode);
-      params.set("valueCode", key.valueCode);
-      break;
-    case "clauseOption":
-      params.set("code", key.clauseCode);
-      params.set("fieldCode", key.optionCode);
-      break;
-    case "clauseOptionValue":
-      params.set("code", key.clauseCode);
-      params.set("fieldCode", key.optionCode);
-      params.set("valueCode", key.valueCode);
-      break;
-    case "document":
-    case "product":
-    case "productCoverage":
-      params.set("id", key.id);
-      break;
-    case "article":
-      params.set("code", key.documentId);
-      params.set("id", key.articleId);
-      break;
-    case "coverageNode":
-      params.set("level", key.level);
-      params.set("id", key.id);
-      break;
-    case "attributeValue":
-      params.set("code", key.code);
-      params.set("valueCode", key.valueCode);
-      break;
-    case "entity":
-      params.set("code", key.entityKind);
-      params.set("id", key.id);
-      break;
-  }
+  for (const [name, value] of Object.entries(refTargetParams(key))) params.set(name, value);
   return `/relations?${params.toString()}`;
 }
 

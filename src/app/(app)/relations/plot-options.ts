@@ -3,7 +3,13 @@ import type { EdgeVia, RefNodeKind } from "@/domain/refs";
 
 import { EDGE_STYLE, type Direction, type PlotOptions } from "./plot";
 
-export type PlotOptionQuery = Record<string, string | string[] | undefined>;
+export interface PlotOptionQuery {
+  depth?: string | string[];
+  dir?: string | string[];
+  kinds?: string | string[];
+  vias?: string | string[];
+  containment?: string | string[];
+}
 
 export const ALL_NODE_KINDS = [
   "discriminator",
@@ -48,9 +54,10 @@ function last(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value.at(-1) : value;
 }
 
-function parseSet<T extends string>(raw: string | undefined, all: readonly T[], fallback: readonly T[]): ReadonlySet<T> {
+function parseSet<T extends string>(raw: string | string[] | undefined, all: readonly T[], fallback: readonly T[]): ReadonlySet<T> {
   if (raw === undefined) return new Set(fallback);
-  const values = raw === "" ? [] : raw.split(",");
+  const chunks = Array.isArray(raw) ? raw : [raw];
+  const values = chunks.flatMap((chunk) => chunk.split(",")).filter((value) => value !== "");
   const valid = new Set<string>(all);
   if (values.some((value) => !valid.has(value))) return new Set(fallback);
   return new Set(values as T[]);
@@ -66,8 +73,8 @@ export function parsePlotOptions(query: PlotOptionQuery): PlotOptions {
   return {
     depth,
     direction,
-    kinds: parseSet(last(query.kinds), ALL_NODE_KINDS, ALL_NODE_KINDS),
-    vias: parseSet(last(query.vias), ALL_EDGE_VIAS, DEFAULT_VIAS),
+    kinds: parseSet(query.kinds, ALL_NODE_KINDS, ALL_NODE_KINDS),
+    vias: parseSet(query.vias, ALL_EDGE_VIAS, DEFAULT_VIAS),
     containment,
   };
 }

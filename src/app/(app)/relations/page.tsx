@@ -6,12 +6,17 @@
  * - 문제 개수에는 늘 분모가 붙는다 (디자인원칙 §9.6 · 리뷰 #39).
  * - 조회 폼은 `?kind=&code=&id=` 를 물려받는다 (§9.1 · 리뷰 #8) — 상세 화면이 「관계정보 →」로 넘어온다.
  */
+import Link from "next/link";
+
 import { formatCoordinate } from "@/domain/coordinate";
-import { describeKey, nodeKey, type RefEdge, type RefGraph, type RefNodeKey, type RelationView } from "@/domain/refs";
+import { describeKey, nodeKey, type EdgeVia, type RefEdge, type RefGraph, type RefNodeKey, type RefNodeKind, type RefStats, type RelationView } from "@/domain/refs";
 import { NODE_LEVEL_LABEL } from "@/app/_lib/labels";
 import { getServices } from "@/lib/services";
 
-import { KIND_OPTIONS, VIA_LABEL, parseRefTarget, type RelationQuery } from "./lib";
+import { GraphPanel } from "./GraphPanel";
+import { KIND_OPTIONS, VIA_LABEL, parseRefTarget, refTargetParams, type RelationQuery } from "./lib";
+import { parsePlotOptions, serializePlotOptions } from "./plot-options";
+import { plotNeighborhood, type Plot, type PlotOptions } from "./plot";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +30,98 @@ function EdgeLine({ edge, side, graph }: { edge: RefEdge; side: "to" | "from"; g
       <span title={nodeKey(key)}>{describeKey(key, graph)}</span> <span className="ts-muted">({VIA_LABEL[edge.via]})</span>
       {where !== "(좌표 없음)" && <span className="ts-muted"> · {where}</span>}
     </li>
+  );
+}
+
+const VIA_GROUPS = [
+  { label: "본문 참조", values: ["when", "slot", "expression"] },
+  { label: "구조 결합", values: ["clauseRef", "optionSelect", "articleRef", "link", "appendixRef", "generalDocument", "document", "override"] },
+  { label: "부착 · 타입 · 탑재 · 조합", values: ["attach", "type", "mount", "combination"] },
+] as const satisfies readonly { label: string; values: readonly EdgeVia[] }[];
+
+function TargetHiddenFields({ target }: { target: RefNodeKey }) {
+  return Object.entries(refTargetParams(target)).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />);
+}
+
+function GraphControls({ target, options }: { target: RefNodeKey; options: PlotOptions }) {
+  return (
+    <form method="get" className="ts-graph-controls">
+      <TargetHiddenFields target={target} />
+      <fieldset>
+        <legend>깊이</legend>
+        {[1, 2, 3].map((depth) => (
+          <label key={depth}>
+            <input type="radio" name="depth" value={depth} defaultChecked={options.depth === depth} /> {depth}
+          </label>
+        ))}
+      </fieldset>
+      <fieldset>
+        <legend>방향</legend>
+        {([
+          ["both", "양방향"],
+          ["in", "역방향만"],
+          ["out", "정방향만"],
+        ] as const).map(([value, label]) => (
+          <label key={value}>
+            <input type="radio" name="dir" value={value} defaultChecked={options.direction === value} /> {label}
+          </label>
+        ))}
+      </fieldset>
+      <fieldset className="is-wide">
+        <legend>종류</legend>
+        <input type="hidden" name="kinds" value="" />
+        {KIND_OPTIONS.map(({ value, label }) => (
+          <label key={value}>
+            <input type="checkbox" name="kinds" value={value} defaultChecked={options.kinds.has(value as RefNodeKind)} /> {label}
+          </label>
+        ))}
+      </fieldset>
+      <fieldset className="is-wide">
+        <legend>형태</legend>
+        <input type="hidden" name="vias" value="" />
+        {VIA_GROUPS.map((group) => (
+          <label key={group.label}>
+            <input type="checkbox" name="vias" value={group.values.join(",")} defaultChecked={group.values.every((via) => options.vias.has(via))} /> {group.label}
+          </label>
+        ))}
+        <input type="hidden" name="containment" value="false" />
+        <label>
+          <input type="checkbox" name="containment" value="true" defaultChecked={options.containment} /> 포함 관계
+        </label>
+      </fieldset>
+      <button type="submit">적용</button>
+    </form>
+  );
+}
+
+function graphHref(target: RefNodeKey, options: PlotOptions): string {
+  const params = serializePlotOptions(options);
+  for (const [name, value] of Object.entries(refTargetParams(target))) params.set(name, value);
+  return `/relations?${params.toString()}`;
+}
+
+function GraphSection({ target, plot, options, stats }: { target: RefNodeKey; plot: Plot; options: PlotOptions; stats: RefStats }) {
+  const optionQuery = serializePlotOptions(options).toString();
+  const edgeCount = plot.status === "ok" ? plot.edges.reduce((sum, edge) => sum + edge.count, 0) : plot.edgeCount;
+  const nodeCount = plot.status === "ok" ? plot.nodes.length : plot.nodeCount;
+  return (
+    <section className="ts-section ts-graph-section">
+      <h2 className="ts-section-title">
+        이웃 그래프{" "}
+        <span className="ts-count">
+          노드 <b>{nodeCount}</b> / {stats.nodes} · 간선 <b>{edgeCount}</b> / {stats.edges}
+        </span>
+      </h2>
+      <GraphControls target={target} options={options} />
+      {plot.status === "tooLarge" ? (
+        <div className="ts-graph-too-large">
+          <p>이웃이 노드 {plot.nodeCount}개 · 간선 {plot.edgeCount}건이다 — 깊이를 줄이거나 종류를 걸러라.</p>
+          {options.depth > 1 && <Link href={graphHref(target, { ...options, depth: options.depth - 1 })}>깊이 {options.depth - 1}로 낮춰 보기</Link>}
+        </div>
+      ) : (
+        <GraphPanel key={`${nodeKey(target)}?${optionQuery}`} plot={plot} optionQuery={optionQuery} />
+      )}
+    </section>
   );
 }
 
@@ -100,6 +197,9 @@ export default async function RelationsPage({ searchParams }: { searchParams: Pr
   const target = parseRefTarget(q);
   const { graph, integrity, relation } = await services.refs.overview(target);
   const { stats } = integrity;
+  const plotOptions = parsePlotOptions(q);
+  const plot = target ? plotNeighborhood(graph, target, plotOptions) : undefined;
+  const serializedOptions = serializePlotOptions(plotOptions);
 
   return (
     <div>
@@ -117,6 +217,7 @@ export default async function RelationsPage({ searchParams }: { searchParams: Pr
       <section className="ts-section">
         <h2 className="ts-section-title">조회 대상</h2>
         <form method="get">
+          {[...serializedOptions].map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
           <div className="ts-form-row">
             <label htmlFor="rel-kind">종류</label>
             <select id="rel-kind" name="kind" defaultValue={q.kind ?? ""}>
@@ -164,6 +265,8 @@ export default async function RelationsPage({ searchParams }: { searchParams: Pr
       </section>
 
       {q.kind && !target && <p className="ts-error-banner">조회에 필요한 값이 비어 있다 — 고른 종류에 맞는 코드나 id 를 채워라.</p>}
+
+      {target && plot && <GraphSection target={target} plot={plot} options={plotOptions} stats={stats} />}
 
       {target && relation && <RelationResult target={target} view={relation} graph={graph} />}
 

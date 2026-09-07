@@ -12,6 +12,11 @@ export interface RelationQuery {
   level?: string;
   fieldCode?: string;
   valueCode?: string;
+  depth?: string | string[];
+  dir?: string | string[];
+  kinds?: string | string[];
+  vias?: string | string[];
+  containment?: string | string[];
 }
 
 const COVERAGE_LEVELS: readonly string[] = ["coverage", "subCoverage", "benefit"];
@@ -29,6 +34,12 @@ export function parseRefTarget(q: RelationQuery): RefNodeKey | undefined {
       return q.code && q.valueCode ? { kind: "enumValue", enumCode: q.code, valueCode: q.valueCode } : undefined;
     case "clause":
       return q.code ? { kind: "clause", code: q.code } : undefined;
+    case "clauseOption":
+      return q.code && q.fieldCode ? { kind: "clauseOption", clauseCode: q.code, optionCode: q.fieldCode } : undefined;
+    case "clauseOptionValue":
+      return q.code && q.fieldCode && q.valueCode ? { kind: "clauseOptionValue", clauseCode: q.code, optionCode: q.fieldCode, valueCode: q.valueCode } : undefined;
+    case "article":
+      return q.code && q.id ? { kind: "article", documentId: q.code, articleId: q.id } : undefined;
     case "appendix":
       return q.code ? { kind: "appendix", code: q.code } : undefined;
     case "coverageNode":
@@ -43,6 +54,8 @@ export function parseRefTarget(q: RelationQuery): RefNodeKey | undefined {
       return q.id ? { kind: "productCoverage", id: q.id } : undefined;
     case "document":
       return q.id ? { kind: "document", id: q.id } : undefined;
+    case "entity":
+      return q.code && q.id ? { kind: "entity", entityKind: q.code, id: q.id } : undefined;
     default:
       return undefined;
   }
@@ -57,6 +70,9 @@ export const KIND_OPTIONS: readonly { value: string; label: string }[] = [
   { value: "enum", label: "선택지" },
   { value: "enumValue", label: "선택형 값" },
   { value: "clause", label: "공용조항" },
+  { value: "clauseOption", label: "공용조항 옵션" },
+  { value: "clauseOptionValue", label: "옵션 선택지" },
+  { value: "article", label: "조" },
   { value: "appendix", label: "별표" },
   { value: "coverageNode", label: "담보 노드" },
   { value: "attribute", label: "담보속성" },
@@ -64,7 +80,63 @@ export const KIND_OPTIONS: readonly { value: string; label: string }[] = [
   { value: "product", label: "상품" },
   { value: "productCoverage", label: "상품담보" },
   { value: "document", label: "문면" },
+  { value: "entity", label: "기타 실체" },
 ];
+
+/** RefNodeKey 를 관계정보의 기존 kind/code/id/level/fieldCode/valueCode 계약으로 직렬화한다. */
+export function refTargetParams(key: RefNodeKey): Record<string, string> {
+  const params: Record<string, string> = { kind: key.kind };
+  switch (key.kind) {
+    case "discriminator":
+    case "clause":
+    case "appendix":
+    case "attribute":
+      params.code = key.code;
+      break;
+    case "field":
+      params.code = key.code;
+      params.fieldCode = key.fieldCode;
+      break;
+    case "enum":
+      params.code = key.enumCode;
+      break;
+    case "enumValue":
+      params.code = key.enumCode;
+      params.valueCode = key.valueCode;
+      break;
+    case "clauseOption":
+      params.code = key.clauseCode;
+      params.fieldCode = key.optionCode;
+      break;
+    case "clauseOptionValue":
+      params.code = key.clauseCode;
+      params.fieldCode = key.optionCode;
+      params.valueCode = key.valueCode;
+      break;
+    case "document":
+    case "product":
+    case "productCoverage":
+      params.id = key.id;
+      break;
+    case "article":
+      params.code = key.documentId;
+      params.id = key.articleId;
+      break;
+    case "coverageNode":
+      params.level = key.level;
+      params.id = key.id;
+      break;
+    case "attributeValue":
+      params.code = key.code;
+      params.valueCode = key.valueCode;
+      break;
+    case "entity":
+      params.code = key.entityKind;
+      params.id = key.id;
+      break;
+  }
+  return params;
+}
 
 /** 참조의 형태(`EdgeVia`) — 화면 표기. */
 export const VIA_LABEL = {

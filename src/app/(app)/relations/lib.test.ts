@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { KIND_OPTIONS, VIA_LABEL, parseRefTarget } from "./lib";
+import { KIND_OPTIONS, VIA_LABEL, parseRefTarget, refTargetParams } from "./lib";
 
 describe("relations lib — 쿼리스트링 → RefNodeKey (순수)", () => {
   it("discriminator · clause · appendix — code 필요", () => {
@@ -24,6 +24,35 @@ describe("relations lib — 쿼리스트링 → RefNodeKey (순수)", () => {
     expect(parseRefTarget({ kind: "product", id: "p1" })).toEqual({ kind: "product", id: "p1" });
     expect(parseRefTarget({ kind: "productCoverage", id: "pc1" })).toEqual({ kind: "productCoverage", id: "pc1" });
     expect(parseRefTarget({ kind: "document", id: "d1" })).toEqual({ kind: "document", id: "d1" });
+  });
+
+  it("조 · 옵션 · 기타 실체도 그래프 노드 링크에서 다시 조회한다", () => {
+    expect(parseRefTarget({ kind: "article", code: "doc", id: "art" })).toEqual({ kind: "article", documentId: "doc", articleId: "art" });
+    expect(parseRefTarget({ kind: "clauseOption", code: "C1", fieldCode: "O1" })).toEqual({ kind: "clauseOption", clauseCode: "C1", optionCode: "O1" });
+    expect(parseRefTarget({ kind: "clauseOptionValue", code: "C1", fieldCode: "O1", valueCode: "V1" })).toEqual({ kind: "clauseOptionValue", clauseCode: "C1", optionCode: "O1", valueCode: "V1" });
+    expect(parseRefTarget({ kind: "entity", code: "snapshot", id: "e1" })).toEqual({ kind: "entity", entityKind: "snapshot", id: "e1" });
+  });
+
+  it("16종 키는 URL 파라미터를 거쳐 같은 키로 돌아온다", () => {
+    const samples = [
+      { kind: "discriminator", code: "D1" },
+      { kind: "field", code: "D1", fieldCode: "F1" },
+      { kind: "enum", enumCode: "E1" },
+      { kind: "enumValue", enumCode: "E1", valueCode: "V1" },
+      { kind: "clause", code: "C1" },
+      { kind: "clauseOption", clauseCode: "C1", optionCode: "O1" },
+      { kind: "clauseOptionValue", clauseCode: "C1", optionCode: "O1", valueCode: "V1" },
+      { kind: "document", id: "doc" },
+      { kind: "article", documentId: "doc", articleId: "art" },
+      { kind: "appendix", code: "A1" },
+      { kind: "coverageNode", level: "benefit", id: "ben" },
+      { kind: "attribute", code: "AT1" },
+      { kind: "attributeValue", code: "AT1", valueCode: "V1" },
+      { kind: "product", id: "p" },
+      { kind: "productCoverage", id: "pc" },
+      { kind: "entity", entityKind: "snapshot", id: "e" },
+    ] as const;
+    for (const key of samples) expect(parseRefTarget(refTargetParams(key))).toEqual(key);
   });
 
   it("알 수 없는 kind 는 undefined", () => {
