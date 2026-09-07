@@ -22,7 +22,7 @@ export default defineConfig({
   workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  reporter: "list",
+  reporter: [["list"], ["./tests/e2e/_lib/reporter.ts"]],
   use: {
     baseURL: BASE_URL,
     // 기존 "on-first-retry" 는 로컬 retries:0 이라 영원히 안 찍혔다.
