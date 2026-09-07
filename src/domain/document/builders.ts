@@ -10,6 +10,7 @@ import type {
   ArticleRefNode,
   BlockBranch,
   BlockNode,
+  BoxNode,
   ClauseBlockRefNode,
   ClauseInlineRefNode,
   CondBlockNode,
@@ -21,8 +22,12 @@ import type {
   InlineNode,
   ItemNode,
   ParagraphNode,
+  SectionNode,
   SlotNode,
   SubitemNode,
+  TableColumn,
+  TableNode,
+  TableRow,
   TextNode,
 } from "./nodes";
 
@@ -39,6 +44,15 @@ export function sequentialIds(prefix = "n"): IdSource {
 export function nodeBuilders(newId: IdSource = randomIds) {
   return {
     document: (title: string, children: DocumentNode["children"] = []): DocumentNode => ({ id: newId(), kind: "document", title, children }),
+    section: (title: string, children: SectionNode["children"] = []): SectionNode => ({ id: newId(), kind: "section", title, children }),
+    table: (input: { title?: string; columns: TableColumn[]; rows: TableRow[] }): TableNode => ({
+      id: newId(),
+      kind: "table",
+      ...(input.title !== undefined ? { title: input.title } : {}),
+      columns: input.columns,
+      rows: input.rows,
+    }),
+    box: (title: string, lines: string[] = []): BoxNode => ({ id: newId(), kind: "box", title, lines }),
     article: (title: string, children: BlockNode[] = [], opts: { linkedArticleId?: Id } = {}): ArticleNode => ({
       id: newId(),
       kind: "article",

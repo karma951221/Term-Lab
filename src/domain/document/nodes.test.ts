@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { nodeBuilders, sequentialIds } from "./builders";
-import { allowedChildren, allowedListChildren, indexTree, validateTree, type DocumentNode } from "./nodes";
+import { allowedChildren, allowedIn, allowedListChildren, indexTree, slotsOf, validateTree, type ArticleNode, type DocumentNode } from "./nodes";
 
 /** 결정적 id 로 만든 빌더 — 스냅샷·기대값에 id 가 그대로 나온다. */
 function make() {
@@ -13,12 +13,12 @@ function kinds(issues: { kind: string }[]): string[] {
 }
 
 describe("허용 자식 규칙 테이블 (ADR-0012 — 문서>조>항>호>목, 동적 노드는 자리에 대신 선다)", () => {
-  it("문서 아래에는 조와 조건 블록만 선다", () => {
-    expect(allowedChildren.document).toEqual(["article", "condBlock"]);
+  it("문서 아래에는 조 · 관 · 조건 블록이 선다", () => {
+    expect(allowedChildren.document).toEqual(["article", "section", "condBlock"]);
   });
 
   it("조 아래에는 항 · 조건 블록 · 공용조항 block 참조 · 반복 블록이 선다 (조는 반복 본문에 못 들어간다)", () => {
-    expect(allowedChildren.article).toEqual(["paragraph", "condBlock", "clauseBlockRef", "forBlock"]);
+    expect(allowedChildren.article).toEqual(["paragraph", "condBlock", "clauseBlockRef", "forBlock", "table", "box"]);
     expect(allowedChildren.forBlock).not.toContain("article");
     expect(allowedChildren.forBlock).not.toContain("forBlock");
   });
@@ -31,7 +31,7 @@ describe("허용 자식 규칙 테이블 (ADR-0012 — 문서>조>항>호>목, �
   });
 
   it("호는 항의 items 에, 목은 호의 subitems 에 선다 (조건 블록도 그 자리에 설 수 있다)", () => {
-    expect(allowedListChildren["paragraph.items"]).toEqual(["item", "condBlock"]);
+    expect(allowedListChildren["paragraph.items"]).toEqual(["item", "condBlock", "table", "box"]);
     expect(allowedListChildren["item.subitems"]).toEqual(["subitem", "condBlock"]);
   });
 
@@ -263,5 +263,37 @@ describe("문면작성 S5 — 공용조항 게이트 (ClauseGate 주입)", () =>
     const b = make();
     const doc: DocumentNode = b.document("d", [b.article("소멸", [b.clauseBlock("C999", {})])]);
     expect(validateTree(doc)).toEqual([]);
+  });
+});
+
+describe("실물 재현 노드 (ADR-0029) — 관 · 정적 표 · 박스", () => {
+  it("관은 문서 직속, 조는 관 안에, 표·박스는 조 직속과 항의 목록 자리에 온다", () => {
+    expect(allowedChildren.document).toEqual(["article", "section", "condBlock"]);
+    expect(allowedChildren.section).toEqual(["article", "condBlock"]);
+    expect(allowedChildren.article).toContain("table");
+    expect(allowedChildren.article).toContain("box");
+    expect(allowedIn("paragraph", "items")).toEqual(["item", "condBlock", "table", "box"]);
+    expect(allowedIn("item", "subitems")).toEqual(["subitem", "condBlock"]);
+    expect(slotsOf("table")).toEqual([]);
+    expect(slotsOf("box")).toEqual([]);
+    expect(slotsOf("section")).toEqual(["children"]);
+  });
+
+  it("관 안의 조도 색인되고 표는 가장 가까운 조 id 를 갖는다", () => {
+    const b = make();
+    const table = b.table({ columns: [{}, {}], rows: [{ header: true, cells: ["용어", "정의"] }, { cells: ["계약자", "…"] }] });
+    const article = b.article("목적", [b.paragraph([b.text("본문")]), table]);
+    const doc = b.document("D", [b.section("목적 및 용어의 정의", [article])]);
+    const ix = indexTree(doc);
+    expect(ix.issues).toEqual([]);
+    expect(ix.nodes.get(table.id)?.articleId).toBe(article.id);
+    expect(ix.nodes.get(article.id)?.parentId).toBe(doc.children[0].id);
+  });
+
+  it("표를 문서 직속에 두면 구조 오류다", () => {
+    const b = make();
+    const table = b.table({ columns: [{}], rows: [] });
+    const doc = { ...b.document("D"), children: [table as unknown as ArticleNode] };
+    expect(indexTree(doc).issues.map((i) => i.message)).toEqual(["document 의 children 자리에 table 은(는) 올 수 없습니다"]);
   });
 });

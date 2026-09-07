@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Result } from "../types";
 import { nodeBuilders, sequentialIds } from "./builders";
 import { applyCommand, applyCommands, cloneTree, type Command } from "./commands";
-import { indexTree, type ArticleNode, type CondBlockNode, type DocumentNode, type ParagraphNode } from "./nodes";
+import { indexTree, type ArticleNode, type CondBlockNode, type DocumentNode, type ParagraphNode, type SectionNode } from "./nodes";
 
 function make() {
   return nodeBuilders(sequentialIds("n"));
@@ -319,5 +319,34 @@ describe("문서 복제 (D-P4-4) — cloneTree", () => {
     const a = copy.children[0] as ArticleNode;
     expect((a.children[0] as ParagraphNode).children).toMatchObject([{ targets: [{ nodeId: a.id }] }, { targets: [{ nodeId: "g1" }] }]);
     expect(a.linkedArticleId).toBe("g1");
+  });
+});
+
+describe("setTable · setBox · 관 제목 (ADR-0029)", () => {
+  it("표의 제목·열 너비·행을 통째로 바꾼다", () => {
+    const b = make();
+    const table = b.table({ columns: [{}], rows: [{ cells: ["a"] }] });
+    const doc = b.document("D", [b.article("조", [b.paragraph([b.text("x")]), table])]);
+    const saved = unwrap(applyCommand(doc, { type: "setTable", nodeId: table.id, title: "표 제목", columns: [{ width: 30 }, { width: 70 }], rows: [{ header: true, cells: ["용어", "정의"] }] }));
+    expect((saved.children[0] as ArticleNode).children[1]).toEqual({ id: table.id, kind: "table", title: "표 제목", columns: [{ width: 30 }, { width: 70 }], rows: [{ header: true, cells: ["용어", "정의"] }] });
+  });
+
+  it("행의 셀 수가 열 수와 다르면 거부한다", () => {
+    const b = make();
+    const table = b.table({ columns: [{}, {}], rows: [] });
+    const doc = b.document("D", [b.article("조", [table])]);
+    expect(rejection(applyCommand(doc, { type: "setTable", nodeId: table.id, columns: [{}, {}], rows: [{ cells: ["하나"] }] })).reason).toBe("invalid");
+  });
+
+  it("박스의 제목·줄을 바꾸고, setTitle 은 관 제목도 바꾼다", () => {
+    const b = make();
+    const box = b.box("용어", ["줄1"]);
+    const section = b.section("제1관", [b.article("조", [b.paragraph([]), box])]);
+    const doc = b.document("D", [section]);
+    const step1 = unwrap(applyCommand(doc, { type: "setBox", nodeId: box.id, title: "심신상실", lines: ["줄1", "줄2"] }));
+    const step2 = unwrap(applyCommand(step1, { type: "setTitle", nodeId: section.id, title: "목적 및 용어의 정의" }));
+    const savedSection = step2.children[0] as SectionNode;
+    expect(savedSection.title).toBe("목적 및 용어의 정의");
+    expect((savedSection.children[0] as ArticleNode).children[1]).toEqual({ id: box.id, kind: "box", title: "심신상실", lines: ["줄1", "줄2"] });
   });
 });

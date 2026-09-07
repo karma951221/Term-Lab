@@ -23,7 +23,7 @@ import type {
 } from "../clause/nodes";
 import { expandClause, resolveOptions } from "../clause/reference";
 import type { Clause, OptionSelection } from "../clause/types";
-import type { ArticleNode, ClauseBlockRefNode, CondBlockNode, DocumentNode, ForBlockNode, InlineNode, ItemNode, ParagraphNode, SubitemNode } from "../document/nodes";
+import type { ArticleNode, BoxNode, ClauseBlockRefNode, CondBlockNode, DocumentNode, ForBlockNode, InlineNode, ItemNode, ParagraphNode, SectionNode, SubitemNode, TableNode } from "../document/nodes";
 import { evaluate, parse } from "../expression";
 import type { Code, Coordinate, Id, Issue } from "../types";
 import type { AssemblyContext } from "./context";
@@ -51,7 +51,7 @@ type AnyCond = CondBlockNode | ClauseCondBlockNode;
 type AnySubitem = ClauseSubitemNode | SubitemNode;
 type AnyItem = ItemNode | ClauseItemNode;
 type AnyParagraph = ParagraphNode | ClauseParagraphNode;
-type AnyBlock = AnyParagraph | AnyCond | ClauseBlockRefNode | ForBlockNode | ClauseBlock | ItemNode | SubitemNode | ArticleNode;
+type AnyBlock = AnyParagraph | AnyCond | ClauseBlockRefNode | ForBlockNode | ClauseBlock | ItemNode | SubitemNode | ArticleNode | SectionNode | TableNode | BoxNode;
 /** 가지 — 블록·인라인·공용조항 쪽 모두 이 모양이다. children 은 자리에 맞게 캐스팅한다. */
 interface Branch {
   id: Id;
@@ -191,9 +191,10 @@ class Walker {
     };
   }
 
-  items(list: readonly (AnyItem | AnyCond)[], f: Frame): (RItem<RInline> | ErrorNode)[] {
+  items(list: readonly (AnyItem | AnyCond | TableNode | BoxNode)[], f: Frame): (RItem<RInline> | ErrorNode)[] {
     return list.flatMap((n) => {
       if (n.kind === "item") return [this.item(n, f)];
+      if (n.kind === "table" || n.kind === "box") return [this.error(n.id, { kind: "structure", message: "표·박스는 아직 조립하지 않습니다", at: this.at(f, n.id) })];
       const r = this.select(n.branches, f, n.id);
       if (r.kind === "error") return [this.error(n.id, r.issue)];
       if (r.kind === "none") return [];
@@ -246,6 +247,7 @@ class Walker {
 
   articles(list: DocumentNode["children"], f: Frame): (RArticle<RInline> | ErrorNode)[] {
     return list.flatMap((n): (RArticle<RInline> | ErrorNode)[] => {
+      if (n.kind === "section") return this.articles(n.children, { ...f, path: [...f.path, n.id] });
       if (n.kind === "article") {
         const inner: Frame = { path: [...f.path, n.id], articleId: n.id, articleTitle: n.title };
         return [

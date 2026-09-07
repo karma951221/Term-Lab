@@ -95,6 +95,36 @@ export type InlineNode =
   | AppendixRefNode
   | ClauseInlineRefNode;
 
+// ───────────────────────────── 실물 재현 노드 (ADR-0029) ─────────────────────────────
+
+/** 정적 표의 열 — 서식은 너비(%)뿐. */
+export interface TableColumn {
+  width?: number;
+}
+
+/** 정적 표의 행 — 제목줄 여부 + 셀 텍스트. 셀 수 = 열 수. */
+export interface TableRow {
+  header?: boolean;
+  cells: string[];
+}
+
+/** 정적 표 — 항·호 뒤에 붙는 번호 없는 블록. 동적(반복·조건 행)은 MVP 이후. */
+export interface TableNode {
+  id: Id;
+  kind: "table";
+  title?: string;
+  columns: TableColumn[];
+  rows: TableRow[];
+}
+
+/** 【용어풀이】 박스 — 제목 + 줄 목록. 번호 없음. */
+export interface BoxNode {
+  id: Id;
+  kind: "box";
+  title: string;
+  lines: string[];
+}
+
 // ───────────────────────────── 블록 ─────────────────────────────
 
 /** 목. */
@@ -117,7 +147,7 @@ export interface ParagraphNode {
   id: Id;
   kind: "paragraph";
   children: InlineNode[];
-  items?: (ItemNode | CondBlockNode)[];
+  items?: (ItemNode | CondBlockNode | TableNode | BoxNode)[];
 }
 
 /** 블록 조건의 가지. */
@@ -156,6 +186,14 @@ export interface ClauseBlockRefNode {
   excludeFromComparison?: boolean;
 }
 
+/** 관(款) — 제목 + 조 목록. 조 번호는 관을 넘어 문서 전역 연속이다 (ADR-0029). */
+export interface SectionNode {
+  id: Id;
+  kind: "section";
+  title: string;
+  children: (ArticleNode | CondBlockNode)[];
+}
+
 /** 조. 메타는 조 명 · 조연결뿐. */
 export interface ArticleNode {
   id: Id;
@@ -167,7 +205,10 @@ export interface ArticleNode {
 }
 
 export type BlockNode =
+  | SectionNode
   | ArticleNode
+  | TableNode
+  | BoxNode
   | ParagraphNode
   | ItemNode
   | SubitemNode
@@ -175,12 +216,12 @@ export type BlockNode =
   | ForBlockNode
   | ClauseBlockRefNode;
 
-/** 문서 루트. 자식은 조 또는 조 자리의 조건 블록. */
+/** 문서 루트. 자식은 조 · 관 · 조 자리의 조건 블록. */
 export interface DocumentNode {
   id: Id;
   kind: "document";
   title: string;
-  children: (ArticleNode | CondBlockNode)[];
+  children: (ArticleNode | SectionNode | CondBlockNode)[];
 }
 
 export type Node = DocumentNode | BlockNode | InlineNode;
@@ -196,8 +237,11 @@ const INLINE: readonly NodeKind[] = ["text", "slot", "inlineCond", "inlineFor", 
  * - 인라인 조건 안에 인라인 조건 없음, 반복 안에 반복 없음 (인라인 반복 안에는 인라인 조건도 두지 않는다).
  */
 export const allowedChildren: Record<NodeKind, readonly NodeKind[]> = {
-  document: ["article", "condBlock"],
-  article: ["paragraph", "condBlock", "clauseBlockRef", "forBlock"],
+  document: ["article", "section", "condBlock"],
+  section: ["article", "condBlock"],
+  article: ["paragraph", "condBlock", "clauseBlockRef", "forBlock", "table", "box"],
+  table: [],
+  box: [],
   paragraph: INLINE,
   item: INLINE,
   subitem: INLINE,
@@ -215,7 +259,7 @@ export const allowedChildren: Record<NodeKind, readonly NodeKind[]> = {
 
 /** 두 번째 목록 자리 — 항의 호 목록 · 호의 목 목록. 조건 블록도 그 자리에 설 수 있다. */
 export const allowedListChildren = {
-  "paragraph.items": ["item", "condBlock"],
+  "paragraph.items": ["item", "condBlock", "table", "box"],
   "item.subitems": ["subitem", "condBlock"],
 } as const satisfies Record<string, readonly NodeKind[]>;
 
@@ -236,6 +280,8 @@ export function slotsOf(kind: NodeKind): readonly SlotName[] {
     case "articleRef":
     case "appendixRef":
     case "clauseInlineRef":
+    case "table":
+    case "box":
       return [];
     default:
       return ["children"];

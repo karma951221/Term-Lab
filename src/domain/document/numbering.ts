@@ -155,7 +155,7 @@ export function numberTree(doc: DocumentNode, opts: NumberingOptions = {}): Map<
     for (const node of list) {
       if (node.kind === "condBlock") {
         for (const br of node.branches) if (!skip(br.id)) each(br.children, fn);
-      } else if (node.kind === "forBlock") {
+      } else if (node.kind === "forBlock" || node.kind === "section") {
         each(node.children, fn);
       } else {
         fn(node);

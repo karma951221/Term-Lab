@@ -462,6 +462,10 @@ function collectArticleIds(node: DocumentNode["children"][number], out: Set<Id>)
     out.add(node.id);
     return;
   }
+  if (node.kind === "section") {
+    for (const c of node.children) collectArticleIds(c, out);
+    return;
+  }
   for (const br of node.branches) {
     for (const c of br.children) {
       if (c.kind === "article" || c.kind === "condBlock") collectArticleIds(c, out);
