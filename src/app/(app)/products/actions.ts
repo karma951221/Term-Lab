@@ -39,7 +39,7 @@ export async function setAppendixOrderAction(productId: Id, formData: FormData):
     .filter((s) => s !== "");
   const r = await getServices().product.setAppendixOrder(actor, productId, codes);
   if (!r.ok) redirect(errorRedirectPath(`/products/${productId}`, describeRejection(r.rejection).message));
-  redirect(`/products/${productId}#appendices`);
+  redirect(`/products/${productId}`);
 }
 
 export async function renameProductAction(id: Id, formData: FormData): Promise<void> {
