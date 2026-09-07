@@ -178,7 +178,7 @@ export async function listAttached(db: Db, owner: ValueOwner): Promise<Code[]> {
     .select({ code: entityAttachments.discriminatorCode })
     .from(entityAttachments)
     .where(and(eq(entityAttachments.ownerKind, owner.kind), eq(entityAttachments.ownerId, owner.id)))
-    .orderBy(asc(entityAttachments.createdAt), asc(entityAttachments.id));
+    .orderBy(asc(entityAttachments.createdAt), asc(entityAttachments.discriminatorCode));
   return rows.map((r) => r.code);
 }
 

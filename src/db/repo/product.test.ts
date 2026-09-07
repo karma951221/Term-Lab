@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { eq } from "drizzle-orm";
+
+import { productCoverages, productPlans } from "../schema";
 import { createTestDb, type TestDb } from "../test-utils";
 import * as repo from "./product";
 
@@ -77,4 +80,33 @@ describe("product repo (PGlite) — 스키마 · 채번 · 매핑", () => {
       ["benefit", "급부", true],
     ]);
   });
+
+  it("세목 목록은 createdAt 이 같아도 조합 키 순으로 안정 정렬된다", async () => {
+    const product = await repo.insertProduct(t.db, { name: "정렬 안정성 — 세목" }, who);
+    const keys = ["K8", "K3", "K6", "K1", "K9", "K4", "K7", "K2"];
+    const idOf = new Map<string, string>();
+    for (const [i, key] of keys.entries()) {
+      // 세목 하나는 축마다 선택지 하나 — 조합이 비면 insertPlan 이 빈 values() 로 실패한다.
+      const option = await repo.insertPlanOption(t.db, product.id, { axis: "type", number: i + 1, name: `제${i + 1}종`, planTypeCode: "D0002" }, who);
+      idOf.set(key, (await repo.insertPlan(t.db, product.id, key, [option.id], who)).id);
+    }
+    // createdAt 을 강제로 동률로 만든다 — PGlite 에서 실제로 82% 확률로 일어나는 상황이다.
+    await t.db.update(productPlans).set({ createdAt: new Date("2026-09-08T00:00:00.000Z") }).where(eq(productPlans.productId, product.id));
+    expect((await repo.listPlans(t.db, product.id)).map((p) => p.id)).toEqual([...keys].sort().map((k) => idOf.get(k)));
+  });
+
+  it("탑재 목록은 createdAt 이 같아도 조합 키 순으로 안정 정렬된다", async () => {
+    const product = await repo.insertProduct(t.db, { name: "정렬 안정성 — 탑재" }, who);
+    const order = [8, 3, 6, 1, 9, 4, 7, 2];
+    for (const n of order) {
+      await repo.insertProductCoverage(
+        t.db,
+        { productId: product.id, coverageId: "44444444-4444-4444-8444-444444444444", coverageName: `담보${n}`, name: `담보${n}`, combinationKey: `K${n}`, attributes: [] },
+        who,
+      );
+    }
+    await t.db.update(productCoverages).set({ createdAt: new Date("2026-09-08T00:00:00.000Z") }).where(eq(productCoverages.productId, product.id));
+    expect((await repo.listProductCoverages(t.db, product.id)).map((c) => c.name)).toEqual([...order].sort().map((n) => `담보${n}`));
+  });
+
 });

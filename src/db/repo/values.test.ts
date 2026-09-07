@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { entityAttachments } from "../schema";
 import { createTestDb, type TestDb } from "../test-utils";
 import {
   attach,
@@ -82,4 +83,17 @@ describe("entity_values — 실체 × 구분자 값 자리 (공용 값 저장소
     await detach(t.db, cov, "D0005");
     expect(await listAttached(t.db, cov)).toEqual(["D0006"]);
   });
+
+  it("부착 목록은 createdAt 이 같아도 구분자 코드 순으로 안정 정렬된다", async () => {
+    // PGlite 는 인프로세스라 연속 삽입이 같은 createdAt 을 받는 일이 잦다(측정 82%).
+    // 그때 tiebreaker 가 무작위 id 면 순서가 매번 뒤집힌다 — 코드 순으로 고정한다.
+    const owner: ValueOwner = { kind: "coverage", id: "33333333-3333-4333-8333-333333333333" };
+    const createdAt = new Date("2026-09-08T00:00:00.000Z");
+    const codes = ["D0008", "D0003", "D0006", "D0001", "D0009", "D0004", "D0007", "D0002"];
+    await t.db
+      .insert(entityAttachments)
+      .values(codes.map((discriminatorCode) => ({ ownerKind: owner.kind, ownerId: owner.id, discriminatorCode, createdAt })));
+    expect(await listAttached(t.db, owner)).toEqual([...codes].sort());
+  });
+
 });

@@ -266,7 +266,7 @@ export async function loadPlan(db: Db, id: Id): Promise<ProductPlan | undefined>
 }
 
 export async function listPlans(db: Db, productId: Id): Promise<ProductPlan[]> {
-  const rows = await db.select().from(productPlans).where(eq(productPlans.productId, productId)).orderBy(asc(productPlans.createdAt), asc(productPlans.id));
+  const rows = await db.select().from(productPlans).where(eq(productPlans.productId, productId)).orderBy(asc(productPlans.createdAt), asc(productPlans.key));
   return plansWithOptions(db, rows);
 }
 
@@ -331,7 +331,7 @@ export async function coverageNameOf(db: Db, id: Id): Promise<string | undefined
 }
 
 export async function listProductCoverages(db: Db, productId: Id): Promise<ProductCoverage[]> {
-  const rows = await db.select().from(productCoverages).where(eq(productCoverages.productId, productId)).orderBy(asc(productCoverages.createdAt), asc(productCoverages.id));
+  const rows = await db.select().from(productCoverages).where(eq(productCoverages.productId, productId)).orderBy(asc(productCoverages.createdAt), asc(productCoverages.combinationKey));
   const attrs = await attributesOf(db, rows.map((r) => r.id));
   return rows.map((r) => toCoverage(r, attrs.get(r.id) ?? []));
 }
