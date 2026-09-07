@@ -52,6 +52,14 @@ const eslintConfig = defineConfig([
     },
   },
 
+  // Playwright fixture 의 `use` 는 React Hook 이 아니다 — 이름만 같아서 규칙이 오인한다.
+  {
+    files: ["tests/e2e/**/*.ts"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+    },
+  },
+
   globalIgnores([
     ".next/**",
     "out/**",
