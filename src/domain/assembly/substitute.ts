@@ -13,6 +13,7 @@ import { evaluate, parse, type ValueRef } from "../expression";
 import type { Code, Coordinate, FieldType, Issue, Value } from "../types";
 import type { AssemblyContext } from "./context";
 import type { ErrorNode, RArticle, RInline, RItem, RParagraph, ResolvedDoc, RSubitem, SInline, SubstitutedDoc } from "./types";
+import { mapArticles } from "./walk";
 
 export interface SubstituteEnv {
   catalog: ReadonlyMap<Code, Discriminator>;
@@ -118,18 +119,17 @@ class Substituter {
       kind: "paragraph",
       id: n.id,
       children: this.inlines(n.children),
-      ...(n.items ? { items: n.items.map((it) => (it.kind === "error" ? it : this.item(it))) } : {}),
+      ...(n.items ? { items: n.items.map((it) => (it.kind === "item" ? this.item(it) : it)) } : {}),
       ...(n.excludeFromComparison ? { excludeFromComparison: true } : {}),
     };
   }
 
   article(n: RArticle<RInline>): RArticle<SInline> {
-    return { ...n, children: n.children.map((p) => (p.kind === "error" ? p : this.paragraph(p))) };
+    return { ...n, children: n.children.map((p) => (p.kind === "paragraph" ? this.paragraph(p) : p)) };
   }
 }
 
 export function substituteSlots(doc: ResolvedDoc, ctx: AssemblyContext, env: SubstituteEnv): SubstituteOutcome {
   const s = new Substituter(ctx, env);
-  const children = doc.children.map((a) => (a.kind === "error" ? a : s.article(a)));
-  return { doc: { ...doc, children }, issues: s.issues };
+  return { doc: mapArticles(doc, (a) => s.article(a)), issues: s.issues };
 }

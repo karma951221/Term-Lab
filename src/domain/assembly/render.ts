@@ -9,7 +9,7 @@
  */
 
 import type { Appendix } from "../document/appendix";
-import { appendixRefLabel, articleLabel, itemLabel, paragraphLabel, referenceTargetLabel, subitemLabel, type ReferenceTarget } from "../document/numbering";
+import { appendixRefLabel, articleLabel, itemLabel, paragraphLabel, referenceTargetLabel, sectionLabel, subitemLabel, type ReferenceTarget } from "../document/numbering";
 import type { Code, Coordinate, Id, Issue } from "../types";
 import type {
   BookletAppendix,
@@ -21,29 +21,34 @@ import type {
   RenderedInline,
   RenderedItem,
   RenderedParagraph,
+  RenderedSection,
   RenderedSubitem,
+  RArticle,
   RItem,
   RParagraph,
   RSubitem,
   SInline,
   SubstitutedDoc,
 } from "./types";
+import { articlesOf } from "./walk";
 
 // ───────────────────────────── 6. 번호 ─────────────────────────────
 
 export function numberDocument(doc: SubstitutedDoc): NumberedDoc {
   const numbers = new Map<Id, NumberedNode>();
   let article = 0;
-  for (const a of doc.children) {
-    if (a.kind === "error") continue;
+  let section = 0;
+  const one = (a: RArticle<SInline>): void => {
     numbers.set(a.id, { n: ++article, label: articleLabel(article) });
     let paragraph = 0;
+    let lastParagraph: Id | undefined;
     for (const p of a.children) {
-      if (p.kind === "error") continue;
+      if (p.kind !== "paragraph") continue;
       numbers.set(p.id, { n: ++paragraph, label: paragraphLabel(paragraph) });
+      lastParagraph = p.id;
       let item = 0;
       for (const it of p.items ?? []) {
-        if (it.kind === "error") continue;
+        if (it.kind !== "item") continue;
         numbers.set(it.id, { n: ++item, label: itemLabel(item) });
         let subitem = 0;
         for (const s of it.subitems ?? []) {
@@ -52,6 +57,15 @@ export function numberDocument(doc: SubstitutedDoc): NumberedDoc {
         }
       }
     }
+    // 항이 하나뿐인 조는 마커를 찍지 않는다 (ADR-0029 — 실물의 단항 조는 전부 번호 없음)
+    if (paragraph === 1 && lastParagraph !== undefined) numbers.set(lastParagraph, { n: 1, label: "" });
+  };
+  for (const c of doc.children) {
+    if (c.kind === "error") continue;
+    if (c.kind === "section") {
+      numbers.set(c.id, { n: ++section, label: sectionLabel(section) });
+      for (const a of c.children) if (a.kind === "article") one(a);
+    } else one(c);
   }
   return { doc, numbers };
 }
@@ -59,13 +73,12 @@ export function numberDocument(doc: SubstitutedDoc): NumberedDoc {
 // ───────────────────────────── 8. 별표 수집 ─────────────────────────────
 
 function* inlinesOf(doc: SubstitutedDoc): Generator<SInline> {
-  for (const a of doc.children) {
-    if (a.kind === "error") continue;
+  for (const a of articlesOf(doc)) {
     for (const p of a.children) {
-      if (p.kind === "error") continue;
+      if (p.kind !== "paragraph") continue;
       yield* p.children;
       for (const it of p.items ?? []) {
-        if (it.kind === "error") continue;
+        if (it.kind !== "item") continue;
         yield* it.children;
         for (const s of it.subitems ?? []) if (s.kind !== "error") yield* s.children;
       }
@@ -109,20 +122,19 @@ export interface RenderOutcome {
 
 function targetIndex(d: NumberedDoc | undefined): Map<Id, ReferenceTarget> {
   const out = new Map<Id, ReferenceTarget>();
-  for (const a of d?.doc.children ?? []) {
-    if (a.kind === "error") continue;
+  for (const a of d ? articlesOf(d.doc) : []) {
     const articleNumber = d!.numbers.get(a.id);
     if (!articleNumber) continue;
     const article = { id: a.id, n: articleNumber.n, title: a.title };
     out.set(a.id, { kind: "article", article });
     for (const p of a.children) {
-      if (p.kind === "error") continue;
+      if (p.kind !== "paragraph") continue;
       const paragraphNumber = d!.numbers.get(p.id);
       if (!paragraphNumber) continue;
       const paragraph = { id: p.id, n: paragraphNumber.n };
       out.set(p.id, { kind: "paragraph", article, paragraph });
       for (const it of p.items ?? []) {
-        if (it.kind === "error") continue;
+        if (it.kind !== "item") continue;
         const itemNumber = d!.numbers.get(it.id);
         if (!itemNumber) continue;
         const item = { id: it.id, n: itemNumber.n };
@@ -211,11 +223,19 @@ class Renderer {
         for (const target of n.targets) {
           let info = n.scope === "self" || this.env.document === "general" ? this.self.get(target.nodeId) : this.general.get(target.nodeId);
           if (!info && n.scope === "self") {
+            // 별칭 — 생략된 특약 조(→ 보통약관 조) 또는 대치된 기본계약 조(→ 이 문서의 보통약관 조).
             const alias = this.env.aliases?.get(target.nodeId);
             if (alias) {
-              info = this.general.get(alias);
-              generalPrefix = true;
-              previous = undefined;
+              const own = this.self.get(alias);
+              if (own) {
+                info = own;
+              } else {
+                info = this.general.get(alias);
+                if (info) {
+                  generalPrefix = true;
+                  previous = undefined;
+                }
+              }
             }
           }
           if (!info) {
@@ -262,7 +282,19 @@ class Renderer {
       id: n.id,
       ...this.number(n.id),
       children: n.children.map((c) => this.inline(c, this.self.get(n.id)!)),
-      ...(n.items ? { items: n.items.map((it) => (it.kind === "error" ? it : this.item(it))) } : {}),
+      ...(n.items ? { items: n.items.map((it) => (it.kind === "item" ? this.item(it) : it)) } : {}),
+    };
+  }
+
+  article(a: RArticle<SInline>): RenderedArticle {
+    return {
+      kind: "article",
+      id: a.id,
+      ...this.number(a.id),
+      title: a.title,
+      ...(a.linkedArticleId !== undefined ? { linkedArticleId: a.linkedArticleId } : {}),
+      // 정적 표·박스는 그대로 (ADR-0029)
+      children: a.children.map((p) => (p.kind === "paragraph" ? this.paragraph(p) : p)),
     };
   }
 
@@ -274,16 +306,12 @@ class Renderer {
       document: this.env.document,
       ownerId: this.env.ownerId,
       title: doc.title,
-      children: doc.children.map((a): RenderedArticle | ErrorNode => {
-        if (a.kind === "error") return a;
-        return {
-          kind: "article",
-          id: a.id,
-          ...this.number(a.id),
-          title: a.title,
-          ...(a.linkedArticleId !== undefined ? { linkedArticleId: a.linkedArticleId } : {}),
-          children: a.children.map((p) => (p.kind === "error" ? p : this.paragraph(p))),
-        };
+      children: doc.children.map((c): RenderedArticle | RenderedSection | ErrorNode => {
+        if (c.kind === "error") return c;
+        if (c.kind === "section") {
+          return { kind: "section", id: c.id, ...this.number(c.id), title: c.title, children: c.children.map((a) => (a.kind === "error" ? a : this.article(a))) };
+        }
+        return this.article(c);
       }),
     };
   }

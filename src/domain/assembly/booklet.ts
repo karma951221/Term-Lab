@@ -25,6 +25,7 @@ import { collectAppendices, locateIssues, numberDocument, renderDocument } from 
 import { resolveDocument } from "./resolve";
 import { substituteSlots } from "./substitute";
 import type { AssemblyCoverage, AssemblyInput, Booklet, NumberedDoc, OmissionRecord, RenderedDoc, RenderedGroup, SpecialPreview, SubstitutedDoc, UndocumentedCoverage } from "./types";
+import { articlesOf } from "./walk";
 
 // ───────────────────────────── 공통 ─────────────────────────────
 
@@ -55,6 +56,8 @@ interface Built {
   numbered: NumberedDoc;
   issues: Issue[];
   omitted: OmissionRecord[];
+  /** 보통약관: 대치된 기본계약 조 id → 보통약관 조 id (렌더의 자기 참조 해소). */
+  aliases?: ReadonlyMap<Id, Id>;
 }
 
 interface Prepared {
@@ -114,16 +117,18 @@ function buildGeneral(input: AssemblyInput, contexts: AssemblyContexts, s: Share
     const ctx = base && contexts.specials.get(base.snapshot.id);
     if (base && doc && ctx) {
       const basePrepared = prepare(doc, ctx, s, { coordinate: specialCoordinate(base), overrides: base.overrides, ...prepareCoordinates(input, doc, base) });
-      const replacedArticleIds = new Set(basePrepared.doc.children.flatMap((node) => (node.kind === "article" && node.linkedArticleId ? [node.linkedArticleId] : [])));
+      const replacedArticleIds = new Set(articlesOf(basePrepared.doc).flatMap((node) => (node.linkedArticleId ? [node.linkedArticleId] : [])));
       // 대치될 보통약관 본문은 실행 경로가 아니다. 먼저 비운 뒤 해소해야 사라질 슬롯의 오류·조회 흔적이 남지 않는다.
-      const generalSource: DocumentNode = {
-        ...g,
-        children: g.children.map((node) => (node.kind === "article" && replacedArticleIds.has(node.id) ? { ...node, children: [] } : node)),
+      const emptyReplaced = (node: DocumentNode["children"][number]): DocumentNode["children"][number] => {
+        if (node.kind === "article") return replacedArticleIds.has(node.id) ? { ...node, children: [] } : node;
+        if (node.kind === "section") return { ...node, children: node.children.map((c) => (c.kind === "article" && replacedArticleIds.has(c.id) ? { ...c, children: [] } : c)) };
+        return node;
       };
+      const generalSource: DocumentNode = { ...g, children: g.children.map(emptyReplaced) };
       const generalPrepared = prepare(generalSource, contexts.general, s, { coordinate: generalCoordinate(input.product), overrides: input.product.overrides, ...prepareCoordinates(input, g) });
       const replaced = replaceGeneralWithBase(generalPrepared.doc, basePrepared.doc, { productCoverageId: base.snapshot.id, productCoverageName: base.snapshot.name });
       const replacementIssues = replaced.issues.map((issue) => ({ ...issue, source: { document: "coverageMaster" as const, ownerId: doc.id, ownerName: base.snapshot.coverageName, articleId: issue.at.articleId, articleTitle: issue.at.articleTitle, nodePath: issue.at.articleId ? [doc.id, issue.at.articleId] : undefined } }));
-      return { numbered: numberDocument(replaced.doc), issues: [...generalPrepared.issues, ...basePrepared.issues, ...replacementIssues], omitted: [] };
+      return { numbered: numberDocument(replaced.doc), issues: [...generalPrepared.issues, ...basePrepared.issues, ...replacementIssues], omitted: [], aliases: replaced.aliases };
     }
   }
   const prepared = prepare(g, contexts.general, s, { coordinate: generalCoordinate(input.product), overrides: input.product.overrides, ...prepareCoordinates(input, g) });
@@ -217,7 +222,7 @@ export function assemble(input: AssemblyInput): Booklet {
   // 7. 참조 해소 + 렌더 (책자 순으로 issues 를 모은다)
   let renderedGeneral: RenderedDoc | undefined;
   if (general) {
-    const r = renderDocument(general.numbered, { document: "general", ownerId: generalCoordinate(input.product).ownerId!, appendices });
+    const r = renderDocument(general.numbered, { document: "general", ownerId: generalCoordinate(input.product).ownerId!, appendices, aliases: general.aliases });
     renderedGeneral = r.doc;
     issues.push(...locateIssues(general.issues, general.numbered), ...r.issues);
   }
@@ -259,7 +264,7 @@ export function assembleSpecial(input: AssemblyInput, productCoverageId: Id): Re
   const issues: Issue[] = [];
   let renderedGeneral: RenderedDoc | undefined;
   if (general) {
-    const r = renderDocument(general.numbered, { document: "general", ownerId: generalCoordinate(input.product).ownerId!, appendices });
+    const r = renderDocument(general.numbered, { document: "general", ownerId: generalCoordinate(input.product).ownerId!, appendices, aliases: general.aliases });
     renderedGeneral = r.doc;
     issues.push(...locateIssues(general.issues, general.numbered), ...r.issues);
   }

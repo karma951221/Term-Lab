@@ -35,7 +35,7 @@ describe("참조 슬롯 렌더", () => {
     };
     const result = renderDocument(numberDocument(doc), { document: "special", ownerId: "pc", general: numberDocument(general()), appendices: [] });
     const article = result.doc.children[0];
-    if (article.kind === "error" || article.children[0].kind === "error") throw new Error("unexpected error");
+    if (article.kind !== "article" || article.children[0].kind !== "paragraph") throw new Error("unexpected error");
     expect(article.children[0].children[0]).toMatchObject({ label: "보통약관 제1조(해약환급금) 제1항 및 제2항" });
   });
 
@@ -59,7 +59,7 @@ describe("참조 슬롯 렌더", () => {
     };
     const result = renderDocument(numberDocument(doc), { document: "special", ownerId: "pc", appendices: [] });
     const article = result.doc.children[0];
-    if (article.kind === "error" || article.children[0].kind === "error") throw new Error("unexpected error");
+    if (article.kind !== "article" || article.children[0].kind !== "paragraph") throw new Error("unexpected error");
     expect(article.children[0].children[0]).toMatchObject({ label: "제2호, 제2항 또는 제2조(둘째 조) 제1항" });
   });
 
@@ -73,7 +73,7 @@ describe("참조 슬롯 렌더", () => {
     const result = renderDocument(numberDocument(doc), { document: "special", ownerId: "pc", appendices: [] });
     expect(result.issues.map((issue) => issue.at.refPath)).toEqual(["gone-1", "gone-2"]);
     const article = result.doc.children[0];
-    if (article.kind === "error" || article.children[0].kind === "error") throw new Error("unexpected structural error");
+    if (article.kind !== "article" || article.children[0].kind !== "paragraph") throw new Error("unexpected structural error");
     expect(article.children[0].children).toHaveLength(1);
     expect(article.children[0].children[0].kind).toBe("error");
   });
@@ -87,7 +87,7 @@ describe("참조 슬롯 렌더", () => {
     };
     const result = renderDocument(numberDocument(doc), { document: "special", ownerId: "pc", general: numberDocument(general()), aliases: new Map([["omitted", "g-a"]]), appendices: [] });
     const article = result.doc.children[0];
-    if (article.kind === "error" || article.children[0].kind === "error") throw new Error("unexpected error");
+    if (article.kind !== "article" || article.children[0].kind !== "paragraph") throw new Error("unexpected error");
     expect(article.children[0].children[0]).toMatchObject({ label: "보통약관 제1조(해약환급금)" });
   });
 });

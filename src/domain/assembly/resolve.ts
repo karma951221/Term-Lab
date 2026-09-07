@@ -27,7 +27,7 @@ import type { ArticleNode, BoxNode, ClauseBlockRefNode, CondBlockNode, DocumentN
 import { evaluate, parse } from "../expression";
 import type { Code, Coordinate, Id, Issue } from "../types";
 import type { AssemblyContext } from "./context";
-import type { ErrorNode, RArticle, RInline, RItem, RParagraph, ResolvedDoc, RSubitem } from "./types";
+import type { ErrorNode, RArticle, RInline, RItem, RParagraph, ResolvedDoc, RSection, RStatic, RSubitem } from "./types";
 
 export interface ResolveEnv {
   clauses: ReadonlyMap<Code, Clause>;
@@ -191,14 +191,20 @@ class Walker {
     };
   }
 
-  items(list: readonly (AnyItem | AnyCond | TableNode | BoxNode)[], f: Frame): (RItem<RInline> | ErrorNode)[] {
-    return list.flatMap((n) => {
+  /** 정적 표·박스 — 그대로 통과한다 (ADR-0029). */
+  static(n: TableNode | BoxNode): RStatic {
+    if (n.kind === "table") return { kind: "table", id: n.id, ...(n.title !== undefined ? { title: n.title } : {}), columns: n.columns, rows: n.rows };
+    return { kind: "box", id: n.id, title: n.title, lines: n.lines };
+  }
+
+  items(list: readonly (AnyItem | AnyCond | TableNode | BoxNode)[], f: Frame): (RItem<RInline> | RStatic | ErrorNode)[] {
+    return list.flatMap((n): (RItem<RInline> | RStatic | ErrorNode)[] => {
       if (n.kind === "item") return [this.item(n, f)];
-      if (n.kind === "table" || n.kind === "box") return [this.error(n.id, { kind: "structure", message: "표·박스는 아직 조립하지 않습니다", at: this.at(f, n.id) })];
+      if (n.kind === "table" || n.kind === "box") return [this.static(n)];
       const r = this.select(n.branches, f, n.id);
       if (r.kind === "error") return [this.error(n.id, r.issue)];
       if (r.kind === "none") return [];
-      return this.items(r.branch.children as (AnyItem | AnyCond)[], { ...f, path: [...f.path, n.id, r.branch.id] });
+      return this.items(r.branch.children as (AnyItem | AnyCond | TableNode | BoxNode)[], { ...f, path: [...f.path, n.id, r.branch.id] });
     });
   }
 
@@ -214,12 +220,15 @@ class Walker {
   }
 
   /** 조 안의 블록 자리 — 항 · 조건 블록 · 공용조항 block 참조 · 반복 블록. */
-  blocks(list: readonly AnyBlock[], f: Frame, excludeFromComparison = false): (RParagraph<RInline> | ErrorNode)[] {
-    return list.flatMap((n): (RParagraph<RInline> | ErrorNode)[] => {
+  blocks(list: readonly AnyBlock[], f: Frame, excludeFromComparison = false): (RParagraph<RInline> | RStatic | ErrorNode)[] {
+    return list.flatMap((n): (RParagraph<RInline> | RStatic | ErrorNode)[] => {
       const at = this.at(f, n.id);
       switch (n.kind) {
         case "paragraph":
           return [this.paragraph(n, f, excludeFromComparison)];
+        case "table":
+        case "box":
+          return [this.static(n)];
         case "condBlock": {
           const r = this.select(n.branches, f, n.id);
           if (r.kind === "error") return [this.error(n.id, r.issue)];
@@ -245,21 +254,32 @@ class Walker {
     });
   }
 
-  articles(list: DocumentNode["children"], f: Frame): (RArticle<RInline> | ErrorNode)[] {
+  /** 관 안의 조 (조건 블록 투명). 관은 조 자리에 다시 올 수 없다. */
+  articlesIn(list: readonly (ArticleNode | CondBlockNode)[], f: Frame): (RArticle<RInline> | ErrorNode)[] {
     return list.flatMap((n): (RArticle<RInline> | ErrorNode)[] => {
-      if (n.kind === "section") return this.articles(n.children, { ...f, path: [...f.path, n.id] });
-      if (n.kind === "article") {
-        const inner: Frame = { path: [...f.path, n.id], articleId: n.id, articleTitle: n.title };
-        return [
-          {
-            kind: "article",
-            id: n.id,
-            title: n.title,
-            ...(n.linkedArticleId !== undefined ? { linkedArticleId: n.linkedArticleId } : {}),
-            children: this.blocks(n.children, inner),
-          },
-        ];
-      }
+      if (n.kind === "article") return [this.article(n, f)];
+      const r = this.select(n.branches, f, n.id);
+      if (r.kind === "error") return [this.error(n.id, r.issue)];
+      if (r.kind === "none") return [];
+      return this.articlesIn(r.branch.children as (ArticleNode | CondBlockNode)[], { ...f, path: [...f.path, n.id, r.branch.id] });
+    });
+  }
+
+  article(n: ArticleNode, f: Frame): RArticle<RInline> {
+    const inner: Frame = { path: [...f.path, n.id], articleId: n.id, articleTitle: n.title };
+    return {
+      kind: "article",
+      id: n.id,
+      title: n.title,
+      ...(n.linkedArticleId !== undefined ? { linkedArticleId: n.linkedArticleId } : {}),
+      children: this.blocks(n.children, inner),
+    };
+  }
+
+  articles(list: DocumentNode["children"], f: Frame): (RArticle<RInline> | RSection<RInline> | ErrorNode)[] {
+    return list.flatMap((n): (RArticle<RInline> | RSection<RInline> | ErrorNode)[] => {
+      if (n.kind === "section") return [{ kind: "section", id: n.id, title: n.title, children: this.articlesIn(n.children, { ...f, path: [...f.path, n.id] }) }];
+      if (n.kind === "article") return [this.article(n, f)];
       const r = this.select(n.branches, f, n.id);
       if (r.kind === "error") return [this.error(n.id, r.issue)];
       if (r.kind === "none") return [];

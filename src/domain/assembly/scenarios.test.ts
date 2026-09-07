@@ -22,7 +22,7 @@ function lines(doc: RenderedDoc): string[] {
       continue;
     }
     out.push(`${a.label}(${a.title})`);
-    for (const p of a.children) out.push(p.kind === "error" ? `  ⟦${p.issue.kind}⟧` : `  ${p.label} ${inline(p.children)}`);
+    for (const p of a.children) out.push(p.kind === "error" ? `  ⟦${p.issue.kind}⟧` : p.kind !== "paragraph" ? `  [${p.kind}]` : `  ${p.label} ${inline(p.children)}`);
   }
   return out;
 }
@@ -173,8 +173,8 @@ describe("조립오류 S3 — 미사용 담보속성 참조 (exist 가드 없음
 
   it("가드 없는 `attr.A0001 = 'V02'` — 「갱신형 수술비」는 true, 「수술비」(미사용)는 unusedAttribute 오류 + 좌표", () => {
     const { booklet, doc } = docsOf(withSurgery(coverages(), {}, attrDoc("attr.A0001 = 'V02'")));
-    expect(lines(doc("pc-renew"))[1]).toBe("  ① 회사는 최초계약일 이후 수술을 보장합니다.");
-    expect(lines(doc("pc-surgery"))[1]).toBe("  ① 회사는 ⟦unusedAttribute⟧ 이후 수술을 보장합니다.");
+    expect(lines(doc("pc-renew"))[1]).toBe("   회사는 최초계약일 이후 수술을 보장합니다.");
+    expect(lines(doc("pc-surgery"))[1]).toBe("   회사는 ⟦unusedAttribute⟧ 이후 수술을 보장합니다.");
     expect(booklet.issues).toHaveLength(1);
     expect(booklet.issues[0]).toMatchObject({ kind: "unusedAttribute", at: { ownerId: "pc-surgery", articleId: "a-art", nodePath: ["a-doc", "a-art", "a-par", "a-cond", "a-if"], refPath: "attr.A0001" } });
     expect(booklet.complete).toBe(false);
@@ -182,8 +182,8 @@ describe("조립오류 S3 — 미사용 담보속성 참조 (exist 가드 없음
 
   it("`exist(attr.A0001) and attr.A0001 = 'V02'` 로 고치면 「수술비」는 분기를 건너뛰고 오류 없음", () => {
     const { booklet, doc } = docsOf(withSurgery(coverages(), {}, attrDoc("exist(attr.A0001) and attr.A0001 = 'V02'")));
-    expect(lines(doc("pc-surgery"))[1]).toBe("  ① 회사는 계약일 이후 수술을 보장합니다.");
-    expect(lines(doc("pc-renew"))[1]).toBe("  ① 회사는 최초계약일 이후 수술을 보장합니다.");
+    expect(lines(doc("pc-surgery"))[1]).toBe("   회사는 계약일 이후 수술을 보장합니다.");
+    expect(lines(doc("pc-renew"))[1]).toBe("   회사는 최초계약일 이후 수술을 보장합니다.");
     expect(booklet.issues).toEqual([]);
   });
 });
@@ -198,19 +198,19 @@ describe("조립오류 S4 — 분기로 사라진 조를 가리키는 조 참조
   it("「갱신형 수술비」 — 보험기간 조가 살아 제2조가 되고 참조는 「제2조(보험기간)」, 이후 조 번호가 밀린다", () => {
     expect(lines(doc("pc-renew"))).toEqual([
       "제1조(보험금의 지급사유)",
-      "  ① 회사는 피보험자가 최초계약일 이후 수술을 받은 경우 평균공시이율 2.5% 를 적용하여 보험금을 지급합니다. 보험기간은 제2조(보험기간)",
+      "   회사는 피보험자가 최초계약일 이후 수술을 받은 경우 평균공시이율 2.5% 를 적용하여 보험금을 지급합니다. 보험기간은 제2조(보험기간)",
       "제2조(보험기간)",
-      "  ① 이 특별약관의 보험기간은 갱신형입니다.",
+      "   이 특별약관의 보험기간은 갱신형입니다.",
       "제3조(특별약관의 소멸)",
       "  ① 이 특별약관은 다음의 경우 소멸합니다.",
       "  ② 이 특별약관은 피보험자가 사망한 때 소멸합니다.",
       "제4조(준용규정)",
-      "  ① 이 특별약관에서 정하지 않은 사항은 보통약관 제2조(보험금의 지급사유) 및 이 특별약관 제1조(보험금의 지급사유) · 【별표2(화상 분류표)】 을 따릅니다. 이 약관에서 정하지 않은 사항은 보통약관을 따릅니다. 갱신형 계약은 갱신 특칙을 우선합니다.",
+      "   이 특별약관에서 정하지 않은 사항은 보통약관 제2조(보험금의 지급사유) 및 이 특별약관 제1조(보험금의 지급사유) · 【별표2(화상 분류표)】 을 따릅니다. 이 약관에서 정하지 않은 사항은 보통약관을 따릅니다. 갱신형 계약은 갱신 특칙을 우선합니다.",
     ]);
   });
 
   it("「수술비」 — 대상 조가 분기로 꺼져 articleGone 마커 + 좌표, 나머지 참조는 어긋나지 않는다", () => {
-    expect(lines(doc("pc-surgery"))[1]).toBe("  ① 회사는 피보험자가 계약일 이후 수술을 받은 경우 평균공시이율 2.5% 를 적용하여 보험금을 지급합니다. 보험기간은 ⟦articleGone⟧");
+    expect(lines(doc("pc-surgery"))[1]).toBe("   회사는 피보험자가 계약일 이후 수술을 받은 경우 평균공시이율 2.5% 를 적용하여 보험금을 지급합니다. 보험기간은 ⟦articleGone⟧");
     expect(lines(doc("pc-surgery"))[2]).toBe("제2조(특별약관의 소멸)");
     expect(lines(doc("pc-surgery"))[6]).toContain("보통약관 제2조(보험금의 지급사유) 및 이 특별약관 제1조(보험금의 지급사유) · 【별표2(화상 분류표)】");
     expect(kinds(booklet.issues)).toEqual(["articleGone"]);
@@ -264,8 +264,8 @@ describe("조립오류 S6 — 생략 자동 판정: 리터럴 비교 · 탑재�
 
   it("같은 공용조항을 참조 → 「수술비」는 보통약관 조와 동일해 생략, 「갱신형 수술비」는 갱신 문구가 붙어 유지 (탑재분별 판정)", () => {
     const { booklet, doc } = build(viaClause);
-    expect(lines(doc("pc-surgery")).map((l) => l.split("(")[0])).toEqual(["제1조", "  ① 수술을 보장합니다."]);
-    expect(lines(doc("pc-renew"))).toEqual(["제1조(보험금의 지급사유)", "  ① 수술을 보장합니다.", "제2조(준용규정)", "  ① 이 약관에서 정하지 않은 사항은 보통약관을 따릅니다. 갱신형 계약은 갱신 특칙을 우선합니다."]);
+    expect(lines(doc("pc-surgery")).map((l) => l.split("(")[0])).toEqual(["제1조", "   수술을 보장합니다."]);
+    expect(lines(doc("pc-renew"))).toEqual(["제1조(보험금의 지급사유)", "   수술을 보장합니다.", "제2조(준용규정)", "   이 약관에서 정하지 않은 사항은 보통약관을 따릅니다. 갱신형 계약은 갱신 특칙을 우선합니다."]);
     expect(booklet.omitted.map((record) => [record.productCoverageId, record.disposition]).sort()).toEqual([
       ["pc-renew", "full"],
       ["pc-surgery", "omitted"],
@@ -368,7 +368,7 @@ describe("그룹핑별표 S3·S4 — 참조된 별표만 · 번호는 책자 등
       ["APX_DISABILITY", 2],
     ]);
     expect(b.appendices[0].firstAt).toMatchObject({ document: "special", ownerId: "pc-burn" });
-    expect(lines(b.specials[0].docs[0])[1]).toBe("  ① 화상의 분류는 【별표1(화상 분류표)】");
+    expect(lines(b.specials[0].docs[0])[1]).toBe("   화상의 분류는 【별표1(화상 분류표)】");
   });
 
   it("상품 B — 배치가 뒤바뀌면 같은 별표의 번호가 달라진다 · 본문 슬롯도 그 번호를 찍는다", () => {
@@ -377,7 +377,7 @@ describe("그룹핑별표 S3·S4 — 참조된 별표만 · 번호는 책자 등
       ["APX_DISABILITY", 1],
       ["APX_BURN", 2],
     ]);
-    expect(lines(b.specials[1].docs[0])[1]).toBe("  ① 화상의 분류는 【별표2(화상 분류표)】");
+    expect(lines(b.specials[1].docs[0])[1]).toBe("   화상의 분류는 【별표2(화상 분류표)】");
   });
 
   it("별표 마스터에 없는 코드는 brokenRef 마커 (참조 무결성)", () => {
@@ -407,7 +407,7 @@ describe("ADR-0011 — 기본계약을 지정하지 않아도 오류를 남기�
     const paragraph = basePay.children[0] as ParagraphNode;
     paragraph.children = [{ id: "changed", kind: "text", text: "변경된 기본계약 지급사유입니다." }];
     const b = assemble(input);
-    expect(lines(b.general!)[3]).toBe("  ① 변경된 기본계약 지급사유입니다.");
+    expect(lines(b.general!)[3]).toBe("   변경된 기본계약 지급사유입니다.");
     expect(b.complete).toBe(true);
   });
 
@@ -449,8 +449,8 @@ describe("ADR-0017 — 공용조항 옵션 해소: 오버라이드 > 마스터, 
 
   it("상품담보 오버라이드가 마스터 선택을 이긴다 — 「기본」만 일반 문구, 「추가」는 마스터대로", () => {
     const { doc, booklet } = withOptions({ O01: "V02" }, { O01: "V01" });
-    expect(lines(doc("pc-basic"))[6]).toBe("  ① 이 특별약관은 보험기간이 끝난 때 소멸합니다.");
-    expect(lines(doc("pc-addon"))[6]).toBe("  ① 이 특별약관은 피보험자가 사망한 때 소멸합니다.");
+    expect(lines(doc("pc-basic"))[6]).toBe("   이 특별약관은 보험기간이 끝난 때 소멸합니다.");
+    expect(lines(doc("pc-addon"))[6]).toBe("   이 특별약관은 피보험자가 사망한 때 소멸합니다.");
     expect(booklet.complete).toBe(true);
   });
 

@@ -27,7 +27,7 @@
 import type { Discriminator, EnumDef, SlotPath } from "../catalog/types";
 import type { Clause } from "../clause/types";
 import type { Appendix } from "../document/appendix";
-import type { DocumentNode } from "../document/nodes";
+import type { DocumentNode, TableColumn, TableRow } from "../document/nodes";
 import type { AttributeKind, ClauseOptionOverride, ProductCoverageSnapshot, ProductPlan, SpecialGroup } from "../product/types";
 import type { Code, Coordinate, Id, Issue, ValueSlot } from "../types";
 
@@ -123,6 +123,23 @@ export type RInline = RText | RSlot | RArticleRef | RAppendixRef | ErrorNode;
 /** 치환 단계(SubstitutedDoc)의 인라인 노드 — 슬롯이 사라졌다. */
 export type SInline = Exclude<RInline, RSlot>;
 
+/** 정적 표 — 조립 단계를 그대로 통과한다 (ADR-0029). 셀에는 슬롯이 없다. */
+export interface RTable {
+  kind: "table";
+  id: Id;
+  title?: string;
+  columns: TableColumn[];
+  rows: TableRow[];
+}
+/** 【용어풀이】 박스 — 조립 단계를 그대로 통과한다. */
+export interface RBox {
+  kind: "box";
+  id: Id;
+  title: string;
+  lines: string[];
+}
+export type RStatic = RTable | RBox;
+
 export interface RSubitem<I> {
   kind: "subitem";
   id: Id;
@@ -138,7 +155,7 @@ export interface RParagraph<I> {
   kind: "paragraph";
   id: Id;
   children: I[];
-  items?: (RItem<I> | ErrorNode)[];
+  items?: (RItem<I> | RStatic | ErrorNode)[];
   /** 보통약관의 block 공용조항 참조에서 펼쳐져 자동 판정 비교 대상에서 빠지는 항. */
   excludeFromComparison?: boolean;
 }
@@ -147,13 +164,20 @@ export interface RArticle<I> {
   id: Id;
   title: string;
   linkedArticleId?: Id;
-  children: (RParagraph<I> | ErrorNode)[];
+  children: (RParagraph<I> | RStatic | ErrorNode)[];
+}
+/** 관 — 제목 + 조 목록. 번호는 계산값. */
+export interface RSection<I> {
+  kind: "section";
+  id: Id;
+  title: string;
+  children: (RArticle<I> | ErrorNode)[];
 }
 export interface RDoc<I> {
   kind: "document";
   id: Id;
   title: string;
-  children: (RArticle<I> | ErrorNode)[];
+  children: (RArticle<I> | RSection<I> | ErrorNode)[];
 }
 
 export type ResolvedDoc = RDoc<RInline>;
@@ -212,13 +236,16 @@ export interface RenderedItem {
   children: RenderedInline[];
   subitems?: (RenderedSubitem | ErrorNode)[];
 }
+/** 정적 표·박스는 렌더 결과에서도 같은 모양이다. */
+export type RenderedStatic = RStatic;
 export interface RenderedParagraph {
   kind: "paragraph";
   id: Id;
   number: number;
+  /** 항이 하나뿐인 조에서는 빈 문자열 (마커 생략 — ADR-0029). */
   label: string;
   children: RenderedInline[];
-  items?: (RenderedItem | ErrorNode)[];
+  items?: (RenderedItem | RenderedStatic | ErrorNode)[];
 }
 export interface RenderedArticle {
   kind: "article";
@@ -228,7 +255,16 @@ export interface RenderedArticle {
   label: string;
   title: string;
   linkedArticleId?: Id;
-  children: (RenderedParagraph | ErrorNode)[];
+  children: (RenderedParagraph | RenderedStatic | ErrorNode)[];
+}
+export interface RenderedSection {
+  kind: "section";
+  id: Id;
+  number: number;
+  /** 「제N관」 */
+  label: string;
+  title: string;
+  children: (RenderedArticle | ErrorNode)[];
 }
 
 /** 조립 결과 문서 — 순수 데이터 문서트리 (스냅샷 테스트 대상). */
@@ -239,7 +275,7 @@ export interface RenderedDoc {
   document: "general" | "special";
   ownerId: Id;
   title: string;
-  children: (RenderedArticle | ErrorNode)[];
+  children: (RenderedArticle | RenderedSection | ErrorNode)[];
 }
 
 export interface RenderedGroup {

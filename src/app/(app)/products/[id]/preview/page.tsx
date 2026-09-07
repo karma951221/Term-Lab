@@ -9,7 +9,13 @@ export const dynamic = "force-dynamic";
 
 /** 조 수 — 오류 마커 노드는 조가 아니므로 빼고 센다. */
 function articleCount(doc: RenderedDocType | undefined): number {
-  return doc ? doc.children.filter((c) => c.kind === "article").length : 0;
+  if (!doc) return 0;
+  let n = 0;
+  for (const c of doc.children) {
+    if (c.kind === "article") n += 1;
+    else if (c.kind === "section") n += c.children.filter((a) => a.kind === "article").length;
+  }
+  return n;
 }
 
 export default async function ProductPreviewPage({ params }: { params: Promise<{ id: string }> }) {
