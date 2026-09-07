@@ -9,7 +9,8 @@ export interface StaticTableShape {
   id: string;
   title?: string;
   columns: { width?: number }[];
-  rows: { header?: boolean; cells: string[] }[];
+  /** 셀은 인라인 노드를 그린 결과다 — 표 안의 조·별표 참조도 계산 번호로 찍힌다 (ADR-0029). */
+  rows: { header?: boolean; cells: ReactNode[] }[];
 }
 
 export interface StaticBoxShape {

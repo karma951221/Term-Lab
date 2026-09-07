@@ -35,7 +35,16 @@ const doc: RenderedDoc = {
                 { kind: "text", id: "t2", text: "를 따른다." },
               ],
             },
-            { kind: "table", id: "tb", title: "용어", columns: [{}, {}], rows: [{ header: true, cells: ["용어", "정의"] }, { cells: ["계약자", "사람"] }] },
+            {
+              kind: "table",
+              id: "tb",
+              title: "용어",
+              columns: [{}, {}],
+              rows: [
+                { header: true, cells: [[{ kind: "text", id: "h1", text: "용어" }], [{ kind: "text", id: "h2", text: "정의" }]] },
+                { cells: [[{ kind: "text", id: "c1", text: "계약자" }], [{ kind: "text", id: "c2", text: "사람" }]] },
+              ],
+            },
             { kind: "box", id: "bx", title: "심신상실", lines: ["정신병"] },
           ],
         },

@@ -19,7 +19,7 @@ import { indexTree, validateTree } from "../../src/domain/document/nodes";
 import type { Id } from "../../src/domain/types";
 import { APPENDICES, FIXTURE_DIR, GENERAL, SEED_DIR, SPECIALS, type SlotOverlay, type SpecialSpec } from "./config";
 import { parseTerms, type ParsedArticle, type ParsedDoc } from "./parse";
-import { inlinesFromText, type ArticleEntry, type ArticleIndex, type RefEnv } from "./refs";
+import { inlinesFromText, leftoverReferences, type ArticleEntry, type ArticleIndex, type RefEnv } from "./refs";
 
 const root = process.cwd();
 const read = (file: string) => readFileSync(path.join(root, FIXTURE_DIR, file), "utf8");
@@ -31,6 +31,11 @@ interface Built {
   index: ArticleIndex;
   /** 조 id → 원문 번호 (슬롯 오버레이가 조를 찾을 때). */
   numberOf: Map<Id, string>;
+}
+
+/** 표 셀을 인라인 노드로 — 1차에서는 평문 텍스트 하나, 2차(convertText)가 참조를 슬롯으로 바꾼다. */
+function textCell(id: Id, text: string): InlineNode[] {
+  return [{ id, kind: "text", text }];
 }
 
 /** 1차 — 구조 노드. 텍스트는 아직 평문(text 노드 하나)으로 둔다. */
@@ -81,9 +86,10 @@ function buildStructure(doc: ParsedDoc, prefix: string, title: string, articleFi
               kind: "table",
               ...(line.title !== undefined ? { title: line.title } : {}),
               columns: Array.from({ length: Math.max(1, ...line.rows.map((r) => r.cells.length)) }, () => ({})),
-              rows: line.rows.map((r) => {
+              rows: line.rows.map((r, ri) => {
                 const width = Math.max(1, ...line.rows.map((x) => x.cells.length));
-                return { ...(r.header ? { header: true } : {}), cells: [...r.cells, ...Array<string>(width - r.cells.length).fill("")] };
+                const cells = [...r.cells, ...Array<string>(width - r.cells.length).fill("")];
+                return { ...(r.header ? { header: true } : {}), cells: cells.map((text, ci) => textCell(`${aid}-t${staticSeq}-r${ri}c${ci}`, text)) };
               }),
             }
           : { id: `${aid}-b${staticSeq}`, kind: "box", title: line.title, lines: line.lines };
@@ -123,13 +129,46 @@ function convertText(built: Built, general: ArticleIndex | undefined, report: st
       const text = owner.children.map((n) => (n.kind === "text" ? n.text : "")).join("");
       owner.children = inlinesFromText(text, env, newId);
     };
+    // 표 셀 — 조·별표 참조를 슬롯으로 (번호는 계산값이므로 평문으로 굳히지 않는다)
+    for (const c of a.children) {
+      if (c.kind !== "table") continue;
+      c.rows.forEach((row, ri) =>
+        row.cells.forEach((cell, ci) => {
+          const text = cell.map((n) => (n.kind === "text" ? n.text : "")).join("");
+          let seq = 0;
+          row.cells[ci] = inlinesFromText(text, { ...env, currentParagraphId: undefined }, () => `${c.id}-r${ri}c${ci}-x${++seq}`);
+        }),
+      );
+    }
     for (const p of a.children) {
       if (p.kind !== "paragraph") continue;
+      env.currentParagraphId = p.id;
       convert(p);
       for (const it of p.items ?? []) {
         if (it.kind !== "item") continue;
         convert(it);
         for (const u of it.subitems ?? []) if (u.kind === "subitem") convert(u);
+      }
+    }
+  }
+}
+
+/** 변환 뒤에도 텍스트로 남은 참조 모양 평문 — 법령 인용은 제외한다 (변환 누락 감시). */
+function reportLeftovers(built: Built, label: string, report: string[]): void {
+  for (const a of articlesOf(built.tree)) {
+    const walk = (owner: { children: InlineNode[] }) => {
+      for (const n of owner.children) {
+        if (n.kind !== "text") continue;
+        for (const found of leftoverReferences(n.text)) report.push(`${label} 조 「${a.title}」 에 조 참조 평문이 남음: ${found}…`);
+      }
+    };
+    for (const p of a.children) {
+      if (p.kind !== "paragraph") continue;
+      walk(p);
+      for (const it of p.items ?? []) {
+        if (it.kind !== "item") continue;
+        walk(it);
+        for (const u of it.subitems ?? []) if (u.kind === "subitem") walk(u);
       }
     }
   }
@@ -194,6 +233,7 @@ function main(): void {
   const generalParsed = parseTerms(read(GENERAL.file));
   const general = buildStructure(generalParsed, GENERAL.idPrefix, generalParsed.title);
   convertText(general, undefined, report);
+  reportLeftovers(general, "[보통약관]", report);
   for (const a of articlesOf(general.tree)) {
     if (GENERAL.emptyArticles.includes(general.numberOf.get(a.id) ?? "")) a.children = [];
   }
@@ -244,6 +284,7 @@ function buildSpecial(spec: SpecialSpec, generalParsed: ParsedDoc, general: Buil
     convertText(built, general.index, report);
   }
   applySlots(built, spec.slots, report);
+  reportLeftovers(built, `[${spec.code}]`, report);
   issues.push(...validate(built.tree, "special", general.tree).map((l) => `${spec.code}: ${l}`));
   return built.tree;
 }

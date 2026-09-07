@@ -19,11 +19,13 @@ import { randomIds } from "./builders";
 import {
   allowedIn,
   branchesOf,
+  cellNodesOf,
   checkNodeRefs,
   coordinateOf,
   indexTree,
   listOf,
   slotsOf,
+  tableIssues,
   type ArticleRefNode,
   type BlockBranch,
   type BlockNode,
@@ -61,7 +63,8 @@ export type Command =
   | { type: "setTitle"; nodeId: Id; title: string }
   | { type: "setSlotRef"; nodeId: Id; ref: string }
   /** 정적 표의 제목·열·행을 통째로 바꾼다. 셀 수 = 열 수. */
-  | { type: "setTable"; nodeId: Id; title?: string; columns: TableColumn[]; rows: TableRow[] }
+  /** 표 — 제목·열은 항상, 행은 주면 통째로 바꾼다(셀은 텍스트). 참조 슬롯이 든 표는 행을 주지 않고 제목·너비만 고친다. */
+  | { type: "setTable"; nodeId: Id; title?: string; columns: TableColumn[]; rows?: { header?: boolean; cells: string[] }[] }
   | { type: "setBox"; nodeId: Id; title: string; lines: string[] }
   | { type: "setArticleRef"; nodeId: Id; targets: { nodeId: Id }[]; connector: string; scope: ArticleRefNode["scope"] }
   | { type: "setAppendixRef"; nodeId: Id; appendixCode: Code }
@@ -109,6 +112,7 @@ function idsIn(node: Node): Set<Id> {
       return;
     }
     for (const slot of slotsOf(n.kind)) listOf(n, slot)?.forEach(walk);
+    cellNodesOf(n).forEach(walk);
   };
   walk(node);
   return out;
@@ -125,6 +129,7 @@ function nodesIn(node: Node): Node[] {
       return;
     }
     for (const slot of slotsOf(n.kind)) listOf(n, slot)?.forEach(walk);
+    cellNodesOf(n).forEach(walk);
   };
   walk(node);
   return out;
@@ -228,6 +233,7 @@ function cloneSubtree<T extends Node>(root: T, newId: IdSource): T {
       return;
     }
     for (const slot of slotsOf(n.kind)) listOf(n, slot)?.forEach(relabel);
+    cellNodesOf(n).forEach(relabel);
   };
   relabel(copy);
   for (const n of nodesIn(copy)) {
@@ -334,14 +340,25 @@ export function applyCommand(doc: DocumentNode, cmd: Command, opts: ApplyOptions
       const e = entryOf(ix, cmd.nodeId);
       if (!e.ok) return e;
       if (e.value.node.kind !== "table") return structure("표가 아닌 노드에는 표 내용을 넣을 수 없습니다", e.value.path);
-      if (cmd.columns.length === 0) return structure("표에는 열이 하나 이상 있어야 합니다", e.value.path);
-      const bad = cmd.rows.findIndex((row) => row.cells.length !== cmd.columns.length);
-      if (bad >= 0) return structure(`${bad + 1}번째 행의 셀 수(${cmd.rows[bad].cells.length})가 열 수(${cmd.columns.length})와 다릅니다`, e.value.path);
       const node = e.value.node as TableNode;
+      let columns = cmd.columns.map((c) => (c.width !== undefined ? { width: c.width } : {}));
+      // 행을 그대로 두는 편집(제목·너비만)에서는 열 수를 기존 행에 맞춘다
+      if (!cmd.rows && node.rows.length > 0) {
+        const width = node.rows[0].cells.length;
+        columns = Array.from({ length: width }, (_x, i) => columns[i] ?? {});
+      }
+      const rows: TableRow[] = cmd.rows
+        ? cmd.rows.map((row, ri) => ({
+            ...(row.header ? { header: true } : {}),
+            cells: row.cells.map((text, ci): InlineNode[] => [{ id: `${node.id}-r${ri}c${ci}`, kind: "text", text }]),
+          }))
+        : node.rows;
+      const issues = tableIssues({ ...node, columns, rows });
+      if (issues.length > 0) return structure(issues[0], e.value.path);
       delete node.title;
       if (cmd.title !== undefined && cmd.title !== "") node.title = cmd.title;
-      node.columns = cmd.columns.map((c) => (c.width !== undefined ? { width: c.width } : {}));
-      node.rows = cmd.rows.map((r) => ({ ...(r.header ? { header: true } : {}), cells: [...r.cells] }));
+      node.columns = columns;
+      node.rows = rows;
       return ok(work);
     }
 

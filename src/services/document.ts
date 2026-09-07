@@ -431,7 +431,8 @@ export function createDocumentService(db: Db, deps: DocumentServiceDeps = {}): D
           computeImpact: async (): Promise<Impact> => ({
             valueRowsLost: 0,
             brokenRefs: await documentUsages(tx, id),
-            cascade: loaded!.tree.children.filter((c) => c.kind === "article").map((c) => `조 ${(c as { title: string }).title}`),
+            // 관·조건 블록 안의 조까지 센다 — 실물 보통약관은 모든 조가 관 아래에 있다 (2026-09-08 리뷰 7)
+            cascade: collectArticleTitles(loaded!.tree).map((title) => `조 ${title}`),
           }),
           execute: async () => {
             await repo.deleteDocument(tx, id);
@@ -470,6 +471,13 @@ export function createDocumentService(db: Db, deps: DocumentServiceDeps = {}): D
         }),
       ),
   };
+}
+
+/** 관·조건 블록(중첩 포함) 안의 조 제목을 등장 순으로 모은다 — 삭제 영향도 표시용. */
+function collectArticleTitles(node: DocumentNode | DocumentNode["children"][number]): string[] {
+  if (node.kind === "article") return [node.title];
+  if (node.kind === "section" || node.kind === "document") return node.children.flatMap(collectArticleTitles);
+  return node.branches.flatMap((branch) => (branch.children as DocumentNode["children"]).flatMap(collectArticleTitles));
 }
 
 /** 조건 블록(중첩 포함) 안의 조 id 를 모은다. */

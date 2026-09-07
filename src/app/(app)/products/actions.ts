@@ -38,8 +38,10 @@ export async function setAppendixOrderAction(productId: Id, formData: FormData):
     .map((s) => s.trim())
     .filter((s) => s !== "");
   const r = await getServices().product.setAppendixOrder(actor, productId, codes);
-  if (!r.ok) redirect(errorRedirectPath(`/products/${productId}`, describeRejection(r.rejection).message));
-  redirect(`/products/${productId}`);
+  // 성공·실패 모두 별표 목록 자리로 돌아온다. 해시만 바뀌면 서버 데이터를 다시 받지 않으므로 쿼리를 함께 바꾼다.
+  const back = `/products/${productId}?saved=appendices#appendices`;
+  if (!r.ok) redirect(errorRedirectPath(`/products/${productId}#appendices`, describeRejection(r.rejection).message));
+  redirect(back);
 }
 
 export async function renameProductAction(id: Id, formData: FormData): Promise<void> {

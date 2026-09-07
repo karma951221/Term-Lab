@@ -22,7 +22,7 @@ function staticLines(n: RenderedStatic): string[] {
   const out = ["```표", `제목: ${n.title ?? "(없음)"}`];
   let separated = false;
   for (const row of n.rows) {
-    out.push(`|${row.cells.join("|")}|`);
+    out.push(`|${row.cells.map(inlineText).join("|")}|`);
     if (row.header && !separated) {
       out.push(separator);
       separated = true;
@@ -49,13 +49,17 @@ function articleLines(a: RenderedArticle): string[] {
     }
     out.push(`${marker} ${inlineText(c.children)}`);
     for (const it of c.items ?? []) {
-      if (it.kind === "error") continue;
+      // 오류 노드는 어느 자리에 있든 흘리지 않는다 — 대조가 오류를 못 본 채 통과하면 안 된다 (2026-09-08 리뷰 9)
+      if (it.kind === "error") {
+        out.push(`  - ⟦${it.issue.kind}⟧`);
+        continue;
+      }
       if (it.kind !== "item") {
         out.push(...staticLines(it));
         continue;
       }
       out.push(`  - ${inlineText(it.children)}`);
-      for (const s of it.subitems ?? []) if (s.kind === "subitem") out.push(`    - ${inlineText(s.children)}`);
+      for (const s of it.subitems ?? []) out.push(s.kind === "subitem" ? `    - ${inlineText(s.children)}` : `    - ⟦${s.issue.kind}⟧`);
     }
   }
   return out;
@@ -65,10 +69,13 @@ function articleLines(a: RenderedArticle): string[] {
 export function renderedToLines(doc: RenderedDoc): string[] {
   const out: string[] = [];
   for (const c of doc.children) {
-    if (c.kind === "error") continue;
+    if (c.kind === "error") {
+      out.push(`## ⟦${c.issue.kind}⟧`);
+      continue;
+    }
     if (c.kind === "section") {
       out.push(`# ${c.label} ${c.title}`);
-      for (const a of c.children) if (a.kind === "article") out.push(...articleLines(a));
+      for (const a of c.children) out.push(...(a.kind === "article" ? articleLines(a) : [`## ⟦${a.issue.kind}⟧`]));
     } else {
       out.push(...articleLines(c));
     }

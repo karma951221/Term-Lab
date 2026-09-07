@@ -27,7 +27,7 @@
 import type { Discriminator, EnumDef, SlotPath } from "../catalog/types";
 import type { Clause } from "../clause/types";
 import type { Appendix } from "../document/appendix";
-import type { DocumentNode, TableColumn, TableRow } from "../document/nodes";
+import type { DocumentNode, TableColumn } from "../document/nodes";
 import type { AttributeKind, ClauseOptionOverride, ProductCoverageSnapshot, ProductPlan, SpecialGroup } from "../product/types";
 import type { Code, Coordinate, Id, Issue, ValueSlot } from "../types";
 
@@ -125,13 +125,13 @@ export type RInline = RText | RSlot | RArticleRef | RAppendixRef | ErrorNode;
 /** 치환 단계(SubstitutedDoc)의 인라인 노드 — 슬롯이 사라졌다. */
 export type SInline = Exclude<RInline, RSlot>;
 
-/** 정적 표 — 조립 단계를 그대로 통과한다 (ADR-0029). 셀에는 슬롯이 없다. */
-export interface RTable {
+/** 정적 표 — 셀은 인라인 노드 목록이라 슬롯·참조가 단계마다 함께 해소된다 (ADR-0029). */
+export interface RTable<I> {
   kind: "table";
   id: Id;
   title?: string;
   columns: TableColumn[];
-  rows: TableRow[];
+  rows: { header?: boolean; cells: I[][] }[];
 }
 /** 【용어풀이】 박스 — 조립 단계를 그대로 통과한다. */
 export interface RBox {
@@ -140,7 +140,7 @@ export interface RBox {
   title: string;
   lines: string[];
 }
-export type RStatic = RTable | RBox;
+export type RStatic<I> = RTable<I> | RBox;
 
 export interface RSubitem<I> {
   kind: "subitem";
@@ -157,7 +157,7 @@ export interface RParagraph<I> {
   kind: "paragraph";
   id: Id;
   children: I[];
-  items?: (RItem<I> | RStatic | ErrorNode)[];
+  items?: (RItem<I> | RStatic<I> | ErrorNode)[];
   /** 보통약관의 block 공용조항 참조에서 펼쳐져 자동 판정 비교 대상에서 빠지는 항. */
   excludeFromComparison?: boolean;
 }
@@ -166,7 +166,7 @@ export interface RArticle<I> {
   id: Id;
   title: string;
   linkedArticleId?: Id;
-  children: (RParagraph<I> | RStatic | ErrorNode)[];
+  children: (RParagraph<I> | RStatic<I> | ErrorNode)[];
 }
 /** 관 — 제목 + 조 목록. 번호는 계산값. */
 export interface RSection<I> {
@@ -239,7 +239,7 @@ export interface RenderedItem {
   subitems?: (RenderedSubitem | ErrorNode)[];
 }
 /** 정적 표·박스는 렌더 결과에서도 같은 모양이다. */
-export type RenderedStatic = RStatic;
+export type RenderedStatic = RStatic<RenderedInline>;
 export interface RenderedParagraph {
   kind: "paragraph";
   id: Id;

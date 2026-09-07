@@ -281,7 +281,7 @@ describe("실물 재현 노드 (ADR-0029) — 관 · 정적 표 · 박스", () =
 
   it("관 안의 조도 색인되고 표는 가장 가까운 조 id 를 갖는다", () => {
     const b = make();
-    const table = b.table({ columns: [{}, {}], rows: [{ header: true, cells: ["용어", "정의"] }, { cells: ["계약자", "…"] }] });
+    const table = b.textTable({ columns: [{}, {}], rows: [{ header: true, cells: ["용어", "정의"] }, { cells: ["계약자", "…"] }] });
     const article = b.article("목적", [b.paragraph([b.text("본문")]), table]);
     const doc = b.document("D", [b.section("목적 및 용어의 정의", [article])]);
     const ix = indexTree(doc);
@@ -292,7 +292,7 @@ describe("실물 재현 노드 (ADR-0029) — 관 · 정적 표 · 박스", () =
 
   it("표를 문서 직속에 두면 구조 오류다", () => {
     const b = make();
-    const table = b.table({ columns: [{}], rows: [] });
+    const table = b.textTable({ columns: [{}], rows: [] });
     const doc = { ...b.document("D"), children: [table as unknown as ArticleNode] };
     expect(indexTree(doc).issues.map((i) => i.message)).toEqual(["document 의 children 자리에 table 은(는) 올 수 없습니다"]);
   });

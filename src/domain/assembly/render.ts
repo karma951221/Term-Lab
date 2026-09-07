@@ -1,5 +1,5 @@
 /**
- * 6·7·8단계 — 번호 계산 · 별표 수집 · 참조 슬롯 해소.
+ * 조립 파이프라인의 7·9·10단계 (booklet.ts 머리의 순서와 같다) — 번호 계산 · 별표 번호 · 참조 슬롯 해소.
  *
  * - `numberDocument`  : 남은 노드에 조·항·호·목 번호 (표기는 document/numbering 의 임시 규칙 재사용). 오류 마커는 번호를 먹지 않는다.
  * - `collectAppendices`: 상품 별표 목록의 순서가 곧 번호 (ADR-0030). 목록에 없는 별표 참조는 brokenRef 마커.
@@ -21,8 +21,10 @@ import type {
   RenderedItem,
   RenderedParagraph,
   RenderedSection,
+  RenderedStatic,
   RenderedSubitem,
   RArticle,
+  RStatic,
   RItem,
   RParagraph,
   RSubitem,
@@ -31,7 +33,7 @@ import type {
 } from "./types";
 import { articlesOf } from "./walk";
 
-// ───────────────────────────── 6. 번호 ─────────────────────────────
+// ───────────────────────────── 7. 번호 ─────────────────────────────
 
 export function numberDocument(doc: SubstitutedDoc): NumberedDoc {
   const numbers = new Map<Id, NumberedNode>();
@@ -69,7 +71,7 @@ export function numberDocument(doc: SubstitutedDoc): NumberedDoc {
   return { doc, numbers };
 }
 
-// ───────────────────────────── 8. 별표 번호 (ADR-0030) ─────────────────────────────
+// ───────────────────────────── 9. 별표 번호 (ADR-0030) ─────────────────────────────
 
 /**
  * 상품 별표 목록 순서대로 번호 1..n. 참조되지 않은 별표도 번호를 차지한다.
@@ -80,7 +82,7 @@ export function collectAppendices(order: readonly Code[], master: readonly Appen
   return order.map((code, index) => ({ code, name: byCode.get(code)?.name ?? "(없는 별표)", number: index + 1 }));
 }
 
-// ───────────────────────────── 7. 참조 해소 + 렌더 ─────────────────────────────
+// ───────────────────────────── 10. 참조 해소 + 렌더 ─────────────────────────────
 
 export interface RenderEnv {
   document: "general" | "special";
@@ -256,13 +258,19 @@ class Renderer {
     };
   }
 
+  /** 표 셀의 조·별표 참조도 계산 번호로 찍는다. 박스는 텍스트뿐이라 그대로. */
+  static(n: RStatic<SInline>, source: ReferenceTarget): RenderedStatic {
+    if (n.kind === "box") return n;
+    return { ...n, rows: n.rows.map((row) => ({ ...row, cells: row.cells.map((cell) => cell.map((c) => this.inline(c, source))) })) };
+  }
+
   paragraph(n: RParagraph<SInline>): RenderedParagraph {
     return {
       kind: "paragraph",
       id: n.id,
       ...this.number(n.id),
       children: n.children.map((c) => this.inline(c, this.self.get(n.id)!)),
-      ...(n.items ? { items: n.items.map((it) => (it.kind === "item" ? this.item(it) : it)) } : {}),
+      ...(n.items ? { items: n.items.map((it) => (it.kind === "item" ? this.item(it) : it.kind === "error" ? it : this.static(it, this.self.get(n.id)!))) } : {}),
     };
   }
 
@@ -273,8 +281,7 @@ class Renderer {
       ...this.number(a.id),
       title: a.title,
       ...(a.linkedArticleId !== undefined ? { linkedArticleId: a.linkedArticleId } : {}),
-      // 정적 표·박스는 그대로 (ADR-0029)
-      children: a.children.map((p) => (p.kind === "paragraph" ? this.paragraph(p) : p)),
+      children: a.children.map((p) => (p.kind === "paragraph" ? this.paragraph(p) : p.kind === "error" ? p : this.static(p, this.self.get(a.id)!))),
     };
   }
 

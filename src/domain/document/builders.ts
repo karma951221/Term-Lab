@@ -53,6 +53,14 @@ export function nodeBuilders(newId: IdSource = randomIds) {
       rows: input.rows,
     }),
     box: (title: string, lines: string[] = []): BoxNode => ({ id: newId(), kind: "box", title, lines }),
+    /** 텍스트만 있는 표 — 셀 문자열을 텍스트 노드로 감싼다 (편집기·테스트용). */
+    textTable: (input: { title?: string; columns: TableColumn[]; rows: { header?: boolean; cells: string[] }[] }): TableNode => ({
+      id: newId(),
+      kind: "table",
+      ...(input.title !== undefined ? { title: input.title } : {}),
+      columns: input.columns,
+      rows: input.rows.map((row) => ({ ...(row.header ? { header: true } : {}), cells: row.cells.map((text): InlineNode[] => [{ id: newId(), kind: "text", text }]) })),
+    }),
     article: (title: string, children: BlockNode[] = [], opts: { linkedArticleId?: Id } = {}): ArticleNode => ({
       id: newId(),
       kind: "article",

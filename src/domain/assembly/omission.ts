@@ -30,13 +30,16 @@ function inline(n: SInline): string {
 const inlines = (list: readonly SInline[]) => list.map(inline).join("");
 const err = (n: ErrorNode) => `e(${n.id})`;
 const subitem = (n: RSubitem<SInline> | ErrorNode) => (n.kind === "error" ? err(n) : `목[${inlines(n.children)}]`);
-/** 정적 표·박스 — 항과 같은 한 단위로 비교한다 (ADR-0029). */
-const stat = (n: RStatic) =>
+/**
+ * 정적 표·박스 — 항과 같은 한 단위로 비교한다 (ADR-0029).
+ * 표는 **열 수·너비까지** 포함한다 — 같은 글자라도 서식이 다르면 다른 조다 (2026-09-08 리뷰 6).
+ */
+const stat = (n: RStatic<SInline>) =>
   n.kind === "table"
-    ? `표[${n.title ?? ""}|${n.rows.map((r) => `${r.header ? "h" : ""}${r.cells.join("¦")}`).join("‖")}]`
+    ? `표[${n.title ?? ""}|${n.columns.map((c) => c.width ?? "-").join("·")}|${n.rows.map((r) => `${r.header ? "h" : ""}${r.cells.map(inlines).join("¦")}`).join("‖")}]`
     : `박스[${n.title}|${n.lines.join("‖")}]`;
-const item = (n: RItem<SInline> | RStatic | ErrorNode) => (n.kind === "error" ? err(n) : n.kind !== "item" ? stat(n) : `호[${inlines(n.children)}${(n.subitems ?? []).map(subitem).join("")}]`);
-const paragraph = (n: RParagraph<SInline> | RStatic | ErrorNode) => (n.kind === "error" ? err(n) : n.kind !== "paragraph" ? stat(n) : `항[${inlines(n.children)}${(n.items ?? []).map(item).join("")}]`);
+const item = (n: RItem<SInline> | RStatic<SInline> | ErrorNode) => (n.kind === "error" ? err(n) : n.kind !== "item" ? stat(n) : `호[${inlines(n.children)}${(n.subitems ?? []).map(subitem).join("")}]`);
+const paragraph = (n: RParagraph<SInline> | RStatic<SInline> | ErrorNode) => (n.kind === "error" ? err(n) : n.kind !== "paragraph" ? stat(n) : `항[${inlines(n.children)}${(n.items ?? []).map(item).join("")}]`);
 
 /** 조의 본문 직렬화 — 조 명 제외. */
 export function articleBody(a: RArticle<SInline>): string {

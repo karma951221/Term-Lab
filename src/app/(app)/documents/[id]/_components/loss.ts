@@ -34,6 +34,7 @@ export function walkSubtree(node: Node, visit: (n: Node) => void): void {
   if ("items" in node && Array.isArray(node.items)) children.push(...(node.items as Node[]));
   if ("subitems" in node && Array.isArray(node.subitems)) children.push(...(node.subitems as Node[]));
   if ("branches" in node) for (const br of node.branches) children.push(...(br.children as Node[]));
+  if (node.kind === "table") for (const row of node.rows) for (const cell of row.cells) children.push(...cell);
   for (const c of children) walkSubtree(c, visit);
 }
 

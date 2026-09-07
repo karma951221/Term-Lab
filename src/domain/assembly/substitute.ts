@@ -12,7 +12,7 @@ import { slotType } from "../catalog/values";
 import { evaluate, parse, type ValueRef } from "../expression";
 import type { Code, Coordinate, FieldType, Issue, Value } from "../types";
 import type { AssemblyContext } from "./context";
-import type { ErrorNode, RArticle, RInline, RItem, RParagraph, ResolvedDoc, RSubitem, SInline, SubstitutedDoc } from "./types";
+import type { ErrorNode, RArticle, RInline, RItem, RParagraph, ResolvedDoc, RStatic, RSubitem, SInline, SubstitutedDoc } from "./types";
 import { mapArticles } from "./walk";
 
 export interface SubstituteEnv {
@@ -114,18 +114,24 @@ class Substituter {
     };
   }
 
+  /** 표 셀 안의 슬롯도 치환한다 — 박스는 텍스트뿐이라 그대로. */
+  static(n: RStatic<RInline>): RStatic<SInline> {
+    if (n.kind === "box") return n;
+    return { ...n, rows: n.rows.map((row) => ({ ...row, cells: row.cells.map((cell) => this.inlines(cell)) })) };
+  }
+
   paragraph(n: RParagraph<RInline>): RParagraph<SInline> {
     return {
       kind: "paragraph",
       id: n.id,
       children: this.inlines(n.children),
-      ...(n.items ? { items: n.items.map((it) => (it.kind === "item" ? this.item(it) : it)) } : {}),
+      ...(n.items ? { items: n.items.map((it) => (it.kind === "item" ? this.item(it) : it.kind === "error" ? it : this.static(it))) } : {}),
       ...(n.excludeFromComparison ? { excludeFromComparison: true } : {}),
     };
   }
 
   article(n: RArticle<RInline>): RArticle<SInline> {
-    return { ...n, children: n.children.map((p) => (p.kind === "paragraph" ? this.paragraph(p) : p)) };
+    return { ...n, children: n.children.map((p) => (p.kind === "paragraph" ? this.paragraph(p) : p.kind === "error" ? p : this.static(p))) };
   }
 }
 

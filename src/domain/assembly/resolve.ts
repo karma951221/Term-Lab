@@ -191,16 +191,23 @@ class Walker {
     };
   }
 
-  /** 정적 표·박스 — 그대로 통과한다 (ADR-0029). */
-  static(n: TableNode | BoxNode): RStatic {
-    if (n.kind === "table") return { kind: "table", id: n.id, ...(n.title !== undefined ? { title: n.title } : {}), columns: n.columns, rows: n.rows };
-    return { kind: "box", id: n.id, title: n.title, lines: n.lines };
+  /** 정적 표·박스 — 박스는 그대로, 표는 셀의 인라인까지 해소한다 (ADR-0029). */
+  static(n: TableNode | BoxNode, f: Frame): RStatic<RInline> {
+    if (n.kind === "box") return { kind: "box", id: n.id, title: n.title, lines: n.lines };
+    const inner = { ...f, path: [...f.path, n.id] };
+    return {
+      kind: "table",
+      id: n.id,
+      ...(n.title !== undefined ? { title: n.title } : {}),
+      columns: n.columns,
+      rows: n.rows.map((row) => ({ ...(row.header ? { header: true } : {}), cells: row.cells.map((cell) => this.inlines(cell, inner)) })),
+    };
   }
 
-  items(list: readonly (AnyItem | AnyCond | TableNode | BoxNode)[], f: Frame): (RItem<RInline> | RStatic | ErrorNode)[] {
-    return list.flatMap((n): (RItem<RInline> | RStatic | ErrorNode)[] => {
+  items(list: readonly (AnyItem | AnyCond | TableNode | BoxNode)[], f: Frame): (RItem<RInline> | RStatic<RInline> | ErrorNode)[] {
+    return list.flatMap((n): (RItem<RInline> | RStatic<RInline> | ErrorNode)[] => {
       if (n.kind === "item") return [this.item(n, f)];
-      if (n.kind === "table" || n.kind === "box") return [this.static(n)];
+      if (n.kind === "table" || n.kind === "box") return [this.static(n, f)];
       const r = this.select(n.branches, f, n.id);
       if (r.kind === "error") return [this.error(n.id, r.issue)];
       if (r.kind === "none") return [];
@@ -220,15 +227,15 @@ class Walker {
   }
 
   /** 조 안의 블록 자리 — 항 · 조건 블록 · 공용조항 block 참조 · 반복 블록. */
-  blocks(list: readonly AnyBlock[], f: Frame, excludeFromComparison = false): (RParagraph<RInline> | RStatic | ErrorNode)[] {
-    return list.flatMap((n): (RParagraph<RInline> | RStatic | ErrorNode)[] => {
+  blocks(list: readonly AnyBlock[], f: Frame, excludeFromComparison = false): (RParagraph<RInline> | RStatic<RInline> | ErrorNode)[] {
+    return list.flatMap((n): (RParagraph<RInline> | RStatic<RInline> | ErrorNode)[] => {
       const at = this.at(f, n.id);
       switch (n.kind) {
         case "paragraph":
           return [this.paragraph(n, f, excludeFromComparison)];
         case "table":
         case "box":
-          return [this.static(n)];
+          return [this.static(n, f)];
         case "condBlock": {
           const r = this.select(n.branches, f, n.id);
           if (r.kind === "error") return [this.error(n.id, r.issue)];

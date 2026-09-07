@@ -20,9 +20,23 @@ import type {
 
 import { StaticBox, StaticTable } from "./StaticNodes";
 
-/** 정적 표·박스 (ADR-0029) — 편집기와 같은 컴포넌트. */
+/** 정적 표·박스 (ADR-0029) — 편집기와 같은 컴포넌트. 표 셀의 참조도 계산 번호로 찍힌다. */
 function Static({ node }: { node: RenderedStatic }) {
-  return node.kind === "table" ? <StaticTable node={node} /> : <StaticBox node={node} />;
+  if (node.kind === "box") return <StaticBox node={node} />;
+  const shape = {
+    ...node,
+    rows: node.rows.map((row) => ({
+      ...row,
+      cells: row.cells.map((cell, i) => (
+        <span key={i}>
+          {cell.map((c, j) => (
+            <Inline key={j} node={c} />
+          ))}
+        </span>
+      )),
+    })),
+  };
+  return <StaticTable node={shape} />;
 }
 
 /** 오류 표식 — 문자 글리프(⚠)가 아니라 그린다. 색은 `currentColor` 로 상속된다 (디자인원칙 §1.6). */

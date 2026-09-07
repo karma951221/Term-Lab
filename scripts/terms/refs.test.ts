@@ -5,7 +5,7 @@ import { inlinesFromText, type ArticleIndex, type RefEnv } from "./refs";
 function index(): ArticleIndex {
   return {
     byNumber: new Map([
-      ["1", { id: "a1", title: "보험금의 지급사유", paragraphIds: ["a1p1", "a1p2"], itemIds: new Map([["a1p1", ["a1p1i1", "a1p1i2"]]]) }],
+      ["1", { id: "a1", title: "보험금의 지급사유", paragraphIds: ["a1p1", "a1p2"], itemIds: new Map([["a1p1", ["a1p1i1", "a1p1i2", "a1p1i3", "a1p1i4"]]]) }],
       ["9", { id: "a9", title: "적립부분 적립이율에 관한 사항", paragraphIds: [], itemIds: new Map() }],
       ["10", { id: "a10", title: "만기환급금의 지급", paragraphIds: [], itemIds: new Map() }],
       ["27의1", { id: "a27-1", title: "보험료의 납입면제", paragraphIds: [], itemIds: new Map() }],
@@ -68,6 +68,50 @@ describe("inlinesFromText — 평문의 조·별표 참조를 슬롯으로", () 
     expect(out[1]).toMatchObject({ text: "에서 정한" });
   });
 
+  it("앞 조의 문맥이 뒤따르는 항·호에 이어진다 (리뷰 1 — 「제16조(…) 제4항 또는 제5항」)", () => {
+    const e = env();
+    e.self.byNumber.set("16", { id: "a16", title: "상해보험계약 후 알릴 의무", paragraphIds: ["a16p1", "a16p2", "a16p3", "a16p4", "a16p5"], itemIds: new Map() });
+    e.currentArticleId = "a1";
+    const out = inlinesFromText("제16조(상해보험계약 후 알릴 의무) 제4항 또는 제5항에 따라", e, newId);
+    expect(out.map((x) => x.kind)).toEqual(["articleRef", "text"]);
+    expect(out[0]).toMatchObject({ connector: "또는", targets: [{ nodeId: "a16p4" }, { nodeId: "a16p5" }] });
+    expect(e.report).toEqual([]);
+  });
+
+  it("조 뒤 항 사이에 공백이 없어도 한 덩어리다 (리뷰 1 — 「제27조의1(…)제1항」)", () => {
+    const e = env();
+    e.self.byNumber.set("27의1", { id: "a27-1", title: "보험료의 납입면제", paragraphIds: ["a27p1"], itemIds: new Map([["a27p1", ["a27p1i1"]]]) });
+    const out = inlinesFromText("보험수익자와 회사가 제27조의1(보험료의 납입면제)제1항의 사유에 대해", e, newId);
+    expect(out.map((x) => x.kind)).toEqual(["text", "articleRef", "text"]);
+    expect(out[1]).toMatchObject({ targets: [{ nodeId: "a27p1" }] });
+  });
+
+  it("쉼표로만 이어진 호 목록도 한 덩어리이고 연결어는 쉼표다 (리뷰 1 — 「제1항 제10호, 제11호」)", () => {
+    const e = env();
+    const items = Array.from({ length: 11 }, (_x, i) => `a1p1i${i + 1}`);
+    e.self.byNumber.set("1", { id: "a1", title: "보험금의 지급사유", paragraphIds: ["a1p1", "a1p2"], itemIds: new Map([["a1p1", items]]) });
+    e.currentArticleId = "a9";
+    const out = inlinesFromText("제1조(보험금의 지급사유) 제1항 제10호, 제11호에서 정한", e, newId);
+    expect(out.map((x) => x.kind)).toEqual(["articleRef", "text"]);
+    expect(out[0]).toMatchObject({ connector: ",", targets: [{ nodeId: "a1p1i10" }, { nodeId: "a1p1i11" }] });
+  });
+
+  it("현재 조의 항 목록도 한 덩어리로 잇는다 (「제4항 및 제5항」)", () => {
+    const e = env();
+    e.self.byNumber.set("17", { id: "a17", title: "알릴 의무 위반의 효과", paragraphIds: ["a17p1", "a17p2", "a17p3", "a17p4", "a17p5"], itemIds: new Map() });
+    e.currentArticleId = "a17";
+    const out = inlinesFromText("제4항 및 제5항에 관계없이", e, newId);
+    expect(out[0]).toMatchObject({ kind: "articleRef", connector: "및", targets: [{ nodeId: "a17p4" }, { nodeId: "a17p5" }] });
+  });
+
+  it("법령 인용은 뒤따르는 항·호까지 통째로 건너뛴다", () => {
+    const e = env();
+    e.self.byNumber.set("2", { id: "a2", title: "용어의 정의", paragraphIds: ["a2p1"], itemIds: new Map() });
+    const out = inlinesFromText("민법 제2조(신의성실) 제1항에 따라", e, newId);
+    expect(out.every((x) => x.kind === "text")).toBe(true);
+    expect(e.report).toEqual([]);
+  });
+
   it("제목이 다르거나 조가 없으면 텍스트로 두고 보고한다", () => {
     const e = env();
     const out = inlinesFromText("제9조(다른 제목)을 제99조(없는 조)와", e, newId);
@@ -81,5 +125,15 @@ describe("inlinesFromText — 평문의 조·별표 참조를 슬롯으로", () 
     const out = inlinesFromText("보통약관 제9조(적립부분 적립이율에 관한 사항)은", e, newId);
     expect(out.every((x) => x.kind === "text")).toBe(true);
     expect(e.report[0]).toMatch(/보통약관 색인/);
+  });
+});
+
+describe("현재 항 문맥 — 조 없는 단독 호 참조", () => {
+  it("항 안의 「제3호 및 제4호」는 그 항의 호를 가리킨다", () => {
+    const e = env();
+    e.currentParagraphId = "a1p1";
+    const out = inlinesFromText("제3호 및 제4호의 내용에 관한 사항", e, newId);
+    expect(out[0]).toMatchObject({ kind: "articleRef", connector: "및", targets: [{ nodeId: "a1p1i3" }, { nodeId: "a1p1i4" }] });
+    expect(e.report).toEqual([]);
   });
 });

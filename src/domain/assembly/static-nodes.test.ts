@@ -12,7 +12,7 @@ describe("관·표·박스가 조립을 통과한다 (ADR-0029)", () => {
     const b = nodeBuilders(sequentialIds("s"));
     const general = input.product.general!;
     const [first, ...rest] = general.children as ArticleNode[];
-    const table = b.table({ title: "용어", columns: [{ width: 30 }, { width: 70 }], rows: [{ header: true, cells: ["용어", "정의"] }, { cells: ["계약자", "…"] }] });
+    const table = b.textTable({ title: "용어", columns: [{ width: 30 }, { width: 70 }], rows: [{ header: true, cells: ["용어", "정의"] }, { cells: ["계약자", "…"] }] });
     const box = b.box("심신상실", ["정신병 등"]);
     const withSections = {
       ...general,
@@ -27,7 +27,9 @@ describe("관·표·박스가 조립을 통과한다 (ADR-0029)", () => {
     expect(a1.label).toBe("제1조");
     expect((s2.children[0] as RenderedArticle).label).toBe("제2조");
     expect(a1.children.map((c) => c.kind)).toEqual(["paragraph", "table", "box"]);
-    expect(a1.children[1]).toMatchObject({ kind: "table", title: "용어", columns: [{ width: 30 }, { width: 70 }], rows: [{ header: true, cells: ["용어", "정의"] }, { cells: ["계약자", "…"] }] });
+    expect(a1.children[1]).toMatchObject({ kind: "table", title: "용어", columns: [{ width: 30 }, { width: 70 }] });
+    const rendered = a1.children[1] as Extract<typeof a1.children[number], { kind: "table" }>;
+    expect(rendered.rows.map((row) => row.cells.map((cell) => cell.map((n) => (n.kind === "text" ? n.text : n.kind))))).toEqual([[["용어"], ["정의"]], [["계약자"], ["…"]]]);
     expect(a1.children[2]).toMatchObject({ kind: "box", title: "심신상실", lines: ["정신병 등"] });
     // 항 하나뿐인 조는 마커가 없다
     expect((a1.children[0] as RenderedParagraph).label).toBe("");
@@ -84,5 +86,37 @@ describe("기본계약 대치 — 보통약관이 대치되는 조의 항을 가
     const rendered = booklet.general!.children.find((c): c is RenderedArticle => c.kind === "article" && c.id === "g-art-refund")!;
     const ref = (rendered.children[0] as RenderedParagraph).children.find((n) => n.kind === "articleRef") as RenderedArticleRef;
     expect(ref.label).toBe("제3조(보험금 지급에 관한 세부규정) 제2항");
+  });
+});
+
+describe("순번 별칭은 구조가 같음을 증명한 경우에만 만든다 (2026-09-08 리뷰 3)", () => {
+  /** 마스터 조와 기본계약 조의 항 수가 다르면 별칭을 만들지 않는다 — 조용한 오연결 대신 articleGone 오류. */
+  it("항 수가 다르면 별칭 없이 articleGone 오류를 낸다", () => {
+    const input = alphaPlusFixture();
+    const b = nodeBuilders(sequentialIds("m"));
+    const general = input.product.general!;
+    const detail = general.children.find((c): c is ArticleNode => c.kind === "article" && c.id === "g-art-detail")!;
+    const gp1 = b.paragraph([b.text("마스터 첫 항")]);
+    const gp2 = b.paragraph([b.text("마스터 둘째 항")]);
+    detail.children = [gp1, gp2];
+    const refund = general.children.find((c): c is ArticleNode => c.kind === "article" && c.id === "g-art-refund")!;
+    (refund.children[0] as ParagraphNode).children.push(b.articleRef(gp2.id, "self"));
+    // 기본계약 조는 항이 하나뿐 — 마스터의 둘째 항에 대응하는 자리가 없다
+    const booklet = assemble(input);
+    expect(booklet.issues.map((i) => i.kind)).toEqual(["articleGone"]);
+    expect(booklet.complete).toBe(false);
+  });
+
+  it("마스터 조에 조건 블록이 있으면 별칭을 만들지 않는다", () => {
+    const input = alphaPlusFixture();
+    const b = nodeBuilders(sequentialIds("c"));
+    const general = input.product.general!;
+    const detail = general.children.find((c): c is ArticleNode => c.kind === "article" && c.id === "g-art-detail")!;
+    const gp1 = b.paragraph([b.text("마스터 첫 항")]);
+    detail.children = [gp1, b.condBlock([b.branch("D0001 = true", [b.paragraph([b.text("조건 항")])])])];
+    const refund = general.children.find((c): c is ArticleNode => c.kind === "article" && c.id === "g-art-refund")!;
+    (refund.children[0] as ParagraphNode).children.push(b.articleRef(gp1.id, "self"));
+    const booklet = assemble(input);
+    expect(booklet.issues.map((i) => i.kind)).toEqual(["articleGone"]);
   });
 });

@@ -82,9 +82,11 @@ export async function insertNodeAction(documentId: Id, parentId: Id, slot: "chil
     case "section":
       node = b.section(str(formData, "title") || "새 관", []);
       break;
-    case "table":
-      node = b.table(parseTableForm(formData));
+    case "table": {
+      const form = parseTableForm(formData);
+      node = b.textTable({ ...form, rows: form.rows ?? [] });
       break;
+    }
     case "box":
       node = b.box(str(formData, "title") || "용어풀이", parseLines(String(formData.get("lines") ?? "")));
       break;

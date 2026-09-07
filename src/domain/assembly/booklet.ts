@@ -30,28 +30,42 @@ import { articlesOf } from "./walk";
 /**
  * 대치되는 보통약관 조의 항·호·목 → 같은 자리(순번)의 기본계약 항·호·목 별칭.
  * 마스터 본문이 다른 조에서 「제4조(…) 제4항」처럼 대치될 조의 항을 가리킬 수 있다 (실물 제8조) — 대치 뒤 그 id 는
- * 사라지므로 순번으로 기본계약 쪽 id 에 잇는다. 마스터의 조건 블록 안 항은 세지 않는다 (마스터 제3·4조는 평문).
+ * 사라지므로 순번으로 기본계약 쪽 id 에 잇는다.
+ *
+ * **구조가 같음을 증명한 경우에만 잇는다** (2026-09-08 리뷰 3): 양쪽 모두 항·호·목만으로 이뤄져 있고 개수가 같아야 한다.
+ * 마스터에 조건 블록·공용조항 참조·표가 있거나 개수가 다르면 어느 항이 어느 항인지 알 수 없으므로 별칭을 만들지 않는다 —
+ * 그 참조는 `articleGone` 오류로 드러난다 (조용한 오연결보다 낫다).
  */
 function positionAliases(master: ArticleNode, base: RArticle<SInline>): [Id, Id][] {
-  const out: [Id, Id][] = [];
+  // 마스터에 동적 노드(조건 블록 · 공용조항 참조 · 반복)가 있으면 항이 몇 개로 펼쳐질지 알 수 없다 — 별칭을 만들지 않는다
+  const dynamic = (kind: string) => kind === "condBlock" || kind === "clauseBlockRef" || kind === "forBlock";
   const masterParagraphs = master.children.filter((c) => c.kind === "paragraph");
+  if (master.children.some((c) => dynamic(c.kind))) return [];
+  // 정적 표·박스는 대응에 영향을 주지 않는다. 오류 마커가 있으면 신뢰할 수 없다.
   const baseParagraphs = base.children.filter((c) => c.kind === "paragraph");
-  masterParagraphs.forEach((mp, i) => {
+  if (base.children.some((c) => c.kind === "error")) return [];
+  if (masterParagraphs.length !== baseParagraphs.length) return [];
+
+  const out: [Id, Id][] = [];
+  for (const [i, mp] of masterParagraphs.entries()) {
     const bp = baseParagraphs[i];
-    if (!bp) return;
-    out.push([mp.id, bp.id]);
+    if ((mp.items ?? []).some((c) => dynamic(c.kind))) return [];
+    if ((bp.items ?? []).some((c) => c.kind === "error")) return [];
     const masterItems = (mp.items ?? []).filter((c) => c.kind === "item");
     const baseItems = (bp.items ?? []).filter((c) => c.kind === "item");
-    masterItems.forEach((mi, j) => {
+    if (masterItems.length !== baseItems.length) return [];
+    out.push([mp.id, bp.id]);
+    for (const [j, mi] of masterItems.entries()) {
       const bi = baseItems[j];
-      if (!bi) return;
+      if ((mi.subitems ?? []).some((c) => dynamic(c.kind))) return [];
+      if ((bi.subitems ?? []).some((c) => c.kind === "error")) return [];
+      const masterSubitems = (mi.subitems ?? []).filter((c) => c.kind === "subitem");
+      const baseSubitems = (bi.subitems ?? []).filter((c) => c.kind === "subitem");
+      if (masterSubitems.length !== baseSubitems.length) return [];
       out.push([mi.id, bi.id]);
-      (mi.subitems ?? []).filter((c) => c.kind === "subitem").forEach((mu, k) => {
-        const bu = (bi.subitems ?? []).filter((c) => c.kind === "subitem")[k];
-        if (bu) out.push([mu.id, bu.id]);
-      });
-    });
-  });
+      for (const [k, mu] of masterSubitems.entries()) out.push([mu.id, baseSubitems[k].id]);
+    }
+  }
   return out;
 }
 

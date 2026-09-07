@@ -290,7 +290,8 @@ function Block({ nodes, ctx, inList }: { nodes: readonly Node[]; ctx: DocCtx; in
 
       // 정적 표·박스 — 항·호 뒤에 붙는 번호 없는 블록 (ADR-0029). 목록 자리면 <li> 로 감싼다.
       case "table": {
-        const body = <StaticTable node={node} controls={ctx.mode === "edit" ? <NodeControls ctx={ctx} nodeId={node.id} what={`표${node.title ? ` ${node.title}` : ""}`} /> : undefined} />;
+        const shape = { ...node, rows: node.rows.map((row) => ({ ...row, cells: row.cells.map((cell, i) => <Inlines key={i} nodes={cell} ctx={ctx} />) })) };
+        const body = <StaticTable node={shape} controls={ctx.mode === "edit" ? <NodeControls ctx={ctx} nodeId={node.id} what={`표${node.title ? ` ${node.title}` : ""}`} /> : undefined} />;
         return inList ? <li key={node.id} className="ts-doc-static-item">{body}</li> : <div key={node.id}>{body}</div>;
       }
       case "box": {

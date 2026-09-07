@@ -78,6 +78,9 @@ const ADD_KINDS = {
 /** 표 폼 필드 — 추가·수정 폼이 같이 쓴다 (값은 노드에서 역직렬화). */
 function TableFields({ prefix, node, withTitle = true }: { prefix: string; node?: Node & { kind: "table" }; withTitle?: boolean }) {
   const headerRows = node ? node.rows.findIndex((r) => !r.header) : -1;
+  // 셀에 참조 슬롯이 있으면 행을 텍스트로 되돌릴 수 없다 — 제목·너비만 고치게 한다 (행 칸이 없으면 행은 그대로 남는다)
+  const textOnly = !node || node.rows.every((row) => row.cells.every((cell) => cell.every((n) => n.kind === "text")));
+  const cellText = (cell: readonly Node[]) => cell.map((n) => (n.kind === "text" ? n.text : "")).join("");
   return (
     <>
       {withTitle && (
@@ -90,14 +93,29 @@ function TableFields({ prefix, node, withTitle = true }: { prefix: string; node?
         <label htmlFor={`${prefix}-widths`}>열 너비 %</label>
         <input id={`${prefix}-widths`} type="text" name="widths" className="ts-mono" defaultValue={node ? node.columns.map((c) => c.width ?? "").join(",") : ""} placeholder="예: 30,70 (빈칸은 자동)" />
       </div>
-      <div className="ts-form-row">
-        <label htmlFor={`${prefix}-header`}>제목줄 수</label>
-        <input id={`${prefix}-header`} type="number" name="headerRows" min={0} defaultValue={node ? (headerRows < 0 ? node.rows.length : headerRows) : 1} />
-      </div>
-      <div className="ts-form-row ts-form-full">
-        <label htmlFor={`${prefix}-rows`}>행 (한 줄 = 한 행 · 셀은 |)</label>
-        <textarea id={`${prefix}-rows`} name="rows" rows={6} className="ts-mono" defaultValue={node ? node.rows.map((r) => r.cells.join("|")).join("\n") : ""} placeholder={"용어|정의\n계약자|회사와 계약을 체결하고…"} />
-      </div>
+      {textOnly ? (
+        <>
+          <div className="ts-form-row">
+            <label htmlFor={`${prefix}-header`}>제목줄 수</label>
+            <input id={`${prefix}-header`} type="number" name="headerRows" min={0} defaultValue={node ? (headerRows < 0 ? node.rows.length : headerRows) : 1} />
+          </div>
+          <div className="ts-form-row ts-form-full">
+            <label htmlFor={`${prefix}-rows`}>행 (한 줄 = 한 행 · 셀은 |)</label>
+            <textarea
+              id={`${prefix}-rows`}
+              name="rows"
+              rows={6}
+              className="ts-mono"
+              defaultValue={node ? node.rows.map((r) => r.cells.map(cellText).join("|")).join("\n") : ""}
+              placeholder={"용어|정의\n계약자|회사와 계약을 체결하고…"}
+            />
+          </div>
+        </>
+      ) : (
+        <p className="ts-muted">
+          이 표의 셀에 조·별표 참조 슬롯이 있다 — 글자로 되돌리면 참조가 끊기므로 행은 여기서 고치지 않는다. 제목과 너비만 바꾼다.
+        </p>
+      )}
     </>
   );
 }

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Result } from "../types";
 import { nodeBuilders, sequentialIds } from "./builders";
 import { applyCommand, applyCommands, cloneTree, type Command } from "./commands";
-import { indexTree, type ArticleNode, type CondBlockNode, type DocumentNode, type ParagraphNode, type SectionNode } from "./nodes";
+import { indexTree, type ArticleNode, type CondBlockNode, type DocumentNode, type Node, type ParagraphNode, type SectionNode } from "./nodes";
 
 function make() {
   return nodeBuilders(sequentialIds("n"));
@@ -325,17 +325,35 @@ describe("문서 복제 (D-P4-4) — cloneTree", () => {
 describe("setTable · setBox · 관 제목 (ADR-0029)", () => {
   it("표의 제목·열 너비·행을 통째로 바꾼다", () => {
     const b = make();
-    const table = b.table({ columns: [{}], rows: [{ cells: ["a"] }] });
+    const table = b.textTable({ columns: [{}], rows: [{ cells: ["a"] }] });
     const doc = b.document("D", [b.article("조", [b.paragraph([b.text("x")]), table])]);
     const saved = unwrap(applyCommand(doc, { type: "setTable", nodeId: table.id, title: "표 제목", columns: [{ width: 30 }, { width: 70 }], rows: [{ header: true, cells: ["용어", "정의"] }] }));
-    expect((saved.children[0] as ArticleNode).children[1]).toEqual({ id: table.id, kind: "table", title: "표 제목", columns: [{ width: 30 }, { width: 70 }], rows: [{ header: true, cells: ["용어", "정의"] }] });
+    expect((saved.children[0] as ArticleNode).children[1]).toEqual({
+      id: table.id,
+      kind: "table",
+      title: "표 제목",
+      columns: [{ width: 30 }, { width: 70 }],
+      rows: [{ header: true, cells: [[{ id: `${table.id}-r0c0`, kind: "text", text: "용어" }], [{ id: `${table.id}-r0c1`, kind: "text", text: "정의" }]] }],
+    });
   });
 
   it("행의 셀 수가 열 수와 다르면 거부한다", () => {
     const b = make();
-    const table = b.table({ columns: [{}, {}], rows: [] });
+    const table = b.textTable({ columns: [{}, {}], rows: [] });
     const doc = b.document("D", [b.article("조", [table])]);
     expect(rejection(applyCommand(doc, { type: "setTable", nodeId: table.id, columns: [{}, {}], rows: [{ cells: ["하나"] }] })).reason).toBe("invalid");
+    // 너비는 1~100 정수만 (리뷰 4)
+    expect(rejection(applyCommand(doc, { type: "setTable", nodeId: table.id, columns: [{ width: 101 }, {}], rows: [{ cells: ["가", "나"] }] })).reason).toBe("invalid");
+  });
+
+  it("행을 주지 않으면 기존 행을 지키고 제목·너비만 바꾼다 (참조 슬롯이 든 표)", () => {
+    const b = make();
+    const table = b.textTable({ columns: [{}, {}], rows: [{ cells: ["가", "나"] }] });
+    const doc = b.document("D", [b.article("조", [table])]);
+    const saved = unwrap(applyCommand(doc, { type: "setTable", nodeId: table.id, columns: [{ width: 40 }, { width: 60 }] }));
+    const kept = (saved.children[0] as ArticleNode).children[0] as Extract<Node, { kind: "table" }>;
+    expect(kept.columns).toEqual([{ width: 40 }, { width: 60 }]);
+    expect(kept.rows[0].cells.map((cell) => cell.map((n) => (n.kind === "text" ? n.text : n.kind)))).toEqual([["가"], ["나"]]);
   });
 
   it("박스의 제목·줄을 바꾸고, setTitle 은 관 제목도 바꾼다", () => {

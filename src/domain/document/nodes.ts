@@ -102,10 +102,13 @@ export interface TableColumn {
   width?: number;
 }
 
-/** 정적 표의 행 — 제목줄 여부 + 셀 텍스트. 셀 수 = 열 수. */
+/**
+ * 정적 표의 행 — 제목줄 여부 + 셀. 셀 수 = 열 수.
+ * 셀은 **인라인 노드 목록**이다 — 표 안에서도 조·별표 번호를 평문으로 굳히지 않는다 (번호는 계산값 · ADR-0012).
+ */
 export interface TableRow {
   header?: boolean;
-  cells: string[];
+  cells: InlineNode[][];
 }
 
 /** 정적 표 — 항·호 뒤에 붙는 번호 없는 블록. 동적(반복·조건 행)은 MVP 이후. */
@@ -307,6 +310,11 @@ export function listOf(node: Node, slot: SlotName): Node[] | undefined {
   }
 }
 
+/** 표 셀의 인라인 노드 전부 (평탄화). 표가 아니면 빈 배열 — 순회기들이 셀 안을 빠뜨리지 않게 한다. */
+export function cellNodesOf(node: Node): InlineNode[] {
+  return node.kind === "table" ? node.rows.flatMap((row) => row.cells.flat()) : [];
+}
+
 /** 조건 노드(블록·인라인)의 가지 목록. */
 export function branchesOf(node: Node): (BlockBranch | InlineBranch)[] | undefined {
   return node.kind === "condBlock" || node.kind === "inlineCond" ? node.branches : undefined;
@@ -359,6 +367,25 @@ interface Frame {
   allowed: readonly NodeKind[];
   inInlineCond: boolean;
   inFor: boolean;
+}
+
+/**
+ * 표 불변식 — 열이 하나 이상 · 행마다 셀 수 = 열 수 · 너비는 1~100 정수 (ADR-0029).
+ * `setTable` 커맨드와 저장 검증(`validateTree`)이 같은 규칙을 쓴다 (2026-09-08 리뷰 4).
+ */
+export function tableIssues(node: TableNode): string[] {
+  const out: string[] = [];
+  if (node.columns.length === 0) out.push("표에는 열이 하나 이상 있어야 합니다");
+  node.columns.forEach((column, i) => {
+    if (column.width === undefined) return;
+    if (!Number.isInteger(column.width) || column.width < 1 || column.width > 100) {
+      out.push(`${i + 1}번째 열의 너비(${column.width})는 1~100 사이 정수여야 합니다`);
+    }
+  });
+  node.rows.forEach((row, i) => {
+    if (row.cells.length !== node.columns.length) out.push(`${i + 1}번째 행의 셀 수(${row.cells.length})가 열 수(${node.columns.length})와 다릅니다`);
+  });
+  return out;
 }
 
 /** 트리를 한 번 훑어 노드·가지 색인과 구조 규칙 위반을 만든다. */
@@ -418,6 +445,19 @@ export function indexTree(doc: DocumentNode, base: Coordinate = {}): TreeIndex {
 
     const inInlineCond = f.inInlineCond || node.kind === "inlineCond";
     const inFor = f.inFor || node.kind === "forBlock" || node.kind === "inlineFor";
+
+    if (node.kind === "table") {
+      // 표 불변식 — 열이 하나 이상, 행마다 셀 수 = 열 수, 너비는 1~100 정수 (setTable · importTree 공통)
+      for (const message of tableIssues(node)) structure(message, path, articleId);
+      // 셀의 인라인 노드도 색인한다 — id 유일성·참조 검증이 본문과 같은 규칙으로 걸린다
+      node.rows.forEach((row, ri) =>
+        row.cells.forEach((cell, ci) =>
+          cell.forEach((child, xi) =>
+            visit(child, { parentId: node.id, slot: "children", index: xi, path: [...path, `${node.id}-r${ri}c${ci}`], articleId, allowed: INLINE, inInlineCond, inFor }),
+          ),
+        ),
+      );
+    }
 
     const brs = branchesOf(node);
     if (brs !== undefined) {
