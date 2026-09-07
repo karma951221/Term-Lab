@@ -31,6 +31,7 @@ import {
   codeSequences,
   namingTemplates,
   planOptions,
+  productAppendices,
   productBaseContracts,
   productCoverageAttributes,
   productCoverageNodes,
@@ -182,6 +183,18 @@ export async function listProducts(db: Db): Promise<Product[]> {
 
 export async function updateProduct(db: Db, id: Id, patch: { name?: string; generalDocumentId?: Id | null }, who: Id): Promise<void> {
   await db.update(products).set({ ...patch, updatedAt: new Date(), updatedBy: who }).where(eq(products.id, id));
+}
+
+/** 상품 별표 목록 — 순서대로 코드. */
+export async function listProductAppendices(db: Db, productId: Id): Promise<Code[]> {
+  const rows = await db.select({ code: productAppendices.appendixCode }).from(productAppendices).where(eq(productAppendices.productId, productId)).orderBy(asc(productAppendices.order));
+  return rows.map((r) => r.code);
+}
+
+/** 상품 별표 목록을 통째로 바꾼다 (순서 = 배열 순서). */
+export async function replaceProductAppendices(db: Db, productId: Id, codes: readonly Code[], who: Id): Promise<void> {
+  await db.delete(productAppendices).where(eq(productAppendices.productId, productId));
+  if (codes.length > 0) await db.insert(productAppendices).values(codes.map((appendixCode, order) => ({ productId, appendixCode, order, createdBy: who })));
 }
 
 export async function deleteProduct(db: Db, id: Id): Promise<void> {

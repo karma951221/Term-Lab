@@ -9,7 +9,8 @@
  */
 
 import type { Id } from "../types";
-import type { ErrorNode, OmissionRecord, RArticle, RItem, RParagraph, RSubitem, SInline, SubstitutedDoc } from "./types";
+import type { ErrorNode, OmissionRecord, RArticle, RItem, RParagraph, RStatic, RSubitem, SInline, SubstitutedDoc } from "./types";
+import { articlesOf, mapArticles } from "./walk";
 
 // ───────────────────────────── 직렬화 ─────────────────────────────
 
@@ -29,8 +30,13 @@ function inline(n: SInline): string {
 const inlines = (list: readonly SInline[]) => list.map(inline).join("");
 const err = (n: ErrorNode) => `e(${n.id})`;
 const subitem = (n: RSubitem<SInline> | ErrorNode) => (n.kind === "error" ? err(n) : `목[${inlines(n.children)}]`);
-const item = (n: RItem<SInline> | ErrorNode) => (n.kind === "error" ? err(n) : `호[${inlines(n.children)}${(n.subitems ?? []).map(subitem).join("")}]`);
-const paragraph = (n: RParagraph<SInline> | ErrorNode) => (n.kind === "error" ? err(n) : `항[${inlines(n.children)}${(n.items ?? []).map(item).join("")}]`);
+/** 정적 표·박스 — 항과 같은 한 단위로 비교한다 (ADR-0029). */
+const stat = (n: RStatic) =>
+  n.kind === "table"
+    ? `표[${n.title ?? ""}|${n.rows.map((r) => `${r.header ? "h" : ""}${r.cells.join("¦")}`).join("‖")}]`
+    : `박스[${n.title}|${n.lines.join("‖")}]`;
+const item = (n: RItem<SInline> | RStatic | ErrorNode) => (n.kind === "error" ? err(n) : n.kind !== "item" ? stat(n) : `호[${inlines(n.children)}${(n.subitems ?? []).map(subitem).join("")}]`);
+const paragraph = (n: RParagraph<SInline> | RStatic | ErrorNode) => (n.kind === "error" ? err(n) : n.kind !== "paragraph" ? stat(n) : `항[${inlines(n.children)}${(n.items ?? []).map(item).join("")}]`);
 
 /** 조의 본문 직렬화 — 조 명 제외. */
 export function articleBody(a: RArticle<SInline>): string {
@@ -50,7 +56,7 @@ export interface OmissionOutcome {
 }
 
 function paragraphBodies(a: RArticle<SInline>, excludeMarked: boolean): string[] {
-  const children = a.children.filter((p) => p.kind === "error" || !excludeMarked || !p.excludeFromComparison);
+  const children = a.children.filter((p) => p.kind !== "paragraph" || !excludeMarked || !p.excludeFromComparison);
   if (children.length === 0) return ["항[]"];
   return children.map(paragraph);
 }
@@ -90,28 +96,28 @@ function applicationParagraph(article: RArticle<SInline>, linkedArticleId: Id, o
 
 export function judgeOmission(special: SubstitutedDoc, general: SubstitutedDoc | undefined, owner: OmissionOwner): OmissionOutcome {
   const generalArticles = new Map<Id, RArticle<SInline>>();
-  for (const a of general?.children ?? []) if (a.kind === "article") generalArticles.set(a.id, a);
+  if (general) for (const a of articlesOf(general)) generalArticles.set(a.id, a);
 
   const records: OmissionRecord[] = [];
-  const children = special.children.flatMap((a): SubstitutedDoc["children"] => {
-    if (a.kind !== "article" || a.linkedArticleId === undefined) return [a];
+  const doc = mapArticles(special, (a): RArticle<SInline> | null => {
+    if (a.linkedArticleId === undefined) return a;
     const target = generalArticles.get(a.linkedArticleId);
     let disposition: OmissionRecord["disposition"] = "full";
-    let output: SubstitutedDoc["children"] = [a];
+    let output: RArticle<SInline> | null = a;
     if (target && !containsErrors(a) && !containsErrors(target)) {
       const specialBodies = paragraphBodies(a, false);
       const generalBodies = paragraphBodies(target, true);
       const matched = takeMatches(generalBodies, specialBodies);
       if (matched.all && matched.unmatchedSpecial.length === 0) {
         disposition = "omitted";
-        output = [];
+        output = null;
       } else if (matched.all) {
         disposition = "applied";
-        output = [{ ...a, children: [applicationParagraph(a, a.linkedArticleId, owner), ...matched.unmatchedSpecial.map((index) => a.children[index])] }];
+        output = { ...a, children: [applicationParagraph(a, a.linkedArticleId, owner), ...matched.unmatchedSpecial.map((index) => a.children[index])] };
       }
     }
     records.push({ ...owner, articleId: a.id, articleTitle: a.title, linkedArticleId: a.linkedArticleId, disposition });
     return output;
   });
-  return { doc: { ...special, children }, records };
+  return { doc, records };
 }

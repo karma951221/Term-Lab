@@ -1,6 +1,6 @@
 import type { NewDiscriminator, NewEnum } from "@/domain/catalog";
 import type { NewClause } from "@/domain/clause";
-import type { Command, DocumentNode } from "@/domain/document";
+import type { DocumentNode } from "@/domain/document";
 import type { Actor, Code, Id, Result, Value } from "@/domain/types";
 import type { Services } from "@/services/container";
 
@@ -14,7 +14,7 @@ import enums from "./data/enums.json";
 import generals from "./data/generals.json";
 import products from "./data/products.json";
 
-export const ALPHA_PLUS_PRODUCT_NAME = "알파Plus(축약)";
+export const ALPHA_PLUS_PRODUCT_NAME = "알파Plus보장보험";
 
 export interface SeedResult {
   created: boolean;
@@ -34,14 +34,10 @@ function omit(record: Record<string, unknown>, keys: readonly string[]): Record<
   return Object.fromEntries(Object.entries(record).filter(([key]) => !keys.includes(key)));
 }
 
-function insertAll(rootId: Id, tree: DocumentNode): Command[] {
-  return tree.children.map((node) => ({ type: "insert", node, at: { parentId: rootId } }));
-}
-
 async function assertAssembles(services: Services, productId: Id): Promise<void> {
   const result = await services.assembly.preview(productId);
   if (!result.ok) throw new Error(`[seed:alphaPlus] 조립 미리보기 실패: ${JSON.stringify(result.rejection)}`);
-  if (!result.value.complete) throw new Error(`[seed:alphaPlus] 관통 1 조립 검증 실패: ${JSON.stringify(result.value.issues)}`);
+  if (!result.value.complete) throw new Error(`[seed:alphaPlus] 실물 조립 검증 실패: ${JSON.stringify(result.value.issues)}`);
 }
 
 /** JSON 정본을 서비스 API로 적재한다. JSON의 의미 코드는 참조 키로만 쓰고 UUID는 서비스가 발급한다. */
@@ -68,8 +64,16 @@ export async function loadAlphaPlus(services: Services, actor: Actor): Promise<S
     expectCode(created.code, code);
   }
 
+  interface CoverageSpec {
+    code: string;
+    name: string;
+    benefitName: string;
+    attachments?: Code[];
+    coverageValues: { path: string; value: unknown }[];
+    benefitValues: { path: string; value: unknown }[];
+  }
   const coverageIds = new Map<string, Id>();
-  for (const specification of coverages) {
+  for (const specification of coverages as unknown as CoverageSpec[]) {
     const tree = unwrap(await services.coverage.create(actor, { name: specification.name, benefitName: specification.benefitName }));
     coverageIds.set(specification.code, tree.id);
     const benefitId = tree.subCoverages[0].benefits[0].id;
@@ -105,7 +109,7 @@ export async function loadAlphaPlus(services: Services, actor: Actor): Promise<S
   const generalIds = new Map<string, Id>();
   for (const specification of generals as unknown as Array<{ code: string; tree: DocumentNode }>) {
     const document = unwrap(await services.document.createGeneral(actor, specification.tree.title));
-    unwrap(await services.document.apply(actor, document.id, insertAll(document.tree.id, specification.tree)));
+    unwrap(await services.document.importTree(actor, document.id, specification.tree));
     generalIds.set(specification.code, document.id);
   }
 
@@ -116,7 +120,7 @@ export async function loadAlphaPlus(services: Services, actor: Actor): Promise<S
     if (!coverageId || !generalId) throw new Error(`[seed:alphaPlus] 문서 참조를 찾을 수 없음: ${specification.code}`);
     const document = unwrap(await services.document.createSpecial(actor, coverageId, specification.tree.title));
     unwrap(await services.document.setGeneralDocument(actor, document.id, generalId));
-    unwrap(await services.document.apply(actor, document.id, insertAll(document.tree.id, specification.tree)));
+    unwrap(await services.document.importTree(actor, document.id, specification.tree));
     documentIds.set(specification.code, document.id);
   }
 
@@ -127,7 +131,9 @@ export async function loadAlphaPlus(services: Services, actor: Actor): Promise<S
     unwrap(await services.product.setNamingTemplate(actor, specification.namingTemplate));
     const productId = unwrap(await services.product.createProduct(actor, { name: specification.name, generalDocumentId: generalId })).id;
     seededProductId ??= productId;
-    for (const entry of specification.values) unwrap(await services.product.setProductValue(actor, productId, entry.code, undefined, entry.value as Value));
+    // 별표 번호 = 상품 별표 목록 순서 (ADR-0030)
+    unwrap(await services.product.setAppendixOrder(actor, productId, specification.appendices ?? []));
+    for (const entry of specification.values as { code: Code; value: unknown }[]) unwrap(await services.product.setProductValue(actor, productId, entry.code, undefined, entry.value as Value));
 
     const optionIds = new Map<string, Id>();
     for (const option of specification.planOptions) {

@@ -10,6 +10,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { IconButton, IconCopy, IconDown, IconEdit, IconTrash, IconUp } from "@/app/_components/icons";
+import { StaticBox, StaticTable } from "@/app/_components/StaticNodes";
 import { referenceTargetLabel, type ArticleRefNode, type BlockBranch, type InlineBranch, type Node, type ReferenceTarget } from "@/domain/document";
 import type { Id } from "@/domain/types";
 
@@ -234,7 +235,7 @@ function Block({ nodes, ctx, inList }: { nodes: readonly Node[]; ctx: DocCtx; in
         return (
           <div key={node.id} className="ts-doc-paragraph">
             {ctx.mode === "edit" && <NodeControls ctx={ctx} nodeId={node.id} what={num ? `제${num.n}항` : "항"} />}
-            <span className="ts-doc-num">{num?.label}</span> <Inlines nodes={node.children} ctx={ctx} />
+            {num?.label ? <span className="ts-doc-num">{num.label}</span> : null} <Inlines nodes={node.children} ctx={ctx} />
             {(node.items ?? []).length > 0 && (
               <ol className="ts-doc-items">
                 <Block nodes={node.items ?? []} ctx={ctx} inList />
@@ -287,6 +288,28 @@ function Block({ nodes, ctx, inList }: { nodes: readonly Node[]; ctx: DocCtx; in
       case "condBlock":
         return <CondBlock key={node.id} node={node} ctx={ctx} as={inList ? "li" : "div"} />;
 
+      // 정적 표·박스 — 항·호 뒤에 붙는 번호 없는 블록 (ADR-0029). 목록 자리면 <li> 로 감싼다.
+      case "table": {
+        const body = <StaticTable node={node} controls={ctx.mode === "edit" ? <NodeControls ctx={ctx} nodeId={node.id} what={`표${node.title ? ` ${node.title}` : ""}`} /> : undefined} />;
+        return inList ? <li key={node.id} className="ts-doc-static-item">{body}</li> : <div key={node.id}>{body}</div>;
+      }
+      case "box": {
+        const body = <StaticBox node={node} controls={ctx.mode === "edit" ? <NodeControls ctx={ctx} nodeId={node.id} what={`박스 ${node.title}`} /> : undefined} />;
+        return inList ? <li key={node.id} className="ts-doc-static-item">{body}</li> : <div key={node.id}>{body}</div>;
+      }
+
+      case "section": {
+        const num = ctx.numbers.get(node.id);
+        const heading = `${num?.label ?? "관"} ${node.title}`;
+        return (
+          <section key={node.id} id={`sec-${node.id}`} className="ts-doc-section">
+            {ctx.mode === "edit" && <NodeControls ctx={ctx} nodeId={node.id} what={heading} />}
+            <h2 className="ts-doc-section-title">{heading}</h2>
+            <Block nodes={node.children} ctx={ctx} />
+          </section>
+        );
+      }
+
       case "forBlock":
         return (
           <div key={node.id} className="ts-muted">
@@ -335,7 +358,7 @@ export function DocBody({ tree, ctx }: { tree: Node & { kind: "document" }; ctx:
         <div className="ts-empty">
           <p className="ts-empty-what">아직 조가 하나도 없다 — 이 문면은 조립해도 아무것도 만들지 않는다.</p>
           <p className="ts-empty-example">예: 제1조(보험금의 지급사유) · 제2조(보험금을 지급하지 않는 사유)</p>
-          <p className="ts-empty-action">위 바에서 편집으로 들어가 오른쪽 패널의 「조 추가」로 시작하라.</p>
+          <p className="ts-empty-action">위 바에서 편집으로 들어가 오른쪽 패널의 「여기에 추가」(관 또는 조)로 시작하라.</p>
         </div>
       ) : (
         <Block nodes={tree.children} ctx={ctx} />

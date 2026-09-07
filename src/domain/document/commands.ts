@@ -27,12 +27,16 @@ import {
   type ArticleRefNode,
   type BlockBranch,
   type BlockNode,
+  type BoxNode,
   type DocumentNode,
   type InlineBranch,
   type InlineNode,
   type Node,
   type NodeEntry,
   type SlotName,
+  type TableColumn,
+  type TableNode,
+  type TableRow,
   type TreeEnv,
   type TreeIndex,
 } from "./nodes";
@@ -56,6 +60,9 @@ export type Command =
   /** 조 명 또는 문서 제목. */
   | { type: "setTitle"; nodeId: Id; title: string }
   | { type: "setSlotRef"; nodeId: Id; ref: string }
+  /** 정적 표의 제목·열·행을 통째로 바꾼다. 셀 수 = 열 수. */
+  | { type: "setTable"; nodeId: Id; title?: string; columns: TableColumn[]; rows: TableRow[] }
+  | { type: "setBox"; nodeId: Id; title: string; lines: string[] }
   | { type: "setArticleRef"; nodeId: Id; targets: { nodeId: Id }[]; connector: string; scope: ArticleRefNode["scope"] }
   | { type: "setAppendixRef"; nodeId: Id; appendixCode: Code }
   | { type: "setClauseOptions"; nodeId: Id; options: Record<Code, Code> }
@@ -316,8 +323,35 @@ export function applyCommand(doc: DocumentNode, cmd: Command, opts: ApplyOptions
     case "setTitle": {
       const e = entryOf(ix, cmd.nodeId);
       if (!e.ok) return e;
-      if (e.value.node.kind !== "article" && e.value.node.kind !== "document") return structure("조 명은 조에만, 제목은 문서에만 둘 수 있습니다", e.value.path);
+      if (e.value.node.kind !== "article" && e.value.node.kind !== "document" && e.value.node.kind !== "section") {
+        return structure("제목은 문서 · 관 · 조에만 둘 수 있습니다", e.value.path);
+      }
       e.value.node.title = cmd.title;
+      return ok(work);
+    }
+
+    case "setTable": {
+      const e = entryOf(ix, cmd.nodeId);
+      if (!e.ok) return e;
+      if (e.value.node.kind !== "table") return structure("표가 아닌 노드에는 표 내용을 넣을 수 없습니다", e.value.path);
+      if (cmd.columns.length === 0) return structure("표에는 열이 하나 이상 있어야 합니다", e.value.path);
+      const bad = cmd.rows.findIndex((row) => row.cells.length !== cmd.columns.length);
+      if (bad >= 0) return structure(`${bad + 1}번째 행의 셀 수(${cmd.rows[bad].cells.length})가 열 수(${cmd.columns.length})와 다릅니다`, e.value.path);
+      const node = e.value.node as TableNode;
+      delete node.title;
+      if (cmd.title !== undefined && cmd.title !== "") node.title = cmd.title;
+      node.columns = cmd.columns.map((c) => (c.width !== undefined ? { width: c.width } : {}));
+      node.rows = cmd.rows.map((r) => ({ ...(r.header ? { header: true } : {}), cells: [...r.cells] }));
+      return ok(work);
+    }
+
+    case "setBox": {
+      const e = entryOf(ix, cmd.nodeId);
+      if (!e.ok) return e;
+      if (e.value.node.kind !== "box") return structure("박스가 아닌 노드에는 박스 내용을 넣을 수 없습니다", e.value.path);
+      const node = e.value.node as BoxNode;
+      node.title = cmd.title;
+      node.lines = [...cmd.lines];
       return ok(work);
     }
 

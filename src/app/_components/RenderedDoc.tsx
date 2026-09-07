@@ -13,8 +13,17 @@ import type {
   RenderedInline,
   RenderedItem,
   RenderedParagraph,
+  RenderedSection,
+  RenderedStatic,
   RenderedSubitem,
 } from "@/domain/assembly";
+
+import { StaticBox, StaticTable } from "./StaticNodes";
+
+/** 정적 표·박스 (ADR-0029) — 편집기와 같은 컴포넌트. */
+function Static({ node }: { node: RenderedStatic }) {
+  return node.kind === "table" ? <StaticTable node={node} /> : <StaticBox node={node} />;
+}
 
 /** 오류 표식 — 문자 글리프(⚠)가 아니라 그린다. 색은 `currentColor` 로 상속된다 (디자인원칙 §1.6). */
 function WarningIcon() {
@@ -68,8 +77,9 @@ function Subitem({ node }: { node: RenderedSubitem | ErrorNode }) {
   );
 }
 
-function Item({ node }: { node: RenderedItem | ErrorNode }) {
+function Item({ node }: { node: RenderedItem | RenderedStatic | ErrorNode }) {
   if (node.kind === "error") return <li><ErrorMark node={node} /></li>;
+  if (node.kind !== "item") return <li className="ts-doc-static-item"><Static node={node} /></li>;
   return (
     <li id={`node-${node.id}`} className="ts-doc-item">
       {node.children.map((c, i) => (
@@ -87,17 +97,18 @@ function Item({ node }: { node: RenderedItem | ErrorNode }) {
 }
 
 /** 항 — 호 목록이 있으면 `<div>` 로, 없으면 `<p>` 로 낸다 — `<ol>` 을 `<p>` 안에 두지 않기 위해서다 (문단 표시는 클래스가 한다). */
-function Paragraph({ node }: { node: RenderedParagraph | ErrorNode }) {
+function Paragraph({ node }: { node: RenderedParagraph | RenderedStatic | ErrorNode }) {
   if (node.kind === "error")
     return (
       <p className="ts-doc-paragraph">
         <ErrorMark node={node} />
       </p>
     );
+  if (node.kind !== "paragraph") return <Static node={node} />;
   const items = node.items ?? [];
   const body = (
     <>
-      <span className="ts-doc-num">{node.label}</span>{" "}
+      {node.label ? <span className="ts-doc-num">{node.label}</span> : null}{" "}
       {node.children.map((c, i) => (
         <Inline key={i} node={c} />
       ))}
@@ -121,8 +132,22 @@ function Paragraph({ node }: { node: RenderedParagraph | ErrorNode }) {
   );
 }
 
-function Article({ node }: { node: RenderedArticle | ErrorNode }) {
+function Section({ node }: { node: RenderedSection }) {
+  return (
+    <section id={`node-${node.id}`} className="ts-doc-section">
+      <h2 className="ts-doc-section-title">
+        {node.label} {node.title}
+      </h2>
+      {node.children.map((a, i) => (
+        <Article key={i} node={a} />
+      ))}
+    </section>
+  );
+}
+
+function Article({ node }: { node: RenderedArticle | RenderedSection | ErrorNode }) {
   if (node.kind === "error") return <div className="ts-doc-article"><ErrorMark node={node} /></div>;
+  if (node.kind === "section") return <Section node={node} />;
   return (
     <section id={`node-${node.id}`} className="ts-doc-article">
       <h3 className="ts-doc-article-title">

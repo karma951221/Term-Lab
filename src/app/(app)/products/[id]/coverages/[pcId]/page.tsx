@@ -137,7 +137,7 @@ export default async function ProductCoverageDetailPage({ params }: { params: Pr
           상품담보 미리보기
           {preview.ok && (
             <span className="ts-count">
-              오류 <b>{preview.value.issues.length}</b> / 조 {preview.value.doc.children.filter((n) => n.kind === "article").length}
+              오류 <b>{preview.value.issues.length}</b> / 조 {preview.value.doc.children.flatMap((n) => (n.kind === "section" ? n.children : [n])).filter((n) => n.kind === "article").length}
             </span>
           )}
         </h2>

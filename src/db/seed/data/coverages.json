@@ -1,56 +1,50 @@
 [
   {
-    "code": "base-death",
-    "name": "상해사망(기본계약)",
-    "benefitName": "사망보험금",
+    "code": "base-disability80",
+    "name": "일반상해80%이상후유장해",
+    "benefitName": "일반상해80%이상후유장해보험금",
     "coverageValues": [
       {
         "path": "D0001",
-        "value": false
+        "value": "일반상해80%이상후유장해보험금"
       }
     ],
-    "benefitValues": [
-      {
-        "path": "D0003.F01",
-        "value": false
-      },
-      {
-        "path": "D0003.F02",
-        "value": 100
-      }
-    ]
+    "benefitValues": []
   },
   {
     "code": "death",
-    "name": "일반상해사망",
+    "name": "일반상해사망보장",
     "benefitName": "사망보험금",
-    "attachments": [
-      "D0006",
-      "D0007"
-    ],
     "coverageValues": [
       {
         "path": "D0001",
-        "value": false
-      },
-      {
-        "path": "D0006",
-        "value": 24
-      },
-      {
-        "path": "D0007",
-        "value": "24개월"
+        "value": "사망보험금"
       }
     ],
-    "benefitValues": [
+    "benefitValues": []
+  },
+  {
+    "code": "living80",
+    "name": "일반상해80%이상후유장해 생활자금보장",
+    "benefitName": "생활자금",
+    "coverageValues": [
       {
-        "path": "D0003.F01",
-        "value": true
-      },
-      {
-        "path": "D0003.F02",
-        "value": 100
+        "path": "D0001",
+        "value": "일반상해80%이상후유장해 생활자금"
       }
-    ]
+    ],
+    "benefitValues": []
+  },
+  {
+    "code": "fracture",
+    "name": "골절(치아파절 제외)진단비Ⅱ보장",
+    "benefitName": "골절진단비",
+    "coverageValues": [
+      {
+        "path": "D0001",
+        "value": "골절(치아파절 제외)진단비"
+      }
+    ],
+    "benefitValues": []
   }
 ]

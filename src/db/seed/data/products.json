@@ -1,30 +1,48 @@
 [
   {
     "code": "alpha-plus",
-    "name": "알파Plus(축약)",
+    "name": "알파Plus보장보험",
     "general": "alpha-general",
     "namingTemplate": "[A0001] [담보명] [A0002]",
-    "values": [
-      {
-        "code": "D0002",
-        "value": "V02"
-      }
+    "appendices": [
+      "APX01_INTEREST",
+      "APX02_DISABILITY",
+      "APX03_SURGERY_1_7",
+      "APX04_CANCER",
+      "APX05",
+      "APX06",
+      "APX07_STROKE",
+      "APX08_AMI",
+      "APX09",
+      "APX10_LUNG",
+      "APX11_LIVER",
+      "APX12_DIABETES",
+      "APX13_BURN",
+      "APX14_FRACTURE_2",
+      "APX15_MAJOR_INJURY",
+      "APX16",
+      "APX17",
+      "APX18",
+      "APX19",
+      "APX20_BENIGN_BRAIN",
+      "APX21_FRACTURE_TABLE_2"
     ],
+    "values": [],
     "planOptions": [
       {
         "code": "type-1",
         "axis": "type",
         "number": 1,
         "name": "보험료 납입면제 미적용형",
-        "planTypeCode": "D0008",
+        "planTypeCode": "D0002",
         "values": [
           {
-            "code": "D0008",
+            "code": "D0002",
             "fieldCode": "F01",
             "value": false
           },
           {
-            "code": "D0008",
+            "code": "D0002",
             "fieldCode": "F02",
             "value": []
           }
@@ -34,16 +52,16 @@
         "code": "type-2",
         "axis": "type",
         "number": 2,
-        "name": "보험료 납입면제 적용형",
-        "planTypeCode": "D0008",
+        "name": "보험료 납입면제형",
+        "planTypeCode": "D0002",
         "values": [
           {
-            "code": "D0008",
+            "code": "D0002",
             "fieldCode": "F01",
             "value": true
           },
           {
-            "code": "D0008",
+            "code": "D0002",
             "fieldCode": "F02",
             "value": [
               "V01",
@@ -61,15 +79,21 @@
         "type-2"
       ]
     ],
+    "groups": [
+      {
+        "code": "injury",
+        "title": "상해 관련 특별약관"
+      }
+    ],
     "mounts": [
       {
         "code": "base",
-        "coverage": "base-death",
+        "coverage": "base-disability80",
         "section": "base",
         "attributes": []
       },
       {
-        "code": "basic",
+        "code": "death-basic",
         "coverage": "death",
         "section": "special",
         "attributes": [
@@ -81,7 +105,7 @@
         "group": "injury"
       },
       {
-        "code": "addon",
+        "code": "death-addon",
         "coverage": "death",
         "section": "special",
         "attributes": [
@@ -91,12 +115,20 @@
           }
         ],
         "group": "injury"
-      }
-    ],
-    "groups": [
+      },
       {
-        "code": "injury",
-        "title": "상해 관련 특별약관"
+        "code": "living80",
+        "coverage": "living80",
+        "section": "special",
+        "attributes": [],
+        "group": "injury"
+      },
+      {
+        "code": "fracture",
+        "coverage": "fracture",
+        "section": "special",
+        "attributes": [],
+        "group": "injury"
       }
     ]
   }

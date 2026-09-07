@@ -15,6 +15,7 @@ export function articlesOf(tree: DocumentNode): ArticleNode[] {
   const walk = (nodes: readonly Node[]): void => {
     for (const n of nodes) {
       if (n.kind === "article") out.push(n);
+      else if (n.kind === "section") walk(n.children);
       else if (n.kind === "condBlock") for (const br of n.branches) walk(br.children);
     }
   };

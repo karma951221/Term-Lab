@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { nodeBuilders, sequentialIds, type ClauseGate, type Command } from "@/domain/document";
+import { nodeBuilders, sequentialIds, type ClauseGate, type Command, type DocumentNode } from "@/domain/document";
 import type { EvalContext } from "@/domain/expression";
 import type { Actor, Id, Result } from "@/domain/types";
 
@@ -292,5 +292,41 @@ describe("document 서비스 (PGlite)", () => {
       expect(await svc.get(generalId)).toBeUndefined();
       expect(await svc.remove(admin, generalId, { confirm: true })).toEqual({ ok: false, rejection: { reason: "notFound", what: `문서 ${generalId}` } });
     });
+  });
+});
+
+describe("importTree — 트리 통째 적재 (시드 · E2E)", () => {
+  it("앞 조가 뒤 조를 가리키는 트리를 한 번에 넣고 전체 검증한다 — 루트 id·제목은 문서 것을 유지", async () => {
+    const t = await createTestDb();
+    const svc = createDocumentService(t.db);
+    const g = unwrap(await svc.createGeneral(editor, "가져오기 보통약관"));
+    const tree: DocumentNode = {
+      id: "x-doc",
+      kind: "document",
+      title: "무시되는 제목",
+      children: [
+        { id: "x-s1", kind: "section", title: "목적", children: [{ id: "x-a1", kind: "article", title: "목적", children: [{ id: "x-a1-p1", kind: "paragraph", children: [{ id: "x-a1-p1-r", kind: "articleRef", targets: [{ nodeId: "x-a2" }], connector: "및", scope: "self" }] }] }] },
+        { id: "x-s2", kind: "section", title: "지급", children: [{ id: "x-a2", kind: "article", title: "지급", children: [{ id: "x-a2-p1", kind: "paragraph", children: [{ id: "x-a2-p1-t", kind: "text", text: "본문" }] }] }] },
+      ],
+    };
+    const saved = unwrap(await svc.importTree(editor, g.id, tree));
+    expect(saved.tree.id).toBe(g.tree.id);
+    expect(saved.tree.title).toBe("가져오기 보통약관");
+    expect(saved.tree.children.map((c) => c.id)).toEqual(["x-s1", "x-s2"]);
+    await t.close();
+  });
+
+  it("깨진 참조가 있는 트리는 거부한다", async () => {
+    const t = await createTestDb();
+    const svc = createDocumentService(t.db);
+    const g = unwrap(await svc.createGeneral(editor, "깨진 보통약관"));
+    const r = await svc.importTree(editor, g.id, {
+      id: "y-doc",
+      kind: "document",
+      title: "y",
+      children: [{ id: "y-a1", kind: "article", title: "a", children: [{ id: "y-p", kind: "paragraph", children: [{ id: "y-r", kind: "articleRef", targets: [{ nodeId: "없음" }], connector: "및", scope: "self" }] }] }],
+    });
+    expect(rejection(r).reason).toBe("invalid");
+    await t.close();
   });
 });

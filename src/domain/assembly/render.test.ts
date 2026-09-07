@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { numberDocument, renderDocument } from "./render";
+import { assemble } from "./booklet";
+import { alphaPlusFixture } from "./fixture";
+import { collectAppendices, numberDocument, renderDocument } from "./render";
 import type { SubstitutedDoc } from "./types";
 
 const text = (id: string, value: string) => ({ kind: "text" as const, id, text: value });
@@ -35,7 +37,7 @@ describe("참조 슬롯 렌더", () => {
     };
     const result = renderDocument(numberDocument(doc), { document: "special", ownerId: "pc", general: numberDocument(general()), appendices: [] });
     const article = result.doc.children[0];
-    if (article.kind === "error" || article.children[0].kind === "error") throw new Error("unexpected error");
+    if (article.kind !== "article" || article.children[0].kind !== "paragraph") throw new Error("unexpected error");
     expect(article.children[0].children[0]).toMatchObject({ label: "보통약관 제1조(해약환급금) 제1항 및 제2항" });
   });
 
@@ -59,7 +61,7 @@ describe("참조 슬롯 렌더", () => {
     };
     const result = renderDocument(numberDocument(doc), { document: "special", ownerId: "pc", appendices: [] });
     const article = result.doc.children[0];
-    if (article.kind === "error" || article.children[0].kind === "error") throw new Error("unexpected error");
+    if (article.kind !== "article" || article.children[0].kind !== "paragraph") throw new Error("unexpected error");
     expect(article.children[0].children[0]).toMatchObject({ label: "제2호, 제2항 또는 제2조(둘째 조) 제1항" });
   });
 
@@ -73,7 +75,7 @@ describe("참조 슬롯 렌더", () => {
     const result = renderDocument(numberDocument(doc), { document: "special", ownerId: "pc", appendices: [] });
     expect(result.issues.map((issue) => issue.at.refPath)).toEqual(["gone-1", "gone-2"]);
     const article = result.doc.children[0];
-    if (article.kind === "error" || article.children[0].kind === "error") throw new Error("unexpected structural error");
+    if (article.kind !== "article" || article.children[0].kind !== "paragraph") throw new Error("unexpected structural error");
     expect(article.children[0].children).toHaveLength(1);
     expect(article.children[0].children[0].kind).toBe("error");
   });
@@ -87,7 +89,32 @@ describe("참조 슬롯 렌더", () => {
     };
     const result = renderDocument(numberDocument(doc), { document: "special", ownerId: "pc", general: numberDocument(general()), aliases: new Map([["omitted", "g-a"]]), appendices: [] });
     const article = result.doc.children[0];
-    if (article.kind === "error" || article.children[0].kind === "error") throw new Error("unexpected error");
+    if (article.kind !== "article" || article.children[0].kind !== "paragraph") throw new Error("unexpected error");
     expect(article.children[0].children[0]).toMatchObject({ label: "보통약관 제1조(해약환급금)" });
+  });
+});
+
+describe("별표 번호는 상품 별표 목록 순서다 (ADR-0030)", () => {
+  it("목록 순서대로 번호를 매기고 참조되지 않은 별표도 번호를 차지한다", () => {
+    const master = [
+      { code: "APX_A", name: "A", description: "" },
+      { code: "APX_B", name: "B", description: "" },
+    ];
+    expect(collectAppendices(["APX_B", "APX_A"], master).map((a) => [a.code, a.number, a.name])).toEqual([
+      ["APX_B", 1, "B"],
+      ["APX_A", 2, "A"],
+    ]);
+  });
+
+  it("마스터에 없는 코드는 번호는 차지하되 이름이 「(없는 별표)」다", () => {
+    expect(collectAppendices(["APX_X"], [])).toEqual([{ code: "APX_X", name: "(없는 별표)", number: 1 }]);
+  });
+
+  it("목록에 없는 별표를 참조하면 brokenRef 오류 마커", () => {
+    const input = alphaPlusFixture();
+    const booklet = assemble({ ...input, product: { ...input.product, appendixOrder: [] } });
+    expect(booklet.issues.map((i) => i.kind)).toContain("brokenRef");
+    expect(booklet.issues[0].message).toMatch(/상품 별표 목록에 없습니다/);
+    expect(booklet.appendices).toEqual([]);
   });
 });

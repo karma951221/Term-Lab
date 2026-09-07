@@ -3,7 +3,7 @@
  *
  * 1. 마이그레이션 적용 (`drizzle/` 의 SQL 을 `.data/pgdata`, 또는 `PGLITE_DATA_DIR` 로 지정한 파일 DB 에).
  *    PGlite 드라이버가 아니면(향후 프로덕션 pg) 건너뛴다 — drizzle-kit migrate CLI 몫.
- * 2. `ensureSeedAdmin()` 으로 관리자 확보 → 그 actor 로 관통 1 축약 시드(`seedAlphaPlus`) 실행.
+ * 2. `ensureSeedAdmin()` 으로 관리자 확보 → 그 actor 로 알파Plus 실물 시드(`seedAlphaPlus`) 실행.
  *
  * 몇 번을 돌려도 안전하다 — 마이그레이션은 drizzle 자체가 적용 이력으로 건너뛰고,
  * 시드는 상품명으로 이미 있음을 판단해 건너뛴다.
@@ -38,7 +38,7 @@ async function seed() {
   console.log(`[seed] 관리자 확보: ${admin.name} (${admin.id})`);
 
   const result = await seedAlphaPlus(services, actor);
-  console.log(`[seed] 관통 1 축약 시드 ${result.created ? "생성" : "이미 있음(건너뜀)"} — 상품 ${result.productId}`);
+  console.log(`[seed] 알파Plus 실물 시드 ${result.created ? "생성" : "이미 있음(건너뜀)"} — 상품 ${result.productId}`);
 }
 
 seed()

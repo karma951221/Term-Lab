@@ -1721,6 +1721,78 @@ label.ts-field > textarea {
   color: var(--ts-ink-2);
 }
 
+/* 관 · 정적 표 · 박스 (ADR-0029) */
+.ts-doc-section-title {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  margin: 28px 0 8px;
+}
+
+.ts-doc-static-item {
+  list-style: none;
+  padding-left: 0;
+  text-indent: 0;
+}
+
+.ts-doc-static-item::before {
+  content: none;
+}
+
+.ts-doc-table-wrap {
+  margin: 8px 0 12px 1.5em;
+  text-indent: 0;
+}
+
+.ts-doc-table-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.ts-doc-table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.ts-doc-table th,
+.ts-doc-table td {
+  border: 1px solid var(--ts-rule-strong);
+  padding: 5px 8px;
+  vertical-align: top;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-indent: 0;
+}
+
+.ts-doc-table th {
+  background: var(--ts-surface-2);
+  font-weight: 700;
+  text-align: center;
+}
+
+.ts-doc-box {
+  margin: 8px 0 12px 1.5em;
+  padding: 8px 12px;
+  border: 1px solid var(--ts-rule-strong);
+  background: var(--ts-surface);
+  font-size: 14px;
+  line-height: 1.7;
+  text-indent: 0;
+}
+
+.ts-doc-box-title {
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.ts-doc-box-line {
+  margin: 0;
+}
+
 .ts-doc-group {
   margin: 0 0 24px;
 }

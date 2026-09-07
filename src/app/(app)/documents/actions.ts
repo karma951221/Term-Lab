@@ -8,7 +8,7 @@ import { indexTree, nodeBuilders } from "@/domain/document";
 import type { Id } from "@/domain/types";
 import { currentActor, getServices } from "@/lib/services";
 
-import { moveTarget, parseOptions, str } from "./lib";
+import { moveTarget, parseLines, parseOptions, parseTableForm, str } from "./lib";
 
 const BASE = "/documents";
 
@@ -78,6 +78,15 @@ export async function insertNodeAction(documentId: Id, parentId: Id, slot: "chil
   switch (kind) {
     case "article":
       node = b.article(str(formData, "title") || "새 조", []);
+      break;
+    case "section":
+      node = b.section(str(formData, "title") || "새 관", []);
+      break;
+    case "table":
+      node = b.table(parseTableForm(formData));
+      break;
+    case "box":
+      node = b.box(str(formData, "title") || "용어풀이", parseLines(String(formData.get("lines") ?? "")));
       break;
     case "paragraph":
       node = b.paragraph([]);
@@ -153,6 +162,17 @@ export async function setTextAction(documentId: Id, nodeId: Id, formData: FormDa
   await apply(documentId, [{ type: "setText", nodeId, text }], formData);
 }
 
+/** 표 내용 통째 저장 — 제목 · 열 너비 · 제목줄 수 · 행 (ADR-0029). */
+export async function setTableAction(documentId: Id, nodeId: Id, formData: FormData): Promise<void> {
+  await apply(documentId, [{ type: "setTable", nodeId, ...parseTableForm(formData) }], formData);
+}
+
+/** 박스 내용 저장 — 제목 · 줄. */
+export async function setBoxAction(documentId: Id, nodeId: Id, formData: FormData): Promise<void> {
+  await apply(documentId, [{ type: "setBox", nodeId, title: str(formData, "title"), lines: parseLines(String(formData.get("lines") ?? "")) }], formData);
+}
+
+/** 조 명 · 관 제목 (같은 setTitle 커맨드). */
 export async function setArticleTitleAction(documentId: Id, nodeId: Id, formData: FormData): Promise<void> {
   await apply(documentId, [{ type: "setTitle", nodeId, title: str(formData, "title") }], formData);
 }

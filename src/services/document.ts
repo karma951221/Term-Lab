@@ -89,6 +89,11 @@ export interface DocumentService {
   setTitle(actor: Actor, id: Id, title: string): Promise<Result<DocumentRecord>>;
   setGeneralDocument(actor: Actor, id: Id, generalDocumentId: Id | undefined): Promise<Result<DocumentRecord>>;
   apply(actor: Actor, id: Id, commands: readonly Command[]): Promise<Result<DocumentRecord>>;
+  /**
+   * 트리 통째 적재 — 루트 id·제목은 문서 것을 유지하고 자식만 받는다. 앞 조가 뒤 조를 가리켜도 되도록
+   * 커맨드 단위가 아니라 **전체 트리를 한 번** 검증한다 (시드 · 원문 변환 · E2E 용).
+   */
+  importTree(actor: Actor, id: Id, tree: DocumentNode): Promise<Result<DocumentRecord>>;
   duplicate(actor: Actor, id: Id, target: DuplicateTarget): Promise<Result<DocumentRecord>>;
   // 문서 — 파괴적
   remove(actor: Actor, id: Id, opts?: Confirmable): Promise<Result<void>>;
@@ -381,6 +386,17 @@ export function createDocumentService(db: Db, deps: DocumentServiceDeps = {}): D
         }),
       ),
 
+    importTree: (actor, id, incoming) =>
+      db.transaction((tx) =>
+        withDoc(tx, id, async (doc) => {
+          const tree: DocumentNode = { ...incoming, id: doc.tree.id, title: doc.title };
+          const issues = await validateDoc(tx, doc, tree);
+          if (issues.length > 0) return invalid(issues);
+          await repo.saveDocument(tx, id, { tree, title: doc.title }, actor.userId);
+          return ok((await repo.loadDocument(tx, id))!);
+        }),
+      ),
+
     duplicate: (actor, id, target) =>
       db.transaction((tx) =>
         withDoc(tx, id, async (doc) => {
@@ -460,6 +476,10 @@ export function createDocumentService(db: Db, deps: DocumentServiceDeps = {}): D
 function collectArticleIds(node: DocumentNode["children"][number], out: Set<Id>): void {
   if (node.kind === "article") {
     out.add(node.id);
+    return;
+  }
+  if (node.kind === "section") {
+    for (const c of node.children) collectArticleIds(c, out);
     return;
   }
   for (const br of node.branches) {
