@@ -34,10 +34,12 @@ import {
   setAppendixRefAction,
   setArticleRefAction,
   setArticleTitleAction,
+  setBoxAction,
   setClauseOptionsAction,
   setDocumentTitleAction,
   setGeneralDocumentAction,
   setSlotRefAction,
+  setTableAction,
   setTextAction,
   setWhenAction,
 } from "../../actions";
@@ -45,7 +47,10 @@ import { NodeControls } from "./DocBody";
 import { chipText, returnToValue, type DocCtx } from "./ctx";
 
 const KIND_LABEL: Record<string, string> = {
+  section: "관",
   article: "조",
+  table: "표",
+  box: "박스",
   paragraph: "항",
   item: "호",
   subitem: "목",
@@ -62,12 +67,56 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 const ADD_KINDS = {
-  top: ["article", "condBlock"],
-  block: ["paragraph", "condBlock", "clauseBlockRef"],
+  top: ["article", "section", "condBlock"],
+  section: ["article", "condBlock"],
+  block: ["paragraph", "condBlock", "clauseBlockRef", "table", "box"],
   inline: ["text", "slot", "inlineCond", "articleRef", "appendixRef", "clauseInlineRef"],
-  item: ["item", "condBlock"],
+  item: ["item", "condBlock", "table", "box"],
   subitem: ["subitem", "condBlock"],
 } satisfies Record<string, readonly NodeKind[]>;
+
+/** 표 폼 필드 — 추가·수정 폼이 같이 쓴다 (값은 노드에서 역직렬화). */
+function TableFields({ prefix, node, withTitle = true }: { prefix: string; node?: Node & { kind: "table" }; withTitle?: boolean }) {
+  const headerRows = node ? node.rows.findIndex((r) => !r.header) : -1;
+  return (
+    <>
+      {withTitle && (
+        <div className="ts-form-row">
+          <label htmlFor={`${prefix}-title`}>표 제목</label>
+          <input id={`${prefix}-title`} type="text" name="title" defaultValue={node?.title ?? ""} placeholder="없으면 비운다" />
+        </div>
+      )}
+      <div className="ts-form-row">
+        <label htmlFor={`${prefix}-widths`}>열 너비 %</label>
+        <input id={`${prefix}-widths`} type="text" name="widths" className="ts-mono" defaultValue={node ? node.columns.map((c) => c.width ?? "").join(",") : ""} placeholder="예: 30,70 (빈칸은 자동)" />
+      </div>
+      <div className="ts-form-row">
+        <label htmlFor={`${prefix}-header`}>제목줄 수</label>
+        <input id={`${prefix}-header`} type="number" name="headerRows" min={0} defaultValue={node ? (headerRows < 0 ? node.rows.length : headerRows) : 1} />
+      </div>
+      <div className="ts-form-row ts-form-full">
+        <label htmlFor={`${prefix}-rows`}>행 (한 줄 = 한 행 · 셀은 |)</label>
+        <textarea id={`${prefix}-rows`} name="rows" rows={6} className="ts-mono" defaultValue={node ? node.rows.map((r) => r.cells.join("|")).join("\n") : ""} placeholder={"용어|정의\n계약자|회사와 계약을 체결하고…"} />
+      </div>
+    </>
+  );
+}
+
+/** 박스 폼 필드. */
+function BoxFields({ prefix, node }: { prefix: string; node?: Node & { kind: "box" } }) {
+  return (
+    <>
+      <div className="ts-form-row">
+        <label htmlFor={`${prefix}-box-title`}>박스 제목</label>
+        <input id={`${prefix}-box-title`} type="text" name="title" defaultValue={node?.title ?? ""} placeholder="예: 심신상실 (【】 없이)" />
+      </div>
+      <div className="ts-form-row ts-form-full">
+        <label htmlFor={`${prefix}-box-lines`}>줄 (한 줄씩)</label>
+        <textarea id={`${prefix}-box-lines`} name="lines" rows={5} defaultValue={node ? node.lines.join("\n") : ""} />
+      </div>
+    </>
+  );
+}
 
 type AddMode = keyof typeof ADD_KINDS;
 
@@ -109,10 +158,21 @@ function AddForm({ ctx, data, parentId, slot, mode }: { ctx: DocCtx; data: Panel
             ))}
           </select>
         </div>
-        {kinds.includes("article") && (
+        {(kinds.includes("article") || kinds.includes("section") || kinds.includes("table") || kinds.includes("box")) && (
           <div className="ts-form-row">
-            <label>조 제목</label>
-            <input type="text" name="title" placeholder="예: 보험금의 지급사유" />
+            <label>제목</label>
+            <input
+              type="text"
+              name="title"
+              placeholder={kinds.includes("article") ? "조: 보험금의 지급사유 · 관: 목적 및 용어의 정의" : "표 제목(없으면 비움) · 박스 제목(【】 없이)"}
+            />
+          </div>
+        )}
+        {kinds.includes("table") && <TableFields prefix={`add-${parentId}-${slot ?? "children"}`} withTitle={false} />}
+        {kinds.includes("box") && (
+          <div className="ts-form-row ts-form-full">
+            <label>박스 줄 (제목은 위 제목 칸 · 한 줄씩)</label>
+            <textarea name="lines" rows={3} placeholder="박스 본문 줄" />
           </div>
         )}
         {kinds.includes("text") && (
@@ -231,6 +291,46 @@ function OptionForm({ ctx, data, node }: { ctx: DocCtx; data: PanelData; node: N
 
 function NodeForms({ ctx, data, node }: { ctx: DocCtx; data: PanelData; node: Node }) {
   switch (node.kind) {
+    case "section":
+      return (
+        <>
+          <form action={setArticleTitleAction.bind(null, ctx.documentId, node.id)}>
+            <input type="hidden" name="returnTo" value={returnToValue(ctx)} />
+            <div className="ts-form-row">
+              <label htmlFor="sec-title">관 제목</label>
+              <input id="sec-title" type="text" name="title" defaultValue={node.title} />
+            </div>
+            <div className="ts-form-actions">
+              <button type="submit">관 제목 저장</button>
+            </div>
+          </form>
+          <AddForm ctx={ctx} data={data} parentId={node.id} mode="section" />
+        </>
+      );
+
+    case "table":
+      return (
+        <form action={setTableAction.bind(null, ctx.documentId, node.id)}>
+          <input type="hidden" name="returnTo" value={returnToValue(ctx)} />
+          <TableFields prefix={`edit-${node.id}`} node={node} />
+          <div className="ts-form-actions">
+            <button type="submit">표 저장</button>
+            <span className="ts-muted">제목줄은 굵게·음영, 너비는 %.</span>
+          </div>
+        </form>
+      );
+
+    case "box":
+      return (
+        <form action={setBoxAction.bind(null, ctx.documentId, node.id)}>
+          <input type="hidden" name="returnTo" value={returnToValue(ctx)} />
+          <BoxFields prefix={`edit-${node.id}`} node={node} />
+          <div className="ts-form-actions">
+            <button type="submit">박스 저장</button>
+          </div>
+        </form>
+      );
+
     case "article":
       return (
         <>

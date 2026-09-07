@@ -32,6 +32,7 @@ import {
   renameGroupAction,
   renameProductAction,
   renameProductCoverageAction,
+  setAppendixOrderAction,
   setOptionOverrideAction,
   setProductGeneralDocumentAction,
   unmountAction,
@@ -66,7 +67,7 @@ export default async function ProductDetailPage({
     );
   }
   const actor = await currentActor();
-  const [generals, defs, enumsList, planOptions, plans, coverages, attributeKinds, productCoverages, baseContractIds, groups, unplaced, overrides, completeness, namingTemplate, clauses] =
+  const [generals, defs, enumsList, planOptions, plans, coverages, attributeKinds, productCoverages, baseContractIds, groups, unplaced, overrides, completeness, namingTemplate, clauses, appendixOrder, appendixMaster] =
     await Promise.all([
       services.document.list("general"),
       services.catalog.list(),
@@ -83,7 +84,10 @@ export default async function ProductDetailPage({
       services.product.productCompleteness(id),
       services.product.getNamingTemplate(),
       services.clause.list(),
+      services.product.listAppendixOrder(id),
+      services.document.listAppendices(),
     ]);
+  const appendixName = new Map(appendixMaster.map((a) => [a.code, a.name] as const));
   const productValues = await services.product.getProductValues(id);
   const enumLookup = (code: string) => enumsList.find((e) => e.code === code);
   const productDefs = defs.filter((d) => (d.kind === "scalar" || d.kind === "struct") && d.level === "product" && d.alwaysExposed);
@@ -590,6 +594,53 @@ export default async function ProductDetailPage({
           <p className="ts-muted">미배치 상품담보: {unplaced.map((p) => p.name).join(", ") || "없음"}</p>
         </section>
       </Pair>
+
+      <section className="ts-section" id="appendices">
+        <h2 className="ts-section-title">
+          별표 목록 <span className="ts-count">{appendixOrder.length}건 — 순서가 곧 별표 번호</span>
+        </h2>
+        <Pair>
+          <div>
+            <table className="ts-table">
+              <thead>
+                <tr>
+                  <th className="col-code">번호</th>
+                  <th className="col-code">코드</th>
+                  <th className="col-flex">이름</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appendixOrder.map((code, i) => (
+                  <tr key={code}>
+                    <td className="col-code">별표{i + 1}</td>
+                    <td className="col-code ts-mono">{code}</td>
+                    <td className="col-flex">{appendixName.get(code) ?? <span className="ts-badge danger">(없는 별표)</span>}</td>
+                  </tr>
+                ))}
+                {appendixOrder.length === 0 && (
+                  <tr>
+                    <td className="col-flex ts-muted" colSpan={3}>
+                      별표 목록이 비어 있다 — 본문이 별표를 참조하면 조립 오류가 난다 (ADR-0030).
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <form action={setAppendixOrderAction.bind(null, id)} className="ts-form">
+            <label className="ts-field">
+              <span>별표 코드 (줄마다 하나 · 순서 = 번호)</span>
+              <textarea name="codes" rows={Math.max(6, appendixOrder.length + 1)} className="ts-mono" defaultValue={appendixOrder.join("\n")} />
+            </label>
+            <p className="ts-muted">
+              마스터 별표: {appendixMaster.map((a) => `${a.code}(${a.name})`).join(" · ") || "없음"}
+            </p>
+            <div className="ts-form-actions">
+              <button type="submit">별표 목록 저장</button>
+            </div>
+          </form>
+        </Pair>
+      </section>
 
       <section className="ts-section">
         <h2 className="ts-section-title">

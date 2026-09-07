@@ -7,7 +7,10 @@ import type { DocumentNode, Node } from "@/domain/document";
 import type { Id } from "@/domain/types";
 
 const KIND_LABEL: Record<string, string> = {
+  section: "관",
   article: "조",
+  table: "표",
+  box: "박스",
   paragraph: "항",
   item: "호",
   subitem: "목",

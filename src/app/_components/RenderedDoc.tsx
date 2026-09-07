@@ -18,9 +18,11 @@ import type {
   RenderedSubitem,
 } from "@/domain/assembly";
 
-/** 정적 표·박스 — 임시 자리 표시 (실제 표시는 편집기 확장과 함께). */
+import { StaticBox, StaticTable } from "./StaticNodes";
+
+/** 정적 표·박스 (ADR-0029) — 편집기와 같은 컴포넌트. */
 function Static({ node }: { node: RenderedStatic }) {
-  return <div id={`node-${node.id}`} className="ts-muted">[{node.kind === "table" ? `표${node.title ? `: ${node.title}` : ""}` : `박스: ${node.title}`}]</div>;
+  return node.kind === "table" ? <StaticTable node={node} /> : <StaticBox node={node} />;
 }
 
 /** 오류 표식 — 문자 글리프(⚠)가 아니라 그린다. 색은 `currentColor` 로 상속된다 (디자인원칙 §1.6). */
@@ -77,7 +79,7 @@ function Subitem({ node }: { node: RenderedSubitem | ErrorNode }) {
 
 function Item({ node }: { node: RenderedItem | RenderedStatic | ErrorNode }) {
   if (node.kind === "error") return <li><ErrorMark node={node} /></li>;
-  if (node.kind !== "item") return <li><Static node={node} /></li>;
+  if (node.kind !== "item") return <li className="ts-doc-static-item"><Static node={node} /></li>;
   return (
     <li id={`node-${node.id}`} className="ts-doc-item">
       {node.children.map((c, i) => (
@@ -106,7 +108,7 @@ function Paragraph({ node }: { node: RenderedParagraph | RenderedStatic | ErrorN
   const items = node.items ?? [];
   const body = (
     <>
-      <span className="ts-doc-num">{node.label}</span>{" "}
+      {node.label ? <span className="ts-doc-num">{node.label}</span> : null}{" "}
       {node.children.map((c, i) => (
         <Inline key={i} node={c} />
       ))}

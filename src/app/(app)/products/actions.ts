@@ -30,6 +30,18 @@ export async function createProductAction(formData: FormData): Promise<void> {
   redirect(detailPath(r.value.id));
 }
 
+/** 상품 별표 목록 통째 저장 — 줄마다 코드, 순서 = 별표 번호 (ADR-0030). */
+export async function setAppendixOrderAction(productId: Id, formData: FormData): Promise<void> {
+  const actor = await currentActor();
+  const codes = String(formData.get("codes") ?? "")
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter((s) => s !== "");
+  const r = await getServices().product.setAppendixOrder(actor, productId, codes);
+  if (!r.ok) redirect(errorRedirectPath(`/products/${productId}`, describeRejection(r.rejection).message));
+  redirect(`/products/${productId}#appendices`);
+}
+
 export async function renameProductAction(id: Id, formData: FormData): Promise<void> {
   const actor = await currentActor();
   const r = await getServices().product.renameProduct(actor, id, str(formData, "name"));

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { nodeBuilders } from "@/domain/document";
 
-import { moveTarget, parseOptions, str } from "./lib";
+import { moveTarget, parseLines, parseOptions, parseTableForm, str } from "./lib";
 
 describe("documents lib — 순수 파싱", () => {
   it("str — trim", () => {
@@ -35,5 +35,26 @@ describe("documents lib — 순수 파싱", () => {
     const b = nodeBuilders();
     const doc = b.document("문서", []);
     expect(moveTarget(doc, "no-such-id", 1)).toBeUndefined();
+  });
+});
+
+describe("parseTableForm — 표 폼 → 표 필드 (ADR-0029)", () => {
+  it("행 텍스트(셀은 |)와 너비·제목줄 수를 표 필드로", () => {
+    const fd = new FormData();
+    fd.set("title", "용어");
+    fd.set("widths", "30,");
+    fd.set("headerRows", "1");
+    fd.set("rows", "용어|정의\n계약자|사람");
+    expect(parseTableForm(fd)).toEqual({ title: "용어", columns: [{ width: 30 }, {}], rows: [{ header: true, cells: ["용어", "정의"] }, { cells: ["계약자", "사람"] }] });
+  });
+
+  it("열 수는 가장 긴 행 기준, 짧은 행은 빈 셀 · 제목 없으면 title 없음", () => {
+    const fd = new FormData();
+    fd.set("rows", "a|b|c\nd");
+    expect(parseTableForm(fd)).toEqual({ columns: [{}, {}, {}], rows: [{ cells: ["a", "b", "c"] }, { cells: ["d", "", ""] }] });
+  });
+
+  it("parseLines — 줄마다 하나, 빈 줄은 버린다", () => {
+    expect(parseLines(" 첫 줄 \n\n둘째 줄\n")).toEqual(["첫 줄", "둘째 줄"]);
   });
 });
