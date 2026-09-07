@@ -12,7 +12,7 @@
  */
 
 import type { OptionSelection } from "../clause/types";
-import type { DocumentNode } from "../document/nodes";
+import type { ArticleNode, DocumentNode } from "../document/nodes";
 import type { CompletenessFilter } from "../coverage/values";
 import { sortInGroup } from "../product/groups";
 import type { ClauseOptionOverride, ProductCoverage } from "../product/types";
@@ -24,8 +24,45 @@ import { judgeOmission } from "./omission";
 import { collectAppendices, locateIssues, numberDocument, renderDocument } from "./render";
 import { resolveDocument } from "./resolve";
 import { substituteSlots } from "./substitute";
-import type { AssemblyCoverage, AssemblyInput, Booklet, NumberedDoc, OmissionRecord, RenderedDoc, RenderedGroup, SpecialPreview, SubstitutedDoc, UndocumentedCoverage } from "./types";
+import type { AssemblyCoverage, AssemblyInput, Booklet, NumberedDoc, OmissionRecord, RArticle, RenderedDoc, RenderedGroup, SInline, SpecialPreview, SubstitutedDoc, UndocumentedCoverage } from "./types";
 import { articlesOf } from "./walk";
+
+/**
+ * 대치되는 보통약관 조의 항·호·목 → 같은 자리(순번)의 기본계약 항·호·목 별칭.
+ * 마스터 본문이 다른 조에서 「제4조(…) 제4항」처럼 대치될 조의 항을 가리킬 수 있다 (실물 제8조) — 대치 뒤 그 id 는
+ * 사라지므로 순번으로 기본계약 쪽 id 에 잇는다. 마스터의 조건 블록 안 항은 세지 않는다 (마스터 제3·4조는 평문).
+ */
+function positionAliases(master: ArticleNode, base: RArticle<SInline>): [Id, Id][] {
+  const out: [Id, Id][] = [];
+  const masterParagraphs = master.children.filter((c) => c.kind === "paragraph");
+  const baseParagraphs = base.children.filter((c) => c.kind === "paragraph");
+  masterParagraphs.forEach((mp, i) => {
+    const bp = baseParagraphs[i];
+    if (!bp) return;
+    out.push([mp.id, bp.id]);
+    const masterItems = (mp.items ?? []).filter((c) => c.kind === "item");
+    const baseItems = (bp.items ?? []).filter((c) => c.kind === "item");
+    masterItems.forEach((mi, j) => {
+      const bi = baseItems[j];
+      if (!bi) return;
+      out.push([mi.id, bi.id]);
+      (mi.subitems ?? []).filter((c) => c.kind === "subitem").forEach((mu, k) => {
+        const bu = (bi.subitems ?? []).filter((c) => c.kind === "subitem")[k];
+        if (bu) out.push([mu.id, bu.id]);
+      });
+    });
+  });
+  return out;
+}
+
+function masterArticles(doc: DocumentNode): Map<Id, ArticleNode> {
+  const out = new Map<Id, ArticleNode>();
+  for (const c of doc.children) {
+    if (c.kind === "article") out.set(c.id, c);
+    else if (c.kind === "section") for (const a of c.children) if (a.kind === "article") out.set(a.id, a);
+  }
+  return out;
+}
 
 // ───────────────────────────── 공통 ─────────────────────────────
 
@@ -127,6 +164,11 @@ function buildGeneral(input: AssemblyInput, contexts: AssemblyContexts, s: Share
       const generalSource: DocumentNode = { ...g, children: g.children.map(emptyReplaced) };
       const generalPrepared = prepare(generalSource, contexts.general, s, { coordinate: generalCoordinate(input.product), overrides: input.product.overrides, ...prepareCoordinates(input, g) });
       const replaced = replaceGeneralWithBase(generalPrepared.doc, basePrepared.doc, { productCoverageId: base.snapshot.id, productCoverageName: base.snapshot.name });
+      const originals = masterArticles(g);
+      for (const baseArticle of articlesOf(basePrepared.doc)) {
+        const original = baseArticle.linkedArticleId ? originals.get(baseArticle.linkedArticleId) : undefined;
+        if (original) for (const [from, to] of positionAliases(original, baseArticle)) replaced.aliases.set(from, to);
+      }
       const replacementIssues = replaced.issues.map((issue) => ({ ...issue, source: { document: "coverageMaster" as const, ownerId: doc.id, ownerName: base.snapshot.coverageName, articleId: issue.at.articleId, articleTitle: issue.at.articleTitle, nodePath: issue.at.articleId ? [doc.id, issue.at.articleId] : undefined } }));
       return { numbered: numberDocument(replaced.doc), issues: [...generalPrepared.issues, ...basePrepared.issues, ...replacementIssues], omitted: [], aliases: replaced.aliases };
     }

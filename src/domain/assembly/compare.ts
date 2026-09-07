@@ -15,7 +15,9 @@ const inlineText = (list: readonly RenderedInline[]): string =>
   list.map((n) => (n.kind === "text" ? n.text : n.kind === "error" ? `⟦${n.issue.kind}⟧` : n.label)).join("");
 
 function staticLines(n: RenderedStatic): string[] {
-  if (n.kind === "box") return ["```용어풀이", `【${n.title}】`, ...n.lines, "```"];
+  // 파싱양식 대칭: 그림은 ```그림 + 「설명: 」, 제목 없는 박스는 【】 줄 없이
+  if (n.kind === "box" && n.title === "그림") return ["```그림", ...n.lines.map((l) => `설명: ${l}`), "```"];
+  if (n.kind === "box") return ["```용어풀이", ...(n.title ? [`【${n.title}】`] : []), ...n.lines, "```"];
   const separator = `|${n.columns.map(() => "---").join("|")}|`;
   const out = ["```표", `제목: ${n.title ?? "(없음)"}`];
   let separated = false;

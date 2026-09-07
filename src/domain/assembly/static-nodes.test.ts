@@ -61,3 +61,28 @@ describe("관·표·박스가 조립을 통과한다 (ADR-0029)", () => {
     expect(ref.label).toBe("제2조(보험금의 지급사유)");
   });
 });
+
+describe("기본계약 대치 — 보통약관이 대치되는 조의 항을 가리키는 참조 (실물: 제8조 → 제4조 제4항)", () => {
+  it("대치된 조의 항 참조는 같은 자리(순번)의 기본계약 항으로 풀린다", () => {
+    const input = alphaPlusFixture();
+    const b = nodeBuilders(sequentialIds("q"));
+    const general = input.product.general!;
+    // 마스터 「보험금 지급에 관한 세부규정」(g-art-detail) 에 항 둘을 두고, 다른 조에서 그 둘째 항을 가리킨다
+    const detail = general.children.find((c): c is ArticleNode => c.kind === "article" && c.id === "g-art-detail")!;
+    const gp1 = b.paragraph([b.text("마스터 첫 항")]);
+    const gp2 = b.paragraph([b.text("마스터 둘째 항")]);
+    detail.children = [gp1, gp2];
+    const refund = general.children.find((c): c is ArticleNode => c.kind === "article" && c.id === "g-art-refund")!;
+    (refund.children[0] as ParagraphNode).children.push(b.text(" "), b.articleRef(gp2.id, "self"), b.text("에 따라"));
+    // 기본계약 문면의 세부규정 조는 항 둘 — 대치되면 둘째 항이 「제3조(…) 제2항」 으로 찍혀야 한다
+    const baseDoc = input.specialDocuments.get("cov-base-death")!;
+    const baseDetail = baseDoc.children.find((c): c is ArticleNode => c.kind === "article" && c.linkedArticleId === "g-art-detail")!;
+    baseDetail.children.push(b.paragraph([b.text("기본계약 둘째 항")]));
+
+    const booklet = assemble(input);
+    expect(booklet.issues).toEqual([]);
+    const rendered = booklet.general!.children.find((c): c is RenderedArticle => c.kind === "article" && c.id === "g-art-refund")!;
+    const ref = (rendered.children[0] as RenderedParagraph).children.find((n) => n.kind === "articleRef") as RenderedArticleRef;
+    expect(ref.label).toBe("제3조(보험금 지급에 관한 세부규정) 제2항");
+  });
+});
