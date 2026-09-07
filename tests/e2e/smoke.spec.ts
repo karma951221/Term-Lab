@@ -42,3 +42,21 @@ test("관통 1: 로그인 → 상품 → 조립 미리보기가 완성본으로 
   await expect(page.getByText("오류 없음.")).toBeVisible();
   await expect(page.getByText(/완성본 아님/)).toHaveCount(0);
 });
+
+test("관계정보: 공용조항 이웃을 그리고 노드 링크로 조회 대상을 바꾼다", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: /admin/ }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"));
+
+  await page.goto("/relations?kind=clause&code=C0001");
+  const graph = page.getByRole("img", { name: "조회 대상의 이웃 그래프" });
+  await expect(graph).toBeVisible();
+
+  const neighbor = graph.locator('a[data-graph-node^="article:"]').first();
+  await expect(neighbor).toBeVisible();
+  const neighborId = await neighbor.getAttribute("data-graph-node");
+  await neighbor.click();
+
+  await expect(page).toHaveURL((url) => url.searchParams.get("kind") === "article");
+  await expect(page.locator(`[data-graph-node="${neighborId}"]`).first()).toBeVisible();
+});

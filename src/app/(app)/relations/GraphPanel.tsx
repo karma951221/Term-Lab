@@ -99,7 +99,6 @@ export function GraphPanel({ plot, optionQuery }: GraphPanelProps) {
   const handlePointerDown = (event: PointerEvent<SVGSVGElement>) => {
     if (event.button !== 0) return;
     drag.current = { x: event.clientX, y: event.clientY };
-    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event: PointerEvent<SVGSVGElement>) => {
@@ -112,9 +111,8 @@ export function GraphPanel({ plot, optionQuery }: GraphPanelProps) {
     setViewBox(`${x - dx} ${y - dy} ${width} ${height}`);
   };
 
-  const stopDragging = (event: PointerEvent<SVGSVGElement>) => {
+  const stopDragging = () => {
     drag.current = null;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
   const referenceCount = plot.edges.reduce((sum, edge) => sum + edge.count, 0);
@@ -137,6 +135,7 @@ export function GraphPanel({ plot, optionQuery }: GraphPanelProps) {
         onPointerMove={handlePointerMove}
         onPointerUp={stopDragging}
         onPointerCancel={stopDragging}
+        onPointerLeave={stopDragging}
       >
         <title id={`${markerId}-title`}>조회 대상의 이웃 그래프</title>
         <desc id={`${markerId}-desc`}>노드 {plot.nodes.length}개 간선 {referenceCount}개</desc>
