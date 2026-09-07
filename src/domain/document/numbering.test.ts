@@ -92,3 +92,39 @@ describe("문면작성 S1·S3 — 번호는 저장하지 않고 현재 트리에
     expect(numbers.get("n3")?.label).toBe("③");
   });
 });
+
+describe("관 · 단항 조 (ADR-0029)", () => {
+  it("관은 제N관, 조 번호는 관을 넘어 연속이고 표·박스는 번호가 없다", () => {
+    const b = nodeBuilders(sequentialIds("n"));
+    const t = b.table({ columns: [{}], rows: [] });
+    const s1 = b.section("목적", [b.article("A", [b.paragraph([b.text("x")]), t])]);
+    const s2 = b.section("지급", [b.article("B", [b.paragraph([b.text("y")]), b.paragraph([b.text("z")])])]);
+    const doc = b.document("D", [s1, s2]);
+    const n = numberTree(doc);
+    expect(n.get(s1.id)).toEqual({ kind: "section", n: 1, label: "제1관" });
+    expect(n.get(s2.id)).toEqual({ kind: "section", n: 2, label: "제2관" });
+    expect(n.get(s1.children[0].id)?.label).toBe("제1조");
+    expect(n.get(s2.children[0].id)?.label).toBe("제2조");
+    expect(n.has(t.id)).toBe(false);
+  });
+
+  it("항이 하나뿐인 조는 항 마커를 찍지 않고, 둘 이상이면 ①②", () => {
+    const b = nodeBuilders(sequentialIds("n"));
+    const single = b.paragraph([b.text("x")]);
+    const p1 = b.paragraph([b.text("y")]);
+    const p2 = b.paragraph([b.text("z")]);
+    const doc = b.document("D", [b.article("A", [single]), b.article("B", [p1, p2])]);
+    const n = numberTree(doc);
+    expect(n.get(single.id)).toEqual({ kind: "paragraph", n: 1, label: "" });
+    expect(n.get(p1.id)?.label).toBe("①");
+    expect(n.get(p2.id)?.label).toBe("②");
+  });
+
+  it("참조 색인은 관 안의 조도 찾는다", () => {
+    const b = nodeBuilders(sequentialIds("n"));
+    const a = b.article("A", [b.paragraph([b.text("x")])]);
+    const doc = b.document("D", [b.section("관", [a])]);
+    const index = referenceTargetIndex(doc, numberTree(doc));
+    expect(index.get(a.id)).toEqual({ kind: "article", article: { id: a.id, n: 1, title: "A" } });
+  });
+});

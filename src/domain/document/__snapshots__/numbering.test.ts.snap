@@ -10,11 +10,11 @@ exports[`문면작성 S1·S3 — 번호는 저장하지 않고 현재 트리에�
   "s-clause-lapse": "②",
   "s-item-1": "1.",
   "s-item-2": "2.",
-  "s-par-apply-1": "①",
-  "s-par-exempt-1": "①",
+  "s-par-apply-1": "",
+  "s-par-exempt-1": "",
   "s-par-lapse-1": "①",
-  "s-par-pay-1": "①",
-  "s-par-term-1": "①",
+  "s-par-pay-1": "",
+  "s-par-term-1": "",
   "s-sub-1": "가.",
 }
 `;

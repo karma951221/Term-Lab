@@ -13,7 +13,7 @@
 import type { Id } from "../types";
 import type { ArticleNode, BlockNode, DocumentNode, Node } from "./nodes";
 
-export type NumberKind = "article" | "paragraph" | "item" | "subitem";
+export type NumberKind = "section" | "article" | "paragraph" | "item" | "subitem";
 
 export interface NodeNumber {
   kind: NumberKind;
@@ -33,6 +33,10 @@ export interface NumberingOptions {
 
 const CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
 const HANGUL = ["가", "나", "다", "라", "마", "바", "사", "아", "자", "차", "카", "타", "파", "하"];
+
+export function sectionLabel(n: number): string {
+  return `제${n}관`;
+}
 
 export function articleLabel(n: number): string {
   return `제${n}조`;
@@ -92,6 +96,10 @@ export function referenceTargetIndex(doc: DocumentNode, numbers: ReadonlyMap<Id,
       for (const branch of node.branches) for (const child of branch.children) visit(child, parent);
       return;
     }
+    if (node.kind === "section") {
+      for (const child of node.children) visit(child, parent);
+      return;
+    }
     const number = numbers.get(node.id);
     if (node.kind === "article" && number) {
       const target: ReferenceTarget = { kind: "article", article: { id: node.id, n: number.n, title: node.title } };
@@ -125,6 +133,7 @@ export function appendixRefLabel(n: number, name: string): string {
 }
 
 const LABELS: Record<NumberKind, (n: number) => string> = {
+  section: sectionLabel,
   article: articleLabel,
   paragraph: paragraphLabel,
   item: itemLabel,
@@ -135,13 +144,25 @@ const LABELS: Record<NumberKind, (n: number) => string> = {
 
 class Counter {
   private n = 0;
+  private last: Id | undefined;
   constructor(
     private readonly kind: NumberKind,
     private readonly out: Map<Id, NodeNumber>,
   ) {}
   next(id: Id): void {
     this.n += 1;
+    this.last = id;
     this.out.set(id, { kind: this.kind, n: this.n, label: LABELS[this.kind](this.n) });
+  }
+  get count(): number {
+    return this.n;
+  }
+  /** 항이 하나뿐인 조는 마커를 찍지 않는다 (실물: 단항 조는 전부 번호 없는 본문 — ADR-0029). */
+  hideIfSingle(): void {
+    if (this.n === 1 && this.last !== undefined) {
+      const only = this.out.get(this.last);
+      if (only) this.out.set(this.last, { ...only, label: "" });
+    }
   }
 }
 
@@ -155,7 +176,7 @@ export function numberTree(doc: DocumentNode, opts: NumberingOptions = {}): Map<
     for (const node of list) {
       if (node.kind === "condBlock") {
         for (const br of node.branches) if (!skip(br.id)) each(br.children, fn);
-      } else if (node.kind === "forBlock" || node.kind === "section") {
+      } else if (node.kind === "forBlock") {
         each(node.children, fn);
       } else {
         fn(node);
@@ -181,14 +202,21 @@ export function numberTree(doc: DocumentNode, opts: NumberingOptions = {}): Map<
         paragraphs.next(n.id); // 임시 — 항 1개로 센다
       }
     });
+    paragraphs.hideIfSingle();
   };
 
   const articles = new Counter("article", out);
-  each(doc.children as BlockNode[], (n) => {
-    if (n.kind === "article") {
-      articles.next(n.id);
-      article(n);
-    }
-  });
+  const sections = new Counter("section", out);
+  const top = (list: readonly Node[]): void =>
+    each(list, (n) => {
+      if (n.kind === "section") {
+        sections.next(n.id);
+        top(n.children);
+      } else if (n.kind === "article") {
+        articles.next(n.id);
+        article(n);
+      }
+    });
+  top(doc.children as BlockNode[]);
   return out;
 }
